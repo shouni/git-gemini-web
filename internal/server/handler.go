@@ -2,15 +2,13 @@ package server
 
 import (
 	"fmt"
+	"git-gemini-web/internal/config"
+	"git-gemini-web/internal/domain"
 	"html/template"
 	"log/slog"
 	"net/http"
 	"regexp"
 	"strings"
-	"time"
-
-	"git-gemini-web/internal/config"
-	"git-gemini-web/internal/domain"
 
 	"github.com/google/uuid"
 	"github.com/shouni/gcp-kit/tasks"
@@ -135,7 +133,7 @@ func (h *Handler) HandleReviewSubmit(w http.ResponseWriter, r *http.Request) {
 		ctx,
 		fmt.Sprintf("gs://%s/%s", h.cfg.GCSBucket, gcsPath),
 		"GET",
-		15*time.Minute,
+		config.SignedURLExpiration,
 	)
 	if err != nil {
 		slog.Error("署名付きURLの生成失敗", "error", err)
