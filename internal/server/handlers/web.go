@@ -16,6 +16,13 @@ import (
 	"github.com/shouni/go-utils/urlpath"
 )
 
+var (
+	// gitURLRegexp は、http、https、git、ssh プロトコルを含む有効な Git リポジトリ URL と一致します。
+	gitURLRegexp = regexp.MustCompile(`^((https?|git|ssh):\/\/|git@)[^ \t\n\r\f\v;\|&]+\.git$`)
+	// gitBranchRegexp は、有効な Git ブランチ名と一致します。
+	gitBranchRegexp = regexp.MustCompile(`^[\w.-]+(/[\w.-]+)*$`)
+)
+
 // ReviewFormPageData はフォームテンプレートに渡すデータ構造です。
 type ReviewFormPageData struct {
 	Message   string // 成功メッセージ
@@ -50,7 +57,7 @@ func NewHandler(
 	}, nil
 }
 
-// HandleReviewForm は GET / リクエストを処理し、レビューフォームを表示します。
+// HandleReviewForm は、GET / リクエストを処理し、レビューフォームを表示します。
 func (h *Handler) HandleReviewForm(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := h.template.Execute(w, nil); err != nil {
@@ -59,10 +66,7 @@ func (h *Handler) HandleReviewForm(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// --- バリデーション用正規表現と関数 (変更なし) ---
-var gitURLRegexp = regexp.MustCompile(`^((https?|git|ssh):\/\/|git@)[^ \t\n\r\f\v;\|&]+\.git$`)
-var gitBranchRegexp = regexp.MustCompile(`^[\w.-]+(/[\w.-]+)*$`)
-
+// validateBranchName は、指定されたブランチ名が Git 命名規則に従って有効かどうかを確認し、無効な場合はエラーを返します。
 func validateBranchName(branchName string) error {
 	if !gitBranchRegexp.MatchString(branchName) {
 		return fmt.Errorf("形式が不正です。許容されない特殊文字が含まれています。")
@@ -76,7 +80,7 @@ func validateBranchName(branchName string) error {
 	return nil
 }
 
-// HandleReviewSubmit は POST /submit_review リクエストを処理します。
+// HandleReviewSubmit は、POST /submit_review リクエストを処理します。
 func (h *Handler) HandleReviewSubmit(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	ctx := r.Context()

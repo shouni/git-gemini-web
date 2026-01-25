@@ -50,6 +50,7 @@ func BuildHandlers(appCtx *AppContext, reviewPipeline taskExecutor) (*AppHandler
 	}, nil
 }
 
+// createAuthHandler は、アプリケーション コンテキスト設定で構成された認証ハンドラーを初期化して返します。
 func createAuthHandler(appCtx *AppContext) (*auth.Handler, error) {
 	cfg := appCtx.Config
 	redirectURL, err := url.JoinPath(cfg.ServiceURL, "/auth/callback")

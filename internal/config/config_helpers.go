@@ -44,13 +44,6 @@ func ValidateEssentialConfig(cfg Config) error {
 	return nil
 }
 
-// IsSecureURL は、与えられたURL文字列がセキュアなオリジン（HTTPSまたはローカル開発環境）であるかを判定します。
-// この関数は、セキュアなURLを判定する外部パッケージへの依存を config パッケージ内にカプセル化し、
-// 他のパッケージがその実装詳細を意識する必要をなくすために提供されます。
-func IsSecureURL(rawURL string) bool {
-	return securenet.IsSecureServiceURL(rawURL)
-}
-
 // getEnv は環境変数を取得し、存在しない場合はデフォルト値を返します。
 func getEnv(key string, defaultValue string) string {
 	return envutil.GetEnv(key, defaultValue)
@@ -64,4 +57,11 @@ func getEnvAsBool(key string, defaultValue bool) bool {
 // parseCommaSeparatedList は環境変数からbool値を読み込みます。
 func parseCommaSeparatedList(key string) []string {
 	return text.ParseCommaSeparatedList(key)
+}
+
+// IsSecureURL は、与えられたURL文字列がセキュアなオリジン（HTTPSまたはローカル開発環境）であるかを判定します。
+// この関数は、セキュアなURLを判定する外部パッケージへの依存を config パッケージ内にカプセル化し、
+// 他のパッケージがその実装詳細を意識する必要をなくすために提供されます。
+func IsSecureURL(rawURL string) bool {
+	return securenet.IsSecureServiceURL(rawURL)
 }
