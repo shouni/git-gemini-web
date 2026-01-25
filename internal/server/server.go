@@ -59,7 +59,7 @@ func Run(ctx context.Context) error {
 	// 3. サーバーハンドラーの構築と依存関係の取得
 	appCtx, err := builder.BuildAppContext(ctx, cfg)
 	if err != nil {
-		return fmt.Errorf("failed to build application context: %w", err)
+		return fmt.Errorf("アプリケーションコンテキストの構築に失敗しました: %w", err)
 	}
 
 	// リソースを解放する
