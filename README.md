@@ -1,4 +1,4 @@
-# 🤖 Git Gemini Web Runner
+# 🤖 Git Gemini Web
 
 [![Language](https://img.shields.io/badge/Language-Go-blue)](https://golang.org/)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/shouni/git-gemini-web)](https://golang.org/)
