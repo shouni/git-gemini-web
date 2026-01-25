@@ -101,7 +101,7 @@ Webフォームを通じてレビュー依頼を受け付け、時間がかか�
 
 -----
 
-## 📁 Git Gemini Web Runner プロジェクトレイアウト
+## 📁 Git Gemini Web プロジェクトレイアウト
 
 ```text
 git-gemini-web/
