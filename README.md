@@ -105,29 +105,29 @@ Webフォームを通じてレビュー依頼を受け付け、時間がかか�
 
 ```text
 git-gemini-web/
-├── main.go                      # エントリーポイント & ライフサイクル管理
+├── main.go                      # エントリーポイント（Appの初期化と起動）
 ├── internal/
-│   ├── adapters/                # 外部システム連携（Slack連携等）
-│   │   └── slack_adapter.go
-│   ├── builder/                 # DIコンテナ / AppContext / ルーティング構築
-│   │   ├── app.go               # AppContext定義
-│   │   ├── builder.go           # ハンドラー統合（auth, web, worker の組み立て）
-│   │   └── server.go            # HTTPサーバーの起動・停止制御
+│   ├── adapters/                # 外部システム連携（抽象インターフェースの実装）
+│   │   └── slack_adapter.go     # Slack通知の実装
+│   ├── builder/                 # DIコンテナ / 依存関係の組み立て
+│   │   ├── app.go               # AppContext（Configや共通クライアント）の定義
+│   │   ├── runners.go           # ReviewRunner / PublishRunner 等の生成ロジック
+│   │   └── handlers.go          # 各コントローラー（auth, web, worker）のインスタンス化
 │   ├── config/                  # 環境変数・バリデーション・設定管理
-│   │   └── config.go
-│   ├── domain/                  # データ構造（ReviewRequest, Response等）
-│   │   ├── response.go
-│   │   └── review.go
-│   ├── pipeline/                # 実行フロー制御（全体の指揮者）
-│   │   └── pipeline.go
-│   ├── runner/                  # ビジネスロジック本体
-│   │   ├── review_runner.go     # レビュー実行
-│   │   ├── publish_runner.go    # 結果のパブリッシュ
-│   │   ├── report_builder.go    # レポート組み立て
-│   │   ├── error_report.md
-│   │   └── skip_report.md
-│   └── server/                  # Web UI ハンドラー
-│       └── handler.go           # フォーム表示・送信受付の実体
+│   │   └── config.go            # Secret Managerマウントパス等の設定を含む
+│   ├── domain/                  # ドメインモデル（純粋なデータ構造と型定義）
+│   │   ├── response.go          # ReviewResult 等
+│   │   └── review.go            # ReviewRequest, ReviewStatus, Outcome 等
+│   ├── pipeline/                # ワークフローの指揮（Runner間を繋ぐ）
+│   │   └── pipeline.go          # ReviewRunner -> PublishRunner の流れを制御
+│   ├── runner/                  # ビジネスロジックの具象
+│   │   ├── review_runner.go     # Git操作・Gemini API呼び出し
+│   │   ├── publish_runner.go    # GCS保存・エラーレポート生成ヘルパー
+│   │   └── report_builder.go    # Markdown/HTML テンプレート実行
+│   └── server/                  # HTTPサーバー基盤
+│       ├── server.go            # chi.Routerの構築、ミドルウェア設定、起動制御
+│       └── handlers/            # HTTPリクエストハンドラー（コントローラーの実体）
+│           └── web.go           # フォーム表示・送信受付
 └── templates/                   # UI用 HTMLテンプレート
     └── review_form.html
 ```
