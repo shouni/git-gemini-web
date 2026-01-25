@@ -71,7 +71,7 @@ func Run(ctx context.Context) error {
 	// 4. パイプラインの構築
 	reviewPipeline, err := pipeline.NewReviewPipeline(ctx, appCtx)
 	if err != nil {
-		return fmt.Errorf("failed to build reviewPipeline: %w", err)
+		return fmt.Errorf("reviewPipelineの構築に失敗しました: %w", err)
 	}
 
 	// 5. ハンドラーの組み立て (builder/handlers.go を使用)
