@@ -126,11 +126,8 @@ git-gemini-web/
 │   │   └── report_builder.go    # Markdown/HTML テンプレート実行
 │   └── server/                  # HTTPサーバー基盤
 │       ├── server.go            # chi.Routerの構築、ミドルウェア設定、起動制御
-│       ├── middleware.go        # 認証チェック、パニックリカバリ、ログ等の共通処理
 │       └── handlers/            # HTTPリクエストハンドラー（コントローラーの実体）
-│           ├── auth.go          # Google OAuth 関連
-│           ├── web.go           # フォーム表示・送信受付
-│           └── worker.go        # Cloud Tasks からのタスク実行受付
+│           └── web.go           # フォーム表示・送信受付
 └── templates/                   # UI用 HTMLテンプレート
     └── review_form.html
 ```
