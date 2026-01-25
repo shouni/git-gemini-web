@@ -110,9 +110,9 @@ git-gemini-web/
 │   ├── adapters/                # 外部システム連携（Slack連携等）
 │   │   └── slack_adapter.go
 │   ├── builder/                 # DIコンテナ / AppContext / ルーティング構築
-│   │   ├── app.go               # AppContext定義
-│   │   ├── builder.go           # ハンドラー統合（auth, web, worker の組み立て）
-│   │   └── server.go            # HTTPサーバーの起動・停止制御
+│   │   ├── app.go               # AppContext（Configや共通クライアント）の保持
+│   │   ├── runners.go           # Runner 類の構築（ReviewRunner, PublishRunner 等の DI）
+│   │   └── server.go            # ハンドラー統合（auth, web, worker の組み立て）
 │   ├── config/                  # 環境変数・バリデーション・設定管理
 │   │   └── config.go
 │   ├── domain/                  # データ構造（ReviewRequest, Response等）
