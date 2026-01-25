@@ -125,7 +125,8 @@ git-gemini-web/
 │   │   ├── publish_runner.go    # GCS保存・エラーレポート生成ヘルパー
 │   │   └── report_builder.go    # Markdown/HTML テンプレート実行
 │   └── server/                  # HTTPサーバー基盤
-│       ├── server.go            # chi.Routerの構築、ミドルウェア設定、起動制御
+│       ├── server.go            # サーバーのライフサイクル（Run/Shutdown）
+│       ├── router.go            # chiによるルーティングとミドルウェア設定
 │       └── handlers/            # HTTPリクエストハンドラー（コントローラーの実体）
 │           └── web.go           # フォーム表示・送信受付
 └── templates/                   # UI用 HTMLテンプレート
