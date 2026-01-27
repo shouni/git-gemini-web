@@ -143,11 +143,19 @@
 </div>
 
 <script>
+    const submitBtn = document.getElementById('submitBtn');
     document.getElementById('reviewForm').onsubmit = function() {
-        document.getElementById('submitBtn').disabled = true;
-        document.getElementById('submitBtn').innerText = '送信中...';
+        submitBtn.disabled = true;
+        submitBtn.innerText = '送信中...';
     };
-</script>
 
+    // ブラウザバック時のボタン復帰対策
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'レビュー開始 (Cloud Tasksにキューイング)';
+        }
+    });
+</script>
 </body>
 </html>

@@ -11,6 +11,7 @@ import (
 
 	"git-gemini-web/internal/config"
 	"git-gemini-web/internal/domain"
+
 	"github.com/gorilla/csrf"
 )
 
@@ -44,6 +45,13 @@ func (h *Handler) renderForm(w http.ResponseWriter, r *http.Request, status int,
 func (h *Handler) validateReviewRequest(req domain.ReviewRequest) error {
 	if req.RepoURL == "" || req.BaseBranch == "" || req.FeatureBranch == "" || req.Mode == "" {
 		return fmt.Errorf("すべてのフィールドを入力してください。")
+	}
+
+	switch req.Mode {
+	case "detail", "release":
+		// OK
+	default:
+		return fmt.Errorf("不正なレビューモードです。")
 	}
 
 	if !gitURLRegexp.MatchString(req.RepoURL) {
