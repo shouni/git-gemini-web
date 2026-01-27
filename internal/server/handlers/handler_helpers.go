@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log/slog"
@@ -21,11 +22,15 @@ var (
 
 // renderForm はテンプレートの表示を一括管理するヘルパーメソッドです。
 func (h *Handler) renderForm(w http.ResponseWriter, status int, data ReviewFormPageData) {
+	var buf bytes.Buffer
+	if err := h.template.Execute(&buf, data); err != nil {
+		slog.Error("テンプレート実行エラー", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
-	if err := h.template.Execute(w, data); err != nil {
-		slog.Error("テンプレート実行エラー", "error", err)
-	}
+	buf.WriteTo(w)
 }
 
 // validateReviewRequest は入力内容が正しいかまとめてチェックする。

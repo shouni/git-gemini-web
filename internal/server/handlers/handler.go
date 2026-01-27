@@ -88,7 +88,9 @@ func (h *Handler) HandleReviewSubmit(w http.ResponseWriter, r *http.Request) {
 	publicURL, err := h.generateSignedResultURL(ctx, req.GCSPath)
 	if err != nil {
 		slog.Error("署名付きURLの生成失敗", "error", err)
-		http.Error(w, "内部サーバーエラーが発生しました。", http.StatusInternalServerError)
+		h.renderForm(w, http.StatusInternalServerError, ReviewFormPageData{
+			Error: "内部サーバーエラーが発生しました。",
+		})
 		return
 	}
 
