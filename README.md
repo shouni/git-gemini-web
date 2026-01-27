@@ -128,7 +128,8 @@ git-gemini-web/
 │       ├── server.go            # サーバーのライフサイクル（Run/Shutdown）
 │       ├── router.go            # chiによるルーティングとミドルウェア設定
 │       └── handlers/            # HTTPリクエストハンドラー（コントローラーの実体）
-│           └── web.go           # フォーム表示・送信受付
+│           ├── handler.go       # ハンドラー共通構造体・基盤
+│           └── handler_helpers.go # ハンドラー内の共通補助処理
 └── templates/                   # UI用 HTMLテンプレート
     └── review_form.html
 ```
