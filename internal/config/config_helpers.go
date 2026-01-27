@@ -9,8 +9,8 @@ import (
 )
 
 // ValidateEssentialConfig は設定バリデーションを行います。
-func ValidateEssentialConfig(cfg Config) error {
-	if !IsSecureURL(cfg.ServiceURL) {
+func ValidateEssentialConfig(cfg *Config) error {
+	if !securenet.IsSecureServiceURL(cfg.ServiceURL) {
 		return fmt.Errorf("security error: SERVICE_URL ('%s') must be HTTPS in production", cfg.ServiceURL)
 	}
 
@@ -57,11 +57,4 @@ func getEnvAsBool(key string, defaultValue bool) bool {
 // parseCommaSeparatedList は環境変数からbool値を読み込みます。
 func parseCommaSeparatedList(key string) []string {
 	return text.ParseCommaSeparatedList(key)
-}
-
-// IsSecureURL は、与えられたURL文字列がセキュアなオリジン（HTTPSまたはローカル開発環境）であるかを判定します。
-// この関数は、セキュアなURLを判定する外部パッケージへの依存を config パッケージ内にカプセル化し、
-// 他のパッケージがその実装詳細を意識する必要をなくすために提供されます。
-func IsSecureURL(rawURL string) bool {
-	return securenet.IsSecureServiceURL(rawURL)
 }

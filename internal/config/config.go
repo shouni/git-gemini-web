@@ -41,7 +41,7 @@ type Config struct {
 }
 
 // LoadConfig は環境変数から設定を読み込みます。
-func LoadConfig() Config {
+func LoadConfig() *Config {
 	serviceURL := getEnv("SERVICE_URL", "http://localhost:8080")
 	allowedEmails := getEnv("ALLOWED_EMAILS", "")
 	allowedDomains := getEnv("ALLOWED_DOMAINS", "")
@@ -50,7 +50,7 @@ func LoadConfig() Config {
 		templatePath = "/app/templates/review_form.html"
 	}
 
-	return Config{
+	return &Config{
 		ServiceURL:          serviceURL,
 		Port:                getEnv("PORT", "8080"),
 		ProjectID:           getEnv("GCP_PROJECT_ID", "your-gcp-project"),

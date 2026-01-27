@@ -18,7 +18,7 @@ import (
 
 // AppContext はアプリケーションの依存関係を保持します。
 type AppContext struct {
-	Config        config.Config
+	Config        *config.Config
 	HTTPClient    httpkit.ClientInterface
 	IOFactory     remoteio.IOFactory
 	TaskEnqueuer  *tasks.Enqueuer[domain.ReviewRequest]
@@ -26,7 +26,7 @@ type AppContext struct {
 }
 
 // BuildAppContext は外部サービスとの接続を確立し、依存関係を組み立てます。
-func BuildAppContext(ctx context.Context, cfg config.Config) (*AppContext, error) {
+func BuildAppContext(ctx context.Context, cfg *config.Config) (*AppContext, error) {
 	// 1. 基盤クライアントの初期化
 	httpClient := httpkit.New(config.DefaultHTTPTimeout)
 

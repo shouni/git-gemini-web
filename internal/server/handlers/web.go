@@ -32,7 +32,7 @@ type ReviewFormPageData struct {
 
 // Handler は HTTPリクエストを処理する構造体です。
 type Handler struct {
-	cfg          config.Config
+	cfg          *config.Config
 	taskEnqueuer *tasks.Enqueuer[domain.ReviewRequest]
 	ioFactory    remoteio.IOFactory
 	template     *template.Template
@@ -40,7 +40,7 @@ type Handler struct {
 
 // NewHandler は新しい Handler インスタンスを作成し、依存関係を注入します。
 func NewHandler(
-	cfg config.Config,
+	cfg *config.Config,
 	taskEnqueuer *tasks.Enqueuer[domain.ReviewRequest],
 	ioFactory remoteio.IOFactory,
 ) (*Handler, error) {
