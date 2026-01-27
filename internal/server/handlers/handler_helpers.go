@@ -30,7 +30,9 @@ func (h *Handler) renderForm(w http.ResponseWriter, status int, data ReviewFormP
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
-	buf.WriteTo(w)
+	if _, err := buf.WriteTo(w); err != nil {
+		slog.Error("レスポンス書き込みエラー", "error", err)
+	}
 }
 
 // validateReviewRequest は入力内容が正しいかまとめてチェックする。
