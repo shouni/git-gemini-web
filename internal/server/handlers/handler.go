@@ -66,10 +66,10 @@ func (h *Handler) HandleReviewSubmit(w http.ResponseWriter, r *http.Request) {
 
 	// 1. フォーム値の取得
 	req := domain.ReviewRequest{
-		RepoURL:       strings.TrimSpace(r.FormValue("repo_url")),
-		BaseBranch:    strings.TrimSpace(r.FormValue("base_branch")),
-		FeatureBranch: strings.TrimSpace(r.FormValue("feature_branch")),
-		Mode:          r.FormValue("review_mode"),
+		RepoURL:       strings.TrimSpace(r.PostFormValue("repo_url")),
+		BaseBranch:    strings.TrimSpace(r.PostFormValue("base_branch")),
+		FeatureBranch: strings.TrimSpace(r.PostFormValue("feature_branch")),
+		Mode:          r.PostFormValue("review_mode"),
 		GCSBucket:     h.cfg.GCSBucket,
 	}
 
@@ -106,7 +106,7 @@ func (h *Handler) HandleReviewSubmit(w http.ResponseWriter, r *http.Request) {
 	// 6. 成功応答を返します
 	slog.Info("レビュータスク投入成功", "repo", req.RepoURL, "gcs_path", req.GCSPath)
 	h.renderForm(w, http.StatusAccepted, ReviewFormPageData{
-		Message:   "✅ レビュータスクを受け付けました。生成完了後、以下のURLから確認できます（15分間有効）。",
+		Message:   fmt.Sprintf("✅ レビュータスクを受け付けました。生成完了後、以下のURLから確認できます（%.0f分間有効）。", config.SignedURLExpiration.Minutes()),
 		ResultURL: publicURL,
 	})
 }
