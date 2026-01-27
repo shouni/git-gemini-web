@@ -22,7 +22,7 @@ func NewRouter(h *builder.AppHandlers, cfg *config.Config) http.Handler {
 
 	// CSRFミドルウェアの設定
 	CSRF := csrf.Protect(
-		[]byte(cfg.SessionSecret),
+		[]byte(cfg.SessionEncryptKey),
 		csrf.Path("/"),
 	)
 
