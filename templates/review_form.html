@@ -53,6 +53,10 @@
         button:hover {
             background-color: #0056b3;
         }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
         .note {
             margin-top: 20px;
             padding: 10px;
@@ -61,7 +65,6 @@
             color: #333;
             font-size: 0.9em;
         }
-        /* メッセージ表示用のスタイル */
         .error-message {
             padding: 15px;
             margin-bottom: 20px;
@@ -93,14 +96,16 @@
     <div class="success-message">
         <p><strong>成功:</strong> {{.Message}}</p>
         {{if .ResultURL}}
-        <p><strong>結果URL:</strong> <a href="{{.ResultURL}}" target="_blank">レビュー結果をこちらから確認</a></p>
+        <p><strong>結果URL:</strong> <a href="{{.ResultURL}}" target="_blank" rel="noopener noreferrer">レビュー結果をこちらから確認</a></p>
+        <p><small>※URLの有効期限は15分間です。</small></p>
         {{end}}
     </div>
     {{end}}
 
     <h1>🤖 AIコードレビュー依頼フォーム</h1>
 
-    <form action="/submit_review" method="POST">
+    <form action="/submit_review" method="POST" id="reviewForm">
+        <input type="hidden" name="gorilla.csrf.Token" value="{{.CSRFToken}}">
 
         <label for="repo_url">リポジトリURL (SSH/HTTPS)</label>
         <input type="text" id="repo_url" name="repo_url"
@@ -113,15 +118,14 @@
         <input type="text" id="base_branch" name="base_branch"
                value="main"
                pattern="^(?!.*\.\.)[\w.-]+(/[\w.-]+)*$"
-               title="有効なブランチ名を入力してください (例: main, feature/my-branch)。'..' や先頭・末尾の '/' は使用できません。"
+               title="有効なブランチ名を入力してください。"
                required>
 
         <label for="feature_branch">フィーチャーブランチ (比較対象)</label>
         <input type="text" id="feature_branch" name="feature_branch"
                value="develop"
-               placeholder="例: develop-feature-A"
                pattern="^(?!.*\.\.)[\w.-]+(/[\w.-]+)*$"
-               title="有効なブランチ名を入力してください (例: develop, feature/my-branch)。'..' や先頭・末尾の '/' は使用できません。"
+               title="有効なブランチ名を入力してください。"
                required>
 
         <label for="review_mode">レビューモード</label>
@@ -130,12 +134,28 @@
             <option value="release">release (リリース可否判定)</option>
         </select>
 
-        <button type="submit">レビュー開始 (Cloud Tasksにキューイング)</button>
+        <button type="submit" id="submitBtn">レビュー開始 (Cloud Tasksにキューイング)</button>
     </form>
 
     <div class="note">
         <p><strong>注意:</strong> このリクエストはバックエンドのCloud Tasksに非同期でキューイングされ、処理完了後に結果がGCSに保存されます。</p>
     </div>
 </div>
+
+<script>
+    const submitBtn = document.getElementById('submitBtn');
+    document.getElementById('reviewForm').onsubmit = function() {
+        submitBtn.disabled = true;
+        submitBtn.innerText = '送信中...';
+    };
+
+    // ブラウザバック時のボタン復帰対策
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'レビュー開始 (Cloud Tasksにキューイング)';
+        }
+    });
+</script>
 </body>
 </html>

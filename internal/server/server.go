@@ -43,7 +43,7 @@ func Run(ctx context.Context, cfg *config.Config) error {
 	}
 
 	// 4. ルーターの作成
-	router := NewRouter(appHandlers)
+	router := NewRouter(appHandlers, cfg)
 
 	srv := &http.Server{
 		Addr:    ":" + cfg.Port,
