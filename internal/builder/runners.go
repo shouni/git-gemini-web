@@ -36,7 +36,7 @@ func (f *GitAdapterFactoryImpl) Create(localPath string, baseBranch string) adap
 // 実行可能な Runner のインターフェースを返します。
 func BuildReviewRunner(
 	ctx context.Context,
-	cfg config.Config,
+	cfg *config.Config,
 ) (runner.ReviewRunner, error) {
 
 	// 1. Git Factory の構築

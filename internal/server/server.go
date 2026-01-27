@@ -2,61 +2,89 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"git-gemini-web/internal/builder"
 	"git-gemini-web/internal/config"
 	"git-gemini-web/internal/pipeline"
 )
 
-// Run は、設定ロード、バリデーション、サーバーのライフサイクル管理を行う
-func Run(ctx context.Context) error {
-	// 1. 設定のロード
-	cfg := config.LoadConfig()
+// シャットダウンのデフォルト猶予時間
+const defaultShutdownTimeout = 30 * time.Second
 
-	// 2. 必須設定のチェックとセキュリティバリデーション
-	if err := config.ValidateEssentialConfig(cfg); err != nil {
-		return err
-	}
-
+// Run は、サーバーの構築、起動、およびライフサイクル管理を行います。
+func Run(ctx context.Context, cfg *config.Config) error {
 	slog.Info("🛠️ サーバー依存関係を構築中...")
 
-	// 3. サーバーハンドラーの構築と依存関係の取得
+	// 1. アプリケーションコンテキストの構築
 	appCtx, err := builder.BuildAppContext(ctx, cfg)
 	if err != nil {
 		return fmt.Errorf("アプリケーションコンテキストの構築に失敗しました: %w", err)
 	}
-
-	// リソースを解放する
 	defer func() {
 		slog.Info("♻️ アプリケーションコンテキストをクローズ中...")
 		appCtx.Close()
 	}()
 
-	// 4. パイプラインの構築
+	// 2. パイプラインの構築
 	reviewPipeline, err := pipeline.NewReviewPipeline(ctx, appCtx)
 	if err != nil {
 		return fmt.Errorf("reviewPipelineの構築に失敗しました: %w", err)
 	}
 
-	// 5. ハンドラーの組み立て (builder/handlers.go を使用)
+	// 3. ハンドラーの組み立て
 	appHandlers, err := builder.BuildHandlers(appCtx, reviewPipeline)
 	if err != nil {
 		return fmt.Errorf("ハンドラーの構築に失敗しました: %w", err)
 	}
 
-	// 6. ルーターの作成 (このファイル内の NewRouter を使用)
+	// 4. ルーターの作成
 	router := NewRouter(appHandlers)
 
-	// 7. サーバー起動
-	slog.Info("🚀 サーバーを起動中...", "port", cfg.Port)
-	// Cloud Runでは SIGTERM を受け取ってからシャットダウンする Graceful Shutdown が推奨されますが、
-	// まずはこのシンプルな ListenAndServe でも動作に問題はありません。
-	if err := http.ListenAndServe(":"+cfg.Port, router); err != nil && err != http.ErrServerClosed {
-		return fmt.Errorf("サーバーの起動に失敗しました: %w", err)
+	srv := &http.Server{
+		Addr:    ":" + cfg.Port,
+		Handler: router,
 	}
 
+	// 5. サーバー起動（別ゴルーチン）
+	serverErrors := make(chan error, 1)
+	go func() {
+		slog.Info("🚀 サーバーを起動中...", "port", cfg.Port)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			serverErrors <- err
+		}
+	}()
+
+	// 6. 停止待機
+	select {
+	case err := <-serverErrors:
+		return fmt.Errorf("サーバーエラーが発生しました: %w", err)
+
+	case <-ctx.Done():
+		slog.Info("⚠️ コンテキストのキャンセルを受信、グレースフルシャットダウンを開始します...")
+		return gracefulShutdown(srv)
+	}
+}
+
+// gracefulShutdown は、サーバーを安全に停止させます。
+func gracefulShutdown(srv *http.Server) error {
+	// シャットダウン用のタイムアウト付きコンテキスト
+	// ここは config.Config に ShutdownTimeout があればそれを使うのもアリなのだ！
+	ctx, cancel := context.WithTimeout(context.Background(), defaultShutdownTimeout)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		slog.Error("グレースフルシャットダウンに失敗しました、強制停止します", "error", err)
+		if closeErr := srv.Close(); closeErr != nil {
+			return errors.Join(err, fmt.Errorf("サーバーの強制クローズにも失敗しました: %w", closeErr))
+		}
+		return fmt.Errorf("グレースフルシャットダウン失敗により強制停止しました: %w", err)
+	}
+
+	slog.Info("✅ サーバーは正常に停止しました")
 	return nil
 }
