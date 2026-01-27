@@ -21,6 +21,7 @@ type ReviewFormPageData struct {
 	Message   string
 	Error     string
 	ResultURL string
+	CSRFToken string
 }
 
 // Handler は HTTPリクエストを処理する構造体です。
@@ -106,7 +107,7 @@ func (h *Handler) HandleReviewSubmit(w http.ResponseWriter, r *http.Request) {
 	// 6. 成功応答を返します
 	slog.InfoContext(ctx, "レビュータスク投入成功", "repo", req.RepoURL, "gcs_path", req.GCSPath)
 	h.renderForm(w, r, http.StatusAccepted, ReviewFormPageData{
-		Message:   fmt.Sprintf("✅ レビュータスクを受け付けました。生成完了後、以下のURLから確認できます（%.0f分間有効）。", config.SignedURLExpiration.Minutes()),
+		Message:   fmt.Sprintf("✅ レビュータスクを受け付けました。生成完了後、以下のURLから確認できます（%s有効）。", config.SignedURLExpiration.String()),
 		ResultURL: publicURL,
 	})
 }

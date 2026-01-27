@@ -11,6 +11,7 @@ import (
 
 	"git-gemini-web/internal/config"
 	"git-gemini-web/internal/domain"
+	"github.com/gorilla/csrf"
 )
 
 var (
@@ -22,15 +23,18 @@ var (
 
 // renderForm はテンプレートの表示を一括管理するヘルパーメソッドです。
 func (h *Handler) renderForm(w http.ResponseWriter, r *http.Request, status int, data ReviewFormPageData) {
+	data.CSRFToken = csrf.Token(r)
+
 	var buf bytes.Buffer
+	// バッファに書き込むことで、パースエラー時に中途半端なレスポンスを防ぐ
 	if err := h.template.Execute(&buf, data); err != nil {
-		// Context付きでログ出力
 		slog.ErrorContext(r.Context(), "テンプレート実行エラー", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
+
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(status)
+	w.WriteHeader(status) // ここで初めてステータスコードを確定させる
 	if _, err := buf.WriteTo(w); err != nil {
 		slog.ErrorContext(r.Context(), "レスポンス書き込みエラー", "error", err)
 	}
@@ -60,7 +64,7 @@ func (h *Handler) validateReviewRequest(req domain.ReviewRequest) error {
 // validateBranchName は Git のブランチ名として正当かどうかを判定する。
 func validateBranchName(branchName string) error {
 	if !gitBranchRegexp.MatchString(branchName) {
-		return fmt.Errorf("形式が不正です。")
+		return fmt.Errorf("形式が不正です。英数字、ハイフン、ドット、スラッシュのみ使用可能です。")
 	}
 	if strings.Contains(branchName, "..") || strings.Contains(branchName, "//") {
 		return fmt.Errorf("'..' または '//' は使用できません。")
