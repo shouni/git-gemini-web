@@ -21,17 +21,18 @@ var (
 )
 
 // renderForm はテンプレートの表示を一括管理するヘルパーメソッドです。
-func (h *Handler) renderForm(w http.ResponseWriter, status int, data ReviewFormPageData) {
+func (h *Handler) renderForm(w http.ResponseWriter, r *http.Request, status int, data ReviewFormPageData) {
 	var buf bytes.Buffer
 	if err := h.template.Execute(&buf, data); err != nil {
-		slog.Error("テンプレート実行エラー", "error", err)
+		// Context付きでログ出力
+		slog.ErrorContext(r.Context(), "テンプレート実行エラー", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
 	if _, err := buf.WriteTo(w); err != nil {
-		slog.Error("レスポンス書き込みエラー", "error", err)
+		slog.ErrorContext(r.Context(), "レスポンス書き込みエラー", "error", err)
 	}
 }
 

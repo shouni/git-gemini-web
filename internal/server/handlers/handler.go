@@ -52,7 +52,7 @@ func NewHandler(
 
 // HandleReviewForm は GET リクエストに対してフォームを表示します。
 func (h *Handler) HandleReviewForm(w http.ResponseWriter, r *http.Request) {
-	h.renderForm(w, http.StatusOK, ReviewFormPageData{})
+	h.renderForm(w, r, http.StatusOK, ReviewFormPageData{})
 }
 
 // HandleReviewSubmit は POST リクエストを処理します。
@@ -60,7 +60,7 @@ func (h *Handler) HandleReviewSubmit(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	if err := r.ParseForm(); err != nil {
-		h.renderForm(w, http.StatusBadRequest, ReviewFormPageData{Error: "リクエストのパースに失敗しました。"})
+		h.renderForm(w, r, http.StatusBadRequest, ReviewFormPageData{Error: "リクエストのパースに失敗しました。"})
 		return
 	}
 
@@ -75,7 +75,7 @@ func (h *Handler) HandleReviewSubmit(w http.ResponseWriter, r *http.Request) {
 
 	// 2. 入力バリデーション
 	if err := h.validateReviewRequest(req); err != nil {
-		h.renderForm(w, http.StatusBadRequest, ReviewFormPageData{Error: err.Error()})
+		h.renderForm(w, r, http.StatusBadRequest, ReviewFormPageData{Error: err.Error()})
 		return
 	}
 
@@ -87,8 +87,8 @@ func (h *Handler) HandleReviewSubmit(w http.ResponseWriter, r *http.Request) {
 	// 4. 結果表示用の署名付きURLを事前に生成します
 	publicURL, err := h.generateSignedResultURL(ctx, req.GCSPath)
 	if err != nil {
-		slog.Error("署名付きURLの生成失敗", "error", err)
-		h.renderForm(w, http.StatusInternalServerError, ReviewFormPageData{
+		slog.ErrorContext(ctx, "署名付きURLの生成失敗", "error", err)
+		h.renderForm(w, r, http.StatusInternalServerError, ReviewFormPageData{
 			Error: "内部サーバーエラーが発生しました。",
 		})
 		return
@@ -96,16 +96,16 @@ func (h *Handler) HandleReviewSubmit(w http.ResponseWriter, r *http.Request) {
 
 	// 5. Cloud Tasks へのタスク投入
 	if err := h.taskEnqueuer.Enqueue(ctx, req); err != nil {
-		slog.Error("Cloud Tasksへの投入失敗", "error", err, "repo", req.RepoURL)
-		h.renderForm(w, http.StatusServiceUnavailable, ReviewFormPageData{
+		slog.ErrorContext(ctx, "Cloud Tasksへの投入失敗", "error", err, "repo", req.RepoURL)
+		h.renderForm(w, r, http.StatusServiceUnavailable, ReviewFormPageData{
 			Error: "現在レビューの受け付けができません。時間をおいて再度お試しください。",
 		})
 		return
 	}
 
 	// 6. 成功応答を返します
-	slog.Info("レビュータスク投入成功", "repo", req.RepoURL, "gcs_path", req.GCSPath)
-	h.renderForm(w, http.StatusAccepted, ReviewFormPageData{
+	slog.InfoContext(ctx, "レビュータスク投入成功", "repo", req.RepoURL, "gcs_path", req.GCSPath)
+	h.renderForm(w, r, http.StatusAccepted, ReviewFormPageData{
 		Message:   fmt.Sprintf("✅ レビュータスクを受け付けました。生成完了後、以下のURLから確認できます（%.0f分間有効）。", config.SignedURLExpiration.Minutes()),
 		ResultURL: publicURL,
 	})
