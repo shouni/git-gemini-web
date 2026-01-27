@@ -1,7 +1,6 @@
 package builder
 
 import (
-	"context"
 	"fmt"
 	"net/url"
 
@@ -14,11 +13,6 @@ import (
 
 const defaultSessionName = "git-gemini-session"
 
-// taskExecutor は、非同期タスクを受け取りレビュー処理のパイプラインを実行するインターフェースです。
-type taskExecutor interface {
-	Execute(ctx context.Context, payload domain.ReviewRequest) error
-}
-
 // AppHandlers は生成されたすべての HTTP ハンドラーを保持する構造体です。
 type AppHandlers struct {
 	Auth   *auth.Handler
@@ -27,7 +21,10 @@ type AppHandlers struct {
 }
 
 // BuildHandlers は依存関係を注入し、各エンドポイント用のハンドラーを生成します。
-func BuildHandlers(appCtx *AppContext, reviewPipeline taskExecutor) (*AppHandlers, error) {
+func BuildHandlers(
+	appCtx *AppContext,
+	reviewPipeline worker.TaskExecutor[domain.ReviewRequest],
+) (*AppHandlers, error) {
 	// Auth ハンドラーの生成
 	authHandler, err := createAuthHandler(appCtx)
 	if err != nil {
