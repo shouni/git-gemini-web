@@ -25,7 +25,6 @@ type SlackNotifier interface {
 
 // SlackAdapter は SlackNotifier インターフェースを満たす具象型です。
 type SlackAdapter struct {
-	httpClient  httpkit.ClientInterface
 	webhookURL  string // Webhook URLを保持
 	slackClient *slack.Client
 }
@@ -41,7 +40,6 @@ func NewSlackAdapter(httpClient httpkit.ClientInterface, webhookURL string) (*Sl
 	}
 
 	return &SlackAdapter{
-		httpClient:  httpClient,
 		webhookURL:  webhookURL,
 		slackClient: client,
 	}, nil
