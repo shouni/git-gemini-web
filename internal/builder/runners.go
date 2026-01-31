@@ -46,10 +46,7 @@ func BuildPipeline(ctx context.Context, appCtx *app.Container) (pipeline.Pipelin
 		return nil, fmt.Errorf("PublishRunnerの構築に失敗: %w", err)
 	}
 
-	return &pipeline.ReviewPipeline{
-		ReviewRunner:  reviewRunner,
-		PublishRunner: publishRunner,
-	}, nil
+	return pipeline.NewReviewPipeline(reviewRunner, publishRunner), nil
 }
 
 // buildReviewRunner は、Web Runner の main.go から呼び出され、
