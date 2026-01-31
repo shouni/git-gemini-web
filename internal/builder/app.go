@@ -79,7 +79,7 @@ func buildRemoteIO(ctx context.Context) (*app.RemoteIO, error) {
 
 // buildTaskEnqueuer は、Cloud Tasks エンキューアを初期化します。
 func buildTaskEnqueuer(ctx context.Context, cfg *config.Config) (*tasks.Enqueuer[domain.ReviewRequest], error) {
-	workerURL, err := url.JoinPath(cfg.ServiceURL, "/tasks/generate")
+	workerURL, err := url.JoinPath(cfg.ServiceURL, "/tasks/execute_review")
 	if err != nil {
 		return nil, fmt.Errorf("failed to build worker URL: %w", err)
 	}
