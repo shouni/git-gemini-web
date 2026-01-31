@@ -49,8 +49,7 @@ func BuildPipeline(ctx context.Context, appCtx *app.Container) (pipeline.Pipelin
 	return pipeline.NewReviewPipeline(reviewRunner, publishRunner), nil
 }
 
-// buildReviewRunner は、Web Runner の main.go から呼び出され、
-// 実行可能な Runner のインターフェースを返します。
+// buildReviewRunner は、実行可能な ReviewRunner のインターフェースを返します。
 func buildReviewRunner(
 	ctx context.Context,
 	cfg *config.Config,
