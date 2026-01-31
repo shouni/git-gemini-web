@@ -107,10 +107,12 @@ Webフォームを通じてレビュー依頼を受け付け、時間がかか�
 git-gemini-web/
 ├── main.go                      # エントリーポイント（Appの初期化と起動）
 ├── internal/
+│   ├── app/                     # アプリケーションの基盤構造
+│   │   └── container.go         # Container 構造体と Close メソッドの定義
 │   ├── adapters/                # 外部システム連携（抽象インターフェースの実装）
 │   │   └── slack_adapter.go     # Slack通知の実装
 │   ├── builder/                 # DIコンテナ / 依存関係の組み立て
-│   │   ├── app.go               # AppContext（Configや共通クライアント）の定義
+│   │   ├── app.go               # Containerの構築
 │   │   ├── runners.go           # ReviewRunner / PublishRunner 等の生成ロジック
 │   │   └── handlers.go          # 各コントローラー（auth, web, worker）のインスタンス化
 │   ├── config/                  # 環境変数・バリデーション・設定管理

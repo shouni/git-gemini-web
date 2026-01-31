@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	"git-gemini-web/internal/app"
 	"git-gemini-web/internal/config"
 	"git-gemini-web/internal/runner"
 
@@ -74,7 +75,7 @@ func BuildReviewRunner(
 // BuildPublishRunner は、実行可能な PublisherRunner のインターフェースを返します。
 func BuildPublishRunner(
 	ctx context.Context,
-	appCtx *AppContext,
+	appCtx *app.Container,
 ) (runner.PublisherRunner, error) {
 
 	// Publisher の構築
@@ -82,21 +83,16 @@ func BuildPublishRunner(
 	if err != nil {
 		return nil, fmt.Errorf("MarkdownToHtmlRunnerの初期化に失敗しました: %w", err)
 	}
-	publisherService, err := publisher.NewPublisher(ctx, appCtx.IOFactory, htmlRunner)
+	publisherService, err := publisher.NewPublisher(ctx, appCtx.RemoteIO.Factory, htmlRunner)
 	if err != nil {
 		return nil, fmt.Errorf("Publisherの初期化に失敗しました: %w", err)
 	}
 	slog.Debug("Publisher を構築しました。")
 
-	urlSigner, err := appCtx.IOFactory.URLSigner()
-	if err != nil {
-		return nil, fmt.Errorf("URLSignerの初期化に失敗しました: %w", err)
-	}
-
 	// 依存関係を注入して Runner を組み立てる
 	publishRunner := runner.NewStoragePublisherRunner(
 		publisherService,
-		urlSigner,
+		appCtx.RemoteIO.Signer,
 		appCtx.SlackNotifier,
 	)
 

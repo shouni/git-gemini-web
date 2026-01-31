@@ -3,44 +3,87 @@ package builder
 import (
 	"context"
 	"fmt"
-	"log/slog"
+	"io"
 	"net/url"
 
 	"git-gemini-web/internal/adapters"
+	"git-gemini-web/internal/app"
 	"git-gemini-web/internal/config"
 	"git-gemini-web/internal/domain"
 
 	"github.com/shouni/gcp-kit/tasks"
 	"github.com/shouni/go-http-kit/pkg/httpkit"
 	"github.com/shouni/go-remote-io/pkg/gcsfactory"
-	"github.com/shouni/go-remote-io/pkg/remoteio"
 )
 
-// AppContext はアプリケーションの依存関係を保持します。
-type AppContext struct {
-	Config        *config.Config
-	HTTPClient    httpkit.ClientInterface
-	IOFactory     remoteio.IOFactory
-	TaskEnqueuer  *tasks.Enqueuer[domain.ReviewRequest]
-	SlackNotifier adapters.SlackNotifier
-}
+// BuildContainer は外部サービスとの接続を確立し、依存関係を組み立てた app.Container を返します。
+func BuildContainer(ctx context.Context, cfg *config.Config) (container *app.Container, err error) {
+	var resources []io.Closer
+	defer func() {
+		if err != nil {
+			for _, r := range resources {
+				if r != nil {
+					_ = r.Close()
+				}
+			}
+		}
+	}()
 
-// BuildAppContext は外部サービスとの接続を確立し、依存関係を組み立てます。
-func BuildAppContext(ctx context.Context, cfg *config.Config) (*AppContext, error) {
-	// 1. 基盤クライアントの初期化
+	// 1. HttpClient (全アダプターの基盤)
 	httpClient := httpkit.New(config.DefaultHTTPTimeout)
 
-	// 2. I/O インフラ (GCS等) の初期化
-	ioFactory, err := gcsfactory.New(ctx)
+	// 2. I/O Infrastructure (GCS)
+	rio, err := buildRemoteIO(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize IO components: %w", err)
+	}
+	resources = append(resources, rio)
+
+	// 3. Task Enqueuer
+	enqueuer, err := buildTaskEnqueuer(ctx, cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize task enqueuer: %w", err)
+	}
+	resources = append(resources, enqueuer)
+
+	// 4. Slack Adapter
+	slack, err := adapters.NewSlackAdapter(httpClient, cfg.SlackWebhookURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize Slack adapter: %w", err)
+	}
+
+	return &app.Container{
+		Config:        cfg,
+		RemoteIO:      rio,
+		TaskEnqueuer:  enqueuer,
+		HTTPClient:    httpClient,
+		SlackNotifier: slack,
+	}, nil
+}
+
+// buildRemoteIO は、GCS ベースの I/O コンポーネントを初期化します。
+func buildRemoteIO(ctx context.Context) (*app.RemoteIO, error) {
+	factory, err := gcsfactory.New(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create GCS factory: %w", err)
 	}
+	s, err := factory.URLSigner()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create URL signer: %w", err)
+	}
+	return &app.RemoteIO{
+		Factory: factory,
+		Signer:  s,
+	}, nil
+}
 
-	// 3. Cloud Tasks Enqueuer の初期化
-	workerURL, err := url.JoinPath(cfg.ServiceURL, "/tasks/execute_review")
+// buildTaskEnqueuer は、Cloud Tasks エンキューアを初期化します。
+func buildTaskEnqueuer(ctx context.Context, cfg *config.Config) (*tasks.Enqueuer[domain.ReviewRequest], error) {
+	workerURL, err := url.JoinPath(cfg.ServiceURL, "/tasks/generate")
 	if err != nil {
 		return nil, fmt.Errorf("failed to build worker URL: %w", err)
 	}
+
 	taskCfg := tasks.Config{
 		ProjectID:           cfg.ProjectID,
 		LocationID:          cfg.LocationID,
@@ -49,33 +92,5 @@ func BuildAppContext(ctx context.Context, cfg *config.Config) (*AppContext, erro
 		ServiceAccountEmail: cfg.ServiceAccountEmail,
 		Audience:            cfg.TaskAudienceURL,
 	}
-	taskEnqueuer, err := tasks.NewEnqueuer[domain.ReviewRequest](ctx, taskCfg)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize task enqueuer: %w", err)
-	}
-
-	// 4. Slack アダプター
-	slackNotifier := adapters.NewSlackAdapter(httpClient, cfg.SlackWebhookURL)
-
-	return &AppContext{
-		Config:        cfg,
-		HTTPClient:    httpClient,
-		IOFactory:     ioFactory,
-		TaskEnqueuer:  taskEnqueuer,
-		SlackNotifier: slackNotifier,
-	}, nil
-}
-
-// Close は、AppContextが保持するすべてのリソース（クライアント接続など）を解放します。
-func (a *AppContext) Close() {
-	if a.IOFactory != nil {
-		if err := a.IOFactory.Close(); err != nil {
-			slog.Error("failed to close IOFactory", "error", err)
-		}
-	}
-	if a.TaskEnqueuer != nil {
-		if err := a.TaskEnqueuer.Close(); err != nil {
-			slog.Error("failed to close task enqueuer", "error", err)
-		}
-	}
+	return tasks.NewEnqueuer[domain.ReviewRequest](ctx, taskCfg)
 }

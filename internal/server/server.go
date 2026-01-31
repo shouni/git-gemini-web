@@ -21,7 +21,7 @@ func Run(ctx context.Context, cfg *config.Config) error {
 	slog.Info("🛠️ サーバー依存関係を構築中...")
 
 	// 1. アプリケーションコンテキストの構築
-	appCtx, err := builder.BuildAppContext(ctx, cfg)
+	appCtx, err := builder.BuildContainer(ctx, cfg)
 	if err != nil {
 		return fmt.Errorf("アプリケーションコンテキストの構築に失敗しました: %w", err)
 	}
