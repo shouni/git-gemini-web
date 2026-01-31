@@ -10,7 +10,6 @@ import (
 
 	"git-gemini-web/internal/builder"
 	"git-gemini-web/internal/config"
-	"git-gemini-web/internal/pipeline"
 )
 
 // シャットダウンのデフォルト猶予時間
@@ -31,7 +30,7 @@ func Run(ctx context.Context, cfg *config.Config) error {
 	}()
 
 	// 2. パイプラインの構築
-	reviewPipeline, err := pipeline.NewReviewPipeline(ctx, appCtx)
+	reviewPipeline, err := builder.BuildPipeline(ctx, appCtx)
 	if err != nil {
 		return fmt.Errorf("reviewPipelineの構築に失敗しました: %w", err)
 	}

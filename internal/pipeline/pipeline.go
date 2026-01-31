@@ -5,11 +5,15 @@ import (
 	"fmt"
 	"log/slog"
 
-	"git-gemini-web/internal/app"
-	"git-gemini-web/internal/builder"
 	"git-gemini-web/internal/domain"
 	"git-gemini-web/internal/runner"
 )
+
+// Pipeline レビュー要求を処理するために実行される一連のプロセスを表します。
+type Pipeline interface {
+	// Execute 指定されたコンテキスト内で指定されたレビュー要求を処理し、操作が失敗した場合はエラーを返します。
+	Execute(ctx context.Context, payload domain.ReviewRequest) error
+}
 
 // ReviewPipeline はパイプラインの実行に必要な外部依存関係を保持するサービス構造体です。
 type ReviewPipeline struct {
@@ -17,22 +21,11 @@ type ReviewPipeline struct {
 	publishRunner runner.PublisherRunner
 }
 
-// NewReviewPipeline は ReviewPipeline の新しいインスタンスを生成します。
-func NewReviewPipeline(ctx context.Context, appCtx *app.Container) (*ReviewPipeline, error) {
-	reviewRunner, err := builder.BuildReviewRunner(ctx, appCtx.Config)
-	if err != nil {
-		return nil, fmt.Errorf("ReviewRunnerの構築に失敗: %w", err)
-	}
-
-	publishRunner, err := builder.BuildPublishRunner(ctx, appCtx)
-	if err != nil {
-		return nil, fmt.Errorf("PublishRunnerの構築に失敗: %w", err)
-	}
-
+func NewReviewPipeline(r runner.ReviewRunner, p runner.PublisherRunner) *ReviewPipeline {
 	return &ReviewPipeline{
-		reviewRunner:  reviewRunner,
-		publishRunner: publishRunner,
-	}, nil
+		reviewRunner:  r,
+		publishRunner: p,
+	}
 }
 
 // Execute はレビューリクエストの全工程（実行から公開まで）をオーケストレートします。
