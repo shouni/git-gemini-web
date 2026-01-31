@@ -7,12 +7,12 @@ import (
 	"net/http"
 	"strings"
 
+	"git-gemini-web/internal/app"
 	"git-gemini-web/internal/config"
 	"git-gemini-web/internal/domain"
 
 	"github.com/google/uuid"
 	"github.com/shouni/gcp-kit/tasks"
-	"github.com/shouni/go-remote-io/pkg/remoteio"
 	"github.com/shouni/go-utils/urlpath"
 )
 
@@ -28,7 +28,7 @@ type ReviewFormPageData struct {
 type Handler struct {
 	cfg          *config.Config
 	taskEnqueuer *tasks.Enqueuer[domain.ReviewRequest]
-	ioFactory    remoteio.IOFactory
+	remoteIO     *app.RemoteIO
 	template     *template.Template
 }
 
@@ -36,7 +36,7 @@ type Handler struct {
 func NewHandler(
 	cfg *config.Config,
 	taskEnqueuer *tasks.Enqueuer[domain.ReviewRequest],
-	ioFactory remoteio.IOFactory,
+	remoteIO *app.RemoteIO,
 ) (*Handler, error) {
 	tmpl, err := template.ParseFiles(cfg.TemplatePath)
 	if err != nil {
@@ -46,7 +46,7 @@ func NewHandler(
 	return &Handler{
 		cfg:          cfg,
 		taskEnqueuer: taskEnqueuer,
-		ioFactory:    ioFactory,
+		remoteIO:     remoteIO,
 		template:     tmpl,
 	}, nil
 }

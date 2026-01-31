@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	"git-gemini-web/internal/app"
 	"git-gemini-web/internal/builder"
 	"git-gemini-web/internal/domain"
 	"git-gemini-web/internal/runner"
@@ -17,7 +18,7 @@ type ReviewPipeline struct {
 }
 
 // NewReviewPipeline は ReviewPipeline の新しいインスタンスを生成します。
-func NewReviewPipeline(ctx context.Context, appCtx *builder.AppContext) (*ReviewPipeline, error) {
+func NewReviewPipeline(ctx context.Context, appCtx *app.Container) (*ReviewPipeline, error) {
 	reviewRunner, err := builder.BuildReviewRunner(ctx, appCtx.Config)
 	if err != nil {
 		return nil, fmt.Errorf("ReviewRunnerの構築に失敗: %w", err)

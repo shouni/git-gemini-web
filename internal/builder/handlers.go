@@ -2,6 +2,7 @@ package builder
 
 import (
 	"fmt"
+	"git-gemini-web/internal/app"
 	"net/url"
 
 	"git-gemini-web/internal/domain"
@@ -22,7 +23,7 @@ type AppHandlers struct {
 
 // BuildHandlers は依存関係を注入し、各エンドポイント用のハンドラーを生成します。
 func BuildHandlers(
-	appCtx *AppContext,
+	appCtx *app.Container,
 	reviewPipeline worker.TaskExecutor[domain.ReviewRequest],
 ) (*AppHandlers, error) {
 	// Auth ハンドラーの生成
@@ -32,7 +33,7 @@ func BuildHandlers(
 	}
 
 	// Web UI ハンドラーの生成
-	webHandler, err := handlers.NewHandler(appCtx.Config, appCtx.TaskEnqueuer, appCtx.IOFactory)
+	webHandler, err := handlers.NewHandler(appCtx.Config, appCtx.TaskEnqueuer, appCtx.RemoteIO)
 	if err != nil {
 		return nil, fmt.Errorf("WebHandlerの初期化失敗: %w", err)
 	}
@@ -48,7 +49,7 @@ func BuildHandlers(
 }
 
 // createAuthHandler は、アプリケーション コンテキスト設定で構成された認証ハンドラーを初期化して返します。
-func createAuthHandler(appCtx *AppContext) (*auth.Handler, error) {
+func createAuthHandler(appCtx *app.Container) (*auth.Handler, error) {
 	cfg := appCtx.Config
 	redirectURL, err := url.JoinPath(cfg.ServiceURL, "/auth/callback")
 	if err != nil {

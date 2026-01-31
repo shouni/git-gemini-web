@@ -85,11 +85,6 @@ func validateBranchName(branchName string) error {
 
 // generateSignedResultURL は GCS のパスから署名付きURLを作るヘルパーです。
 func (h *Handler) generateSignedResultURL(ctx context.Context, gcsPath string) (string, error) {
-	urlSigner, err := h.ioFactory.URLSigner()
-	if err != nil {
-		return "", err
-	}
-
 	fullGSPath := fmt.Sprintf("gs://%s/%s", h.cfg.GCSBucket, gcsPath)
-	return urlSigner.GenerateSignedURL(ctx, fullGSPath, "GET", config.SignedURLExpiration)
+	return h.remoteIO.Signer.GenerateSignedURL(ctx, fullGSPath, "GET", config.SignedURLExpiration)
 }
