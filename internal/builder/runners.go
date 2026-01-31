@@ -7,6 +7,7 @@ import (
 
 	"git-gemini-web/internal/app"
 	"git-gemini-web/internal/config"
+	"git-gemini-web/internal/pipeline"
 	"git-gemini-web/internal/runner"
 
 	"github.com/shouni/gemini-reviewer-core/pkg/adapters"
@@ -33,9 +34,27 @@ func (f *GitAdapterFactoryImpl) Create(localPath string, baseBranch string) adap
 	)
 }
 
-// BuildReviewRunner は、Web Runner の main.go から呼び出され、
+// BuildPipeline は ReviewPipeline の新しいインスタンスを生成します。
+func BuildPipeline(ctx context.Context, appCtx *app.Container) (pipeline.Pipeline, error) {
+	reviewRunner, err := buildReviewRunner(ctx, appCtx.Config)
+	if err != nil {
+		return nil, fmt.Errorf("ReviewRunnerの構築に失敗: %w", err)
+	}
+
+	publishRunner, err := buildPublishRunner(ctx, appCtx)
+	if err != nil {
+		return nil, fmt.Errorf("PublishRunnerの構築に失敗: %w", err)
+	}
+
+	return &pipeline.ReviewPipeline{
+		ReviewRunner:  reviewRunner,
+		PublishRunner: publishRunner,
+	}, nil
+}
+
+// buildReviewRunner は、Web Runner の main.go から呼び出され、
 // 実行可能な Runner のインターフェースを返します。
-func BuildReviewRunner(
+func buildReviewRunner(
 	ctx context.Context,
 	cfg *config.Config,
 ) (runner.ReviewRunner, error) {
@@ -72,8 +91,8 @@ func BuildReviewRunner(
 	return reviewRunner, nil
 }
 
-// BuildPublishRunner は、実行可能な PublisherRunner のインターフェースを返します。
-func BuildPublishRunner(
+// buildPublishRunner は、実行可能な PublisherRunner のインターフェースを返します。
+func buildPublishRunner(
 	ctx context.Context,
 	appCtx *app.Container,
 ) (runner.PublisherRunner, error) {
