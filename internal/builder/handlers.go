@@ -62,7 +62,7 @@ func createAuthHandler(cfg *config.Config) (*auth.Handler, error) {
 		SessionAuthKey:    cfg.SessionSecret,
 		SessionEncryptKey: cfg.SessionEncryptKey,
 		SessionName:       defaultSessionName,
-		IsSecureCookie:    cfg.IsSecureServiceURL(cfg.ServiceURL),
+		IsSecureCookie:    cfg.IsSecureServiceURL(),
 		AllowedEmails:     cfg.AllowedEmails,
 		AllowedDomains:    cfg.AllowedDomains,
 		TaskAudienceURL:   cfg.TaskAudienceURL,
