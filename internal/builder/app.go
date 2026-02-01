@@ -63,7 +63,7 @@ func BuildContainer(ctx context.Context, cfg *config.Config) (container *app.Con
 	// 5. Pipeline (Core Logic)
 	reviewPipeline, err := buildPipeline(ctx, appCtx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize MangaPipeline: %w", err)
+		return nil, fmt.Errorf("failed to initialize review pipeline: %w", err)
 	}
 	appCtx.Pipeline = reviewPipeline
 
