@@ -6,7 +6,6 @@ import (
 	"log/slog"
 
 	"git-gemini-web/internal/domain"
-	"git-gemini-web/internal/runner"
 )
 
 // Pipeline レビュー要求を処理するために実行される一連のプロセスを表します。
@@ -15,13 +14,23 @@ type Pipeline interface {
 	Execute(ctx context.Context, payload domain.ReviewRequest) error
 }
 
-// ReviewPipeline はパイプラインの実行に必要な外部依存関係を保持するサービス構造体です。
-type ReviewPipeline struct {
-	reviewRunner  runner.ReviewRunner
-	publishRunner runner.PublisherRunner
+// ReviewRunner は、レビュー要求に対して実際のレビュー処理（AI分析等）を実行するインターフェースです。
+type ReviewRunner interface {
+	Run(ctx context.Context, req domain.ReviewRequest) domain.ReviewProcessOutcome
 }
 
-func NewReviewPipeline(r runner.ReviewRunner, p runner.PublisherRunner) *ReviewPipeline {
+// PublisherRunner は、レビュー結果の公開処理を実行する責務を持つインターフェースです。
+type PublisherRunner interface {
+	Run(ctx context.Context, req domain.ReviewRequest, outcome domain.ReviewProcessOutcome) (domain.ReviewResult, error)
+}
+
+// ReviewPipeline はパイプラインの実行に必要な外部依存関係を保持するサービス構造体です。
+type ReviewPipeline struct {
+	reviewRunner  ReviewRunner
+	publishRunner PublisherRunner
+}
+
+func NewReviewPipeline(r ReviewRunner, p PublisherRunner) *ReviewPipeline {
 	return &ReviewPipeline{
 		reviewRunner:  r,
 		publishRunner: p,

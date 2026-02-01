@@ -3,14 +3,13 @@ package builder
 import (
 	"context"
 	"fmt"
-	"log/slog"
-
+	"git-gemini-web/internal/adapters"
 	"git-gemini-web/internal/app"
 	"git-gemini-web/internal/config"
 	"git-gemini-web/internal/pipeline"
 	"git-gemini-web/internal/runner"
 
-	"github.com/shouni/gemini-reviewer-core/pkg/adapters"
+	coreadapters "github.com/shouni/gemini-reviewer-core/pkg/adapters"
 	"github.com/shouni/gemini-reviewer-core/pkg/prompts"
 	"github.com/shouni/gemini-reviewer-core/pkg/publisher"
 )
@@ -22,11 +21,11 @@ type GitAdapterFactoryImpl struct {
 }
 
 // Create は runner.GitAdapterFactory インターフェースを満たします。
-func (f *GitAdapterFactoryImpl) Create(localPath string, baseBranch string) adapters.GitService {
-	skipHostKeyCheckOption := adapters.WithInsecureSkipHostKeyCheck(f.skipHostKeyCheck)
-	baseBranchOption := adapters.WithBaseBranch(baseBranch)
+func (f *GitAdapterFactoryImpl) Create(localPath string, baseBranch string) coreadapters.GitService {
+	skipHostKeyCheckOption := coreadapters.WithInsecureSkipHostKeyCheck(f.skipHostKeyCheck)
+	baseBranchOption := coreadapters.WithBaseBranch(baseBranch)
 
-	return adapters.NewGitAdapter(
+	return coreadapters.NewGitAdapter(
 		localPath,
 		f.sshKeyPath,
 		skipHostKeyCheckOption,
@@ -34,14 +33,14 @@ func (f *GitAdapterFactoryImpl) Create(localPath string, baseBranch string) adap
 	)
 }
 
-// BuildPipeline は ReviewPipeline の新しいインスタンスを生成します。
-func BuildPipeline(ctx context.Context, appCtx *app.Container) (pipeline.Pipeline, error) {
-	reviewRunner, err := buildReviewRunner(ctx, appCtx.Config)
+// buildPipeline は ReviewPipeline の新しいインスタンスを生成します。
+func buildPipeline(ctx context.Context, cfg *config.Config, rio *app.RemoteIO, slack adapters.SlackNotifier) (pipeline.Pipeline, error) {
+	reviewRunner, err := buildReviewRunner(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("ReviewRunnerの構築に失敗: %w", err)
 	}
 
-	publishRunner, err := buildPublishRunner(ctx, appCtx)
+	publishRunner, err := buildPublishRunner(ctx, rio, slack)
 	if err != nil {
 		return nil, fmt.Errorf("PublishRunnerの構築に失敗: %w", err)
 	}
@@ -53,28 +52,24 @@ func BuildPipeline(ctx context.Context, appCtx *app.Container) (pipeline.Pipelin
 func buildReviewRunner(
 	ctx context.Context,
 	cfg *config.Config,
-) (runner.ReviewRunner, error) {
-
+) (pipeline.ReviewRunner, error) {
 	// 1. Git Factory の構築
 	gitFactory := &GitAdapterFactoryImpl{
 		sshKeyPath:       cfg.SSHKeyPath,
 		skipHostKeyCheck: cfg.SkipHostKeyCheck,
 	}
-	slog.Debug("GitAdapterFactory を構築しました。", "ssh_path_set", cfg.SSHKeyPath != "")
 
 	// 2. GeminiService (Adapter) の構築
-	geminiService, err := adapters.NewGeminiAdapter(ctx, cfg.GeminiModel)
+	geminiService, err := coreadapters.NewGeminiAdapter(ctx, cfg.GeminiModel)
 	if err != nil {
 		return nil, fmt.Errorf("Gemini Service の構築に失敗しました: %w", err)
 	}
-	slog.Debug("GeminiService (Adapter) を構築しました。", "model", cfg.GeminiModel)
 
 	// 3. Prompt Builder の構築
 	promptBuilder, err := prompts.NewPromptBuilder()
 	if err != nil {
 		return nil, fmt.Errorf("Prompt Builder の構築に失敗しました: %w", err)
 	}
-	slog.Debug("PromptBuilderを構築しました。")
 
 	// 4. 依存関係を注入して Runner を組み立てる
 	reviewRunner := runner.NewCodeReviewRunner(
@@ -83,34 +78,33 @@ func buildReviewRunner(
 		promptBuilder,
 	)
 
-	slog.Debug("ReviewRunner の構築が完了しました。")
 	return reviewRunner, nil
 }
 
 // buildPublishRunner は、実行可能な PublisherRunner のインターフェースを返します。
 func buildPublishRunner(
 	ctx context.Context,
-	appCtx *app.Container,
-) (runner.PublisherRunner, error) {
+	rio *app.RemoteIO,
+	slack adapters.SlackNotifier,
+) (pipeline.PublisherRunner, error) {
+	if rio == nil {
+		return nil, fmt.Errorf("RemoteIO が設定されていません")
+	}
 
-	// Publisher の構築
 	htmlRunner, err := publisher.NewMarkdownToHtmlRunner(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("MarkdownToHtmlRunnerの初期化に失敗しました: %w", err)
 	}
-	publisherService, err := publisher.NewPublisher(ctx, appCtx.RemoteIO.Factory, htmlRunner)
+	publisherService, err := publisher.NewPublisher(ctx, rio.Factory, htmlRunner)
 	if err != nil {
 		return nil, fmt.Errorf("Publisherの初期化に失敗しました: %w", err)
 	}
-	slog.Debug("Publisher を構築しました。")
 
-	// 依存関係を注入して Runner を組み立てる
 	publishRunner := runner.NewStoragePublisherRunner(
 		publisherService,
-		appCtx.RemoteIO.Signer,
-		appCtx.SlackNotifier,
+		rio.Signer,
+		slack,
 	)
 
-	slog.Debug("PublishRunner の構築が完了しました。")
 	return publishRunner, nil
 }

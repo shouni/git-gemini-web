@@ -29,19 +29,13 @@ func Run(ctx context.Context, cfg *config.Config) error {
 		appCtx.Close()
 	}()
 
-	// 2. パイプラインの構築
-	reviewPipeline, err := builder.BuildPipeline(ctx, appCtx)
-	if err != nil {
-		return fmt.Errorf("reviewPipelineの構築に失敗しました: %w", err)
-	}
-
-	// 3. ハンドラーの組み立て
-	appHandlers, err := builder.BuildHandlers(appCtx, reviewPipeline)
+	// 2. ハンドラーの組み立て
+	appHandlers, err := builder.BuildHandlers(appCtx)
 	if err != nil {
 		return fmt.Errorf("ハンドラーの構築に失敗しました: %w", err)
 	}
 
-	// 4. ルーターの作成
+	// 3. ルーターの作成
 	router := NewRouter(appHandlers, cfg)
 
 	srv := &http.Server{

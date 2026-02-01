@@ -24,7 +24,6 @@ type AppHandlers struct {
 // BuildHandlers は依存関係を注入し、各エンドポイント用のハンドラーを生成します。
 func BuildHandlers(
 	appCtx *app.Container,
-	reviewPipeline worker.TaskExecutor[domain.ReviewRequest],
 ) (*AppHandlers, error) {
 	// Auth ハンドラーの生成
 	authHandler, err := createAuthHandler(appCtx)
@@ -39,7 +38,7 @@ func BuildHandlers(
 	}
 
 	// Worker ハンドラーの生成
-	workerHandler := worker.NewHandler[domain.ReviewRequest](reviewPipeline)
+	workerHandler := worker.NewHandler[domain.ReviewRequest](appCtx.Pipeline)
 
 	return &AppHandlers{
 		Auth:   authHandler,
