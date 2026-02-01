@@ -48,7 +48,7 @@ func BuildHandlers(
 	}, nil
 }
 
-// createAuthHandler は、認証ハンドラーを初期化して返します。
+// createAuthHandler は、提供された設定(Config)に基づいて認証ハンドラーを初期化して返します。
 func createAuthHandler(cfg *config.Config) (*auth.Handler, error) {
 	redirectURL, err := url.JoinPath(cfg.ServiceURL, "/auth/callback")
 	if err != nil {
