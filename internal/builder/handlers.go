@@ -2,14 +2,16 @@ package builder
 
 import (
 	"fmt"
-	"git-gemini-web/internal/app"
 	"net/url"
 
+	"git-gemini-web/internal/app"
+	"git-gemini-web/internal/config"
 	"git-gemini-web/internal/domain"
 	"git-gemini-web/internal/server/handlers"
 
 	"github.com/shouni/gcp-kit/auth"
 	"github.com/shouni/gcp-kit/worker"
+	"github.com/shouni/netarmor/securenet"
 )
 
 const defaultSessionName = "git-gemini-session"
@@ -26,7 +28,7 @@ func BuildHandlers(
 	appCtx *app.Container,
 ) (*AppHandlers, error) {
 	// Auth ハンドラーの生成
-	authHandler, err := createAuthHandler(appCtx)
+	authHandler, err := createAuthHandler(appCtx.Config)
 	if err != nil {
 		return nil, err
 	}
@@ -47,9 +49,8 @@ func BuildHandlers(
 	}, nil
 }
 
-// createAuthHandler は、アプリケーション コンテキスト設定で構成された認証ハンドラーを初期化して返します。
-func createAuthHandler(appCtx *app.Container) (*auth.Handler, error) {
-	cfg := appCtx.Config
+// createAuthHandler は、認証ハンドラーを初期化して返します。
+func createAuthHandler(cfg *config.Config) (*auth.Handler, error) {
 	redirectURL, err := url.JoinPath(cfg.ServiceURL, "/auth/callback")
 	if err != nil {
 		return nil, fmt.Errorf("リダイレクトURLの構築失敗: %w", err)
@@ -62,7 +63,7 @@ func createAuthHandler(appCtx *app.Container) (*auth.Handler, error) {
 		SessionAuthKey:    cfg.SessionSecret,
 		SessionEncryptKey: cfg.SessionEncryptKey,
 		SessionName:       defaultSessionName,
-		IsSecureCookie:    appCtx.HTTPClient.IsSecureServiceURL(cfg.ServiceURL),
+		IsSecureCookie:    securenet.IsSecureServiceURL(cfg.ServiceURL),
 		AllowedEmails:     cfg.AllowedEmails,
 		AllowedDomains:    cfg.AllowedDomains,
 		TaskAudienceURL:   cfg.TaskAudienceURL,
