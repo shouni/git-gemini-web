@@ -8,9 +8,14 @@ import (
 	"github.com/shouni/netarmor/securenet"
 )
 
+// IsSecureServiceURL は、設定されたServiceURLが安全なスキーム (HTTPS など) を使用しているかどうかを確認します。
+func (c *Config) IsSecureServiceURL() bool {
+	return securenet.IsSecureServiceURL(c.ServiceURL)
+}
+
 // ValidateEssentialConfig は設定バリデーションを行います。
 func ValidateEssentialConfig(cfg *Config) error {
-	if !securenet.IsSecureServiceURL(cfg.ServiceURL) {
+	if !cfg.IsSecureServiceURL() {
 		return fmt.Errorf("security error: SERVICE_URL ('%s') must be HTTPS in production", cfg.ServiceURL)
 	}
 
