@@ -14,7 +14,7 @@ type Pipeline interface {
 	Execute(ctx context.Context, payload domain.ReviewRequest) error
 }
 
-// ReviewRunner は、AIコードレビューパイプライン全体の実行を定義します。
+// ReviewRunner は、レビュー要求に対して実際のレビュー処理（AI分析等）を実行するインターフェースです。
 type ReviewRunner interface {
 	Run(ctx context.Context, req domain.ReviewRequest) domain.ReviewProcessOutcome
 }
