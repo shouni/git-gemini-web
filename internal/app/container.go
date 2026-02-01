@@ -6,6 +6,7 @@ import (
 	"git-gemini-web/internal/adapters"
 	"git-gemini-web/internal/config"
 	"git-gemini-web/internal/domain"
+	"git-gemini-web/internal/pipeline"
 
 	"github.com/shouni/gcp-kit/tasks"
 	"github.com/shouni/go-http-kit/pkg/httpkit"
@@ -15,13 +16,12 @@ import (
 // Container はアプリケーションの依存関係（DIコンテナ）を保持します。
 type Container struct {
 	Config *config.Config
-
 	// I/O and Storage
 	RemoteIO *RemoteIO
-
 	// Asynchronous Task
 	TaskEnqueuer *tasks.Enqueuer[domain.ReviewRequest]
-
+	// Business Logic
+	Pipeline pipeline.Pipeline
 	// External Adapters
 	HTTPClient    httpkit.ClientInterface
 	SlackNotifier adapters.SlackNotifier

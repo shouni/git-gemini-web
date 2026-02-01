@@ -52,13 +52,22 @@ func BuildContainer(ctx context.Context, cfg *config.Config) (container *app.Con
 		return nil, fmt.Errorf("failed to initialize Slack adapter: %w", err)
 	}
 
-	return &app.Container{
+	appCtx := &app.Container{
 		Config:        cfg,
 		RemoteIO:      rio,
 		TaskEnqueuer:  enqueuer,
 		HTTPClient:    httpClient,
 		SlackNotifier: slack,
-	}, nil
+	}
+
+	// 5. Pipeline (Core Logic)
+	reviewPipeline, err := buildPipeline(ctx, appCtx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize MangaPipeline: %w", err)
+	}
+	appCtx.Pipeline = reviewPipeline
+
+	return appCtx, nil
 }
 
 // buildRemoteIO は、GCS ベースの I/O コンポーネントを初期化します。

@@ -19,11 +19,6 @@ const (
 	emptyAPIResponseMessage = "Gemini APIは応答しましたが、空の結果を返しました。"
 )
 
-// ReviewRunner は、AIコードレビューパイプライン全体の実行を定義します。
-type ReviewRunner interface {
-	Run(ctx context.Context, req domain.ReviewRequest) domain.ReviewProcessOutcome
-}
-
 // GitAdapterFactory は、リクエスト固有の情報に基づいて GitAdapter を生成する契約を定義します。
 type GitAdapterFactory interface {
 	Create(localPath string, baseBranch string) adapters.GitService

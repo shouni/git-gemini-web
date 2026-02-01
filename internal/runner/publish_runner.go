@@ -15,11 +15,6 @@ import (
 	"github.com/shouni/go-remote-io/pkg/remoteio"
 )
 
-// PublisherRunner は、レビュー結果の公開処理を実行する責務を持つインターフェースです。
-type PublisherRunner interface {
-	Run(ctx context.Context, req domain.ReviewRequest, outcome domain.ReviewProcessOutcome) (domain.ReviewResult, error)
-}
-
 // StoragePublisherRunner は、レビュー結果の公開処理を実行する具象構造体です。
 type StoragePublisherRunner struct {
 	publisherService publisher.Publisher
