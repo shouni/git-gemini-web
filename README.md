@@ -107,33 +107,36 @@ Webフォームを通じてレビュー依頼を受け付け、時間がかか�
 git-gemini-web/
 ├── main.go                         # エントリーポイント（Appの初期化と起動）
 ├── internal/
-│   ├── app/                        # アプリケーションの基盤構造
-│   │   └── container.go            # Container 構造体と Close メソッドの定義
 │   ├── adapters/                   # 外部システム連携（抽象インターフェースの実装）
-│   │   └── slack_adapter.go        # Slack通知の実装
-│   ├── builder/                    # DIコンテナ / 依存関係の組み立て
-│   │   ├── app.go                  # Containerの構築
-│   │   ├── runners.go              # ReviewRunner / PublishRunner 等の生成ロジック
-│   │   └── handlers.go             # 各コントローラー（auth, web, worker）のインスタンス化
-│   ├── config/                     # 環境変数・バリデーション・設定管理
-│   │   └── config.go               # Secret Managerマウントパス等の設定を含む
-│   ├── domain/                     # ドメインモデル（純粋なデータ構造と型定義）
-│   │   ├── response.go             # ReviewResult 等
-│   │   └── review.go               # ReviewRequest, ReviewStatus, Outcome 等
-│   ├── pipeline/                   # ワークフローの指揮（Runner間を繋ぐ）
-│   │   └── pipeline.go             # ReviewRunner -> PublishRunner の流れを制御
-│   ├── runner/                     # ビジネスロジックの具象
-│   │   ├── review_runner.go        # Git操作・Gemini API呼び出し
-│   │   ├── publish_runner.go       # GCS保存・エラーレポート生成ヘルパー
-│   │   └── report_builder.go       # Markdown/HTML テンプレート実行
-│   └── server/                     # HTTPサーバー基盤
-│       ├── server.go               # サーバーのライフサイクル（Run/Shutdown）
-│       ├── router.go               # chiによるルーティングとミドルウェア設定
-│       └── handlers/               # HTTPリクエストハンドラー（コントローラーの実体）
-│           ├── handler.go          # ハンドラー共通構造体・基盤
-│           └── handler_helpers.go  # ハンドラー内の共通補助処理
+│   │   └── slack_adapter.go        # Slack通知の具体的な送信処理
+│   ├── app/                        # 基盤構造
+│   │   └── container.go            # 依存オブジェクトを保持する Container 定義
+│   ├── builder/                    # DIコンテナの組み立て
+│   │   ├── app.go                  # Container 全体の構築
+│   │   ├── handlers.go             # 各ハンドラー（auth, web, worker）の生成と注入
+│   │   └── pipeline.go             # Pipeline および各 Runner のインスタンス化・依存注入
+│   ├── config/                     # 設定管理
+│   │   ├── config_helpers.go       # 環境変数取得等の補助関数
+│   │   └── config.go               # 設定構造体とバリデーション
+│   ├── domain/                     # 純粋なデータ構造と型定義（ReviewResult, ReviewRequest 等）
+│   │   ├── response.go             # レスポンス関連の型定義
+│   │   └── review.go               # レビュー対象・ステータスの型定義
+│   ├── pipeline/                   # ワークフローの指揮（指揮官）
+│   │   └── pipeline.go             # 各 Runner を使い、一連のフロー（手順）を制御
+│   ├── runner/                     # ビジネスロジックの具象（実働部隊）
+│   │   ├── error_report.md         # エラー時レポートのテンプレート
+│   │   ├── publish_runner.go       # GCS保存・レポート出力の実装
+│   │   ├── report_builder.go       # Markdown/HTML レンダリング
+│   │   ├── review_runner.go        # Git操作・Gemini API呼び出しの実装
+│   │   └── skip_report.md          # スキップ時レポートのテンプレート
+│   └── server/                     # 【Server】HTTPサーバー基盤（玄関）
+│       ├── handlers/               # HTTPリクエストハンドラーの実体
+│       │   ├── handler_helpers.go  # ハンドラー共通の補助処理
+│       │   └── handler.go          # ハンドラーの基盤構造
+│       ├── router.go               # chi によるルーティング設定
+│       └── server.go               # サーバーのライフサイクル管理
 └── templates/                      # UI用 HTMLテンプレート
-    └── review_form.html
+    └── review_form.html            # 入力フォーム画面
 ```
 
 -----
