@@ -11,7 +11,6 @@ import (
 
 	"github.com/shouni/gcp-kit/auth"
 	"github.com/shouni/gcp-kit/worker"
-	"github.com/shouni/netarmor/securenet"
 )
 
 const defaultSessionName = "git-gemini-session"
@@ -63,7 +62,7 @@ func createAuthHandler(cfg *config.Config) (*auth.Handler, error) {
 		SessionAuthKey:    cfg.SessionSecret,
 		SessionEncryptKey: cfg.SessionEncryptKey,
 		SessionName:       defaultSessionName,
-		IsSecureCookie:    securenet.IsSecureServiceURL(cfg.ServiceURL),
+		IsSecureCookie:    cfg.IsSecureServiceURL(cfg.ServiceURL),
 		AllowedEmails:     cfg.AllowedEmails,
 		AllowedDomains:    cfg.AllowedDomains,
 		TaskAudienceURL:   cfg.TaskAudienceURL,
