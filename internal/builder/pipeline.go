@@ -11,7 +11,7 @@ import (
 	"git-gemini-web/internal/pipeline"
 	"git-gemini-web/internal/runner"
 
-	core "github.com/shouni/gemini-reviewer-core/pkg/adapters"
+	coreadapters "github.com/shouni/gemini-reviewer-core/pkg/adapters"
 	"github.com/shouni/gemini-reviewer-core/pkg/prompts"
 	"github.com/shouni/gemini-reviewer-core/pkg/publisher"
 )
@@ -23,11 +23,11 @@ type GitAdapterFactoryImpl struct {
 }
 
 // Create は runner.GitAdapterFactory インターフェースを満たします。
-func (f *GitAdapterFactoryImpl) Create(localPath string, baseBranch string) core.GitService {
-	skipHostKeyCheckOption := core.WithInsecureSkipHostKeyCheck(f.skipHostKeyCheck)
-	baseBranchOption := core.WithBaseBranch(baseBranch)
+func (f *GitAdapterFactoryImpl) Create(localPath string, baseBranch string) coreadapters.GitService {
+	skipHostKeyCheckOption := coreadapters.WithInsecureSkipHostKeyCheck(f.skipHostKeyCheck)
+	baseBranchOption := coreadapters.WithBaseBranch(baseBranch)
 
-	return core.NewGitAdapter(
+	return coreadapters.NewGitAdapter(
 		localPath,
 		f.sshKeyPath,
 		skipHostKeyCheckOption,
@@ -63,7 +63,7 @@ func buildReviewRunner(
 	slog.Debug("GitAdapterFactory を構築しました。", "ssh_path_set", cfg.SSHKeyPath != "")
 
 	// 2. GeminiService (Adapter) の構築
-	geminiService, err := core.NewGeminiAdapter(ctx, cfg.GeminiModel)
+	geminiService, err := coreadapters.NewGeminiAdapter(ctx, cfg.GeminiModel)
 	if err != nil {
 		return nil, fmt.Errorf("Gemini Service の構築に失敗しました: %w", err)
 	}
