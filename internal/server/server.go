@@ -66,7 +66,6 @@ func Run(ctx context.Context, cfg *config.Config) error {
 // gracefulShutdown は、サーバーを安全に停止させます。
 func gracefulShutdown(srv *http.Server) error {
 	// シャットダウン用のタイムアウト付きコンテキスト
-	// ここは config.Config に ShutdownTimeout があればそれを使うのもアリなのだ！
 	ctx, cancel := context.WithTimeout(context.Background(), defaultShutdownTimeout)
 	defer cancel()
 
