@@ -3,9 +3,10 @@ package builder
 import (
 	"context"
 	"fmt"
-	"git-gemini-web/internal/adapters"
+
 	"git-gemini-web/internal/app"
 	"git-gemini-web/internal/config"
+	"git-gemini-web/internal/domain"
 	"git-gemini-web/internal/pipeline"
 	"git-gemini-web/internal/runner"
 
@@ -34,7 +35,7 @@ func (f *GitAdapterFactoryImpl) Create(localPath string, baseBranch string) core
 }
 
 // buildPipeline は ReviewPipeline の新しいインスタンスを生成します。
-func buildPipeline(ctx context.Context, cfg *config.Config, rio *app.RemoteIO, slack adapters.SlackNotifier) (pipeline.Pipeline, error) {
+func buildPipeline(ctx context.Context, cfg *config.Config, rio *app.RemoteIO, slack domain.SlackNotifier) (domain.Pipeline, error) {
 	reviewRunner, err := buildReviewRunner(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("ReviewRunnerの構築に失敗: %w", err)
@@ -52,7 +53,7 @@ func buildPipeline(ctx context.Context, cfg *config.Config, rio *app.RemoteIO, s
 func buildReviewRunner(
 	ctx context.Context,
 	cfg *config.Config,
-) (pipeline.ReviewRunner, error) {
+) (domain.ReviewRunner, error) {
 	// 1. Git Factory の構築
 	gitFactory := &GitAdapterFactoryImpl{
 		sshKeyPath:       cfg.SSHKeyPath,
@@ -85,8 +86,8 @@ func buildReviewRunner(
 func buildPublishRunner(
 	ctx context.Context,
 	rio *app.RemoteIO,
-	slack adapters.SlackNotifier,
-) (pipeline.PublisherRunner, error) {
+	slack domain.SlackNotifier,
+) (domain.PublisherRunner, error) {
 	if rio == nil {
 		return nil, fmt.Errorf("RemoteIO が設定されていません")
 	}

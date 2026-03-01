@@ -119,6 +119,7 @@ git-gemini-web/
 │   │   ├── config_helpers.go       # 環境変数取得等の補助関数
 │   │   └── config.go               # 設定構造体とバリデーション
 │   ├── domain/                     # 純粋なデータ構造と型定義（ReviewResult, ReviewRequest 等）
+│   │   ├── ports.go                # 各層を繋ぐインターフェース定義（Port）
 │   │   ├── response.go             # レスポンス関連の型定義
 │   │   └── review.go               # レビュー対象・ステータスの型定義
 │   ├── pipeline/                   # ワークフローの指揮（指揮官）
