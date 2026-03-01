@@ -14,15 +14,6 @@ import (
 	"github.com/shouni/go-utils/urlpath"
 )
 
-// --- 定数と内部構造体 ---
-
-// SlackNotifier は Slack への通知機能を提供する契約を定義します。
-// publicURL は外部からアクセス可能なリンク (署名済みURLなど) を示し、
-// storageURI は内部的なストレージの場所 (s3://... など) を示します。
-type SlackNotifier interface {
-	Notify(ctx context.Context, publicURL, storageURI string, req domain.ReviewRequest) error
-}
-
 // SlackAdapter は SlackNotifier インターフェースを満たす具象型です。
 type SlackAdapter struct {
 	webhookURL  string // Webhook URLを保持

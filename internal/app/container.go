@@ -3,10 +3,8 @@ package app
 import (
 	"log/slog"
 
-	"git-gemini-web/internal/adapters"
 	"git-gemini-web/internal/config"
 	"git-gemini-web/internal/domain"
-	"git-gemini-web/internal/pipeline"
 
 	"github.com/shouni/gcp-kit/tasks"
 	"github.com/shouni/go-http-kit/pkg/httpkit"
@@ -21,10 +19,10 @@ type Container struct {
 	// Asynchronous Task
 	TaskEnqueuer *tasks.Enqueuer[domain.ReviewRequest]
 	// Business Logic
-	Pipeline pipeline.Pipeline
+	Pipeline domain.Pipeline
 	// External Adapters
 	HTTPClient    httpkit.ClientInterface
-	SlackNotifier adapters.SlackNotifier
+	SlackNotifier domain.SlackNotifier
 }
 
 // RemoteIO は外部ストレージ操作に関するコンポーネントをまとめます。

@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"time"
 
-	"git-gemini-web/internal/adapters"
 	"git-gemini-web/internal/config"
 	"git-gemini-web/internal/domain"
 
@@ -19,11 +18,11 @@ import (
 type StoragePublisherRunner struct {
 	publisherService publisher.Publisher
 	urlSigner        remoteio.URLSigner
-	slackNotifier    adapters.SlackNotifier
+	slackNotifier    domain.SlackNotifier
 }
 
 // NewStoragePublisherRunner は StoragePublisherRunner の新しいインスタンスを作成します。
-func NewStoragePublisherRunner(publisherService publisher.Publisher, urlSigner remoteio.URLSigner, slackNotifier adapters.SlackNotifier) *StoragePublisherRunner {
+func NewStoragePublisherRunner(publisherService publisher.Publisher, urlSigner remoteio.URLSigner, slackNotifier domain.SlackNotifier) *StoragePublisherRunner {
 	return &StoragePublisherRunner{
 		publisherService: publisherService,
 		urlSigner:        urlSigner,
