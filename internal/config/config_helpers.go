@@ -32,14 +32,9 @@ func (c *Config) ValidateEssentialConfig() error {
 	}
 
 	// SessionEncryptKey の長さチェック (AES要件: 16, 24, 32 bytes)
-	keyLen := len([]byte(c.SessionEncryptKey))
+	keyLen := len(c.SessionEncryptKey)
 	if keyLen != 16 && keyLen != 24 && keyLen != 32 {
 		return fmt.Errorf("SESSION_ENCRYPT_KEY の長さが不正です (%d バイト)。16, 24, 32 バイトのいずれかにしてください", keyLen)
-	}
-
-	// SessionSecret の空チェック
-	if c.SessionSecret == "" {
-		return fmt.Errorf("SESSION_SECRET が設定されていません")
 	}
 
 	return nil
