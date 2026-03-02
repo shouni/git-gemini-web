@@ -7,30 +7,42 @@
 
 ## 🚀 概要 (About) - WebベースのAIレビューオーケストレーター
 
-**Git Gemini Web** は、AIコードレビューの**コアライブラリ機能**を **[Gemini Reviewer Core](https://github.com/shouni/gemini-reviewer-core)** を活用し、その機能を**Cloud Run** および **Google Cloud Tasks** を利用して**Webアプリケーション化**したプロジェクトです。
+**Git Gemini Web** は、AIコードレビューの**コアライブラリ機能**を **[Gemini Reviewer Core](https://github.com/shouni/gemini-reviewer-core)** を活用し、その機能を **Cloud Run** および **Google Cloud Tasks** を利用して **Webアプリケーション化** したプロジェクトです。
 
-Webフォームを通じてレビュー依頼を受け付け、時間がかかるAIレビュー処理を**非同期ワーカー（Cloud Tasks）で実行するためのインターフェースとオーケストレーション**を担います。
+Webフォームを通じてレビュー依頼を受け付け、高負荷なAI解析処理を **非同期ワーカー（Cloud Tasks）** で実行するためのオーケストレーションを担います。
 
------
+---
+
+## 🏗 アーキテクチャ設計 (Architecture)
+
+本プロジェクトは **ヘキサゴナル・アーキテクチャ** を採用し、ビジネスロジックを外部依存（GCP, Git, Slack等）から隔離しています。
+
+* **Ports & Adapters**: `internal/domain/ports.go` に全てのインターフェース（Port）を集約し、依存性の逆転を実現しています。
+* **指揮官 (Pipeline) と実働部隊 (Runner)**: ワークフローの制御ロジックと、個別の技術詳細（AI通信、ファイル生成）を分離し、高い保守性とテスト容易性を確保しています。
+
+---
 
 ## ✨ 技術スタック (Technology Stack)
 
-本アプリケーションは、Google Cloud RunとGoogle Cloud Tasksを組み合わせて、フロントエンドと非同期ワーカーの役割を果たします。レビューのコアロジックは外部モジュールに依存します。
-
 | 要素 | 技術 / ライブラリ | 役割 |
-| :--- | :--- | :--- |
-| **言語** | **Go (Golang)** | Webサーバー（API/タスクワーカー）の開発言語。 |
-| **コアレビュー機能** | **[`github.com/shouni/gemini-reviewer-core`](https://github.com/shouni/gemini-reviewer-core)** | **Git操作、AI通信、HTML変換**といった中核のレビューロジックを担う外部ライブラリです。 |
-| **認証・セッション** | **`x/oauth2`** / **`gorilla/sessions`** | **Google OAuth 2.0** フローの制御と、Cookieベースのセッション管理を行います。 |
-| **Webフレームワーク** | **go-chi/chi/v5** | 軽量でモジュール化されたルーティング処理。 |
-| **アーキテクチャ** | **依存性注入 (DI)** / **アダプタパターン** | 高い保守性とテスト容易性を実現するためのサーバー設計基盤。 |
-| **Web画面** | **`html/template`** | Goサーバー自身でレビュー依頼フォームの**HTMLテンプレートをレンダリング**し、ユーザーにフィードバックを表示します。 |
-| **非同期実行** | **Google Cloud Tasks** | HTTPリクエストのタイムアウトを防ぐため、時間のかかるレビュー実行を**非同期キュー**に投入します。 |
-| **デプロイ環境** | **Google Cloud Run** | Webフロントエンドと非同期ワーカーを実行するスケーラブルなサーバーレス環境。 |
-| **結果保存** | **Google Cloud Storage (GCS)** | AIが出力したレビュー結果（HTML）を保存し、ユーザーにURLを提供します。 |
-| **I/O抽象化** | **[`github.com/shouni/go-remote-io`](https://github.com/shouni/go-remote-io)** | GCSへのI/O操作、署名付きURLの生成処理を抽象化します。 |
+| --- | --- | --- |
+| **言語** | **Go (Golang)** | 全体の開発言語。 |
+| **AIバックエンド** | **Hybrid Gemini Adapter** | **Google AI Studio** または **Vertex AI** を自動切替可能。 |
+| **コアレビュー機能** | **[`github.com/shouni/gemini-reviewer-core`](https://github.com/shouni/gemini-reviewer-core)** | Git操作、AI解析、レポート生成の基底ロジック。 |
+| **非同期実行** | **Google Cloud Tasks** | 重いレビュー処理を非同期キューで管理。 |
+| **認証・セッション** | **OAuth 2.0 / Gorilla Sessions** | Googleアカウントによるアクセス制限。 |
+| **I/O抽象化** | **[`github.com/shouni/go-remote-io`](https://github.com/shouni/go-remote-io)**| GCS操作と署名付きURL生成の抽象化。 |
 
------
+---
+
+## 🤖 ハイブリッドなAIバックエンド対応
+
+本アプリは、環境変数に応じて2つのAPIバックエンドを透過的に切り替え可能です。これにより、特定のAPIのサービス停止（503 Unavailable等）時にも柔軟に対応できます。
+
+1. **Google AI Studio (API Key方式)**: 低遅延でプロトタイプ開発や個人利用に最適。
+2. **Vertex AI (GCP方式)**: エンタープライズレベルのSLA、高いクォータ制限、組織的な予算管理に対応。
+
+---
 
 ## 🚀 使い方 (Usage) / セットアップ
 
@@ -53,7 +65,7 @@ Webフォームを通じてレビュー依頼を受け付け、時間がかか�
 | `CLOUD_TASKS_QUEUE_ID` | 使用するCloud Tasksのキュー名 | `review-queue` |
 | `SERVICE_ACCOUNT_EMAIL` | タスク発行に使用するサービスアカウント | - |
 | `GCS_REVIEW_BUCKET` | レビュー結果（HTML）を保存するGCSバケット名 | `your-review-archive-bucket` |
-| `GEMINI_API_KEY` | Google Gemini APIキー | **(設定必須)** |
+| `GEMINI_API_KEY` | Google Gemini APIキー | - |
 | `GEMINI_MODEL` | 使用するGeminiモデル名 | `gemini-2.5-flash` |
 | `SSH_KEY_PATH` | Git操作用のSSH秘密鍵パス（Secret Managerマウント推奨） | `/secrets/ssh/id_rsa` |
 | `SLACK_WEBHOOK_URL` | レビュー結果のURLを通知するためのSlack Webhook URL。未設定の場合は通知をスキップします。 | `https://hooks.slack.com/services/T...` |
@@ -99,7 +111,7 @@ Webフォームを通じてレビュー依頼を受け付け、時間がかか�
 | :--- | :--- |
 | **サービス アカウント トークン作成者**<br>(`roles/iam.serviceAccountTokenCreator`) | ローカルテストやデプロイ時に、一時的な認証トークンを生成するために必要になる場合があります。 |
 
------
+---
 
 ## 📁 Git Gemini Web プロジェクトレイアウト
 
@@ -140,7 +152,7 @@ git-gemini-web/
     └── review_form.html            # 入力フォーム画面
 ```
 
------
+---
 
 ## 💻 GCS連携とフィードバックの実現方法
 
@@ -153,8 +165,10 @@ git-gemini-web/
 3.  **タスクエンキューと即時応答:**
     レビュータスクを **Cloud Tasks** のキューに投入した後、handlerは処理完了を待たずに `HTTP 202 Accepted` で即座に応答を返し、生成した署名付き URL をユーザーに提示します。
 
------
+---
 
 ## 📜 ライセンス (License)
 
 このプロジェクトは [MIT License](https://opensource.org/licenses/MIT) の下で公開されています。
+
+---
