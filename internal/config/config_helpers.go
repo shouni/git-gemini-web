@@ -16,15 +16,15 @@ func (c *Config) IsSecureServiceURL() bool {
 // ValidateEssentialConfig は設定バリデーションを行います。
 func ValidateEssentialConfig(cfg *Config) error {
 	if !cfg.IsSecureServiceURL() {
-		return fmt.Errorf("security error: SERVICE_URL ('%s') must be HTTPS in production", cfg.ServiceURL)
+		return fmt.Errorf("セキュリティエラー: 本番環境では SERVICE_URL ('%s') は HTTPS である必要があります", cfg.ServiceURL)
 	}
 
 	if cfg.GoogleClientID == "" || cfg.GoogleClientSecret == "" || cfg.SessionSecret == "" {
-		return fmt.Errorf("configuration error: OAuth settings are missing")
+		return fmt.Errorf("設定エラー: Google OAuth 関連の設定（ClientID, ClientSecret, SessionSecret）が不足しています")
 	}
 
 	if len(cfg.AllowedEmails) == 0 && len(cfg.AllowedDomains) == 0 {
-		return fmt.Errorf("configuration error: authorization lists are empty")
+		return fmt.Errorf("設定エラー: 許可されたメールアドレスまたはドメインが一つも設定されていません（認可リストが空です）")
 	}
 
 	if cfg.SessionEncryptKey == "" {
