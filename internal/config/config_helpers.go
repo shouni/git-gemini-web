@@ -27,10 +27,6 @@ func ValidateEssentialConfig(cfg *Config) error {
 		return fmt.Errorf("configuration error: authorization lists are empty")
 	}
 
-	if cfg.GeminiAPIKey == "" {
-		return fmt.Errorf("configuration error: GEMINI_API_KEY is not set")
-	}
-
 	if cfg.SessionEncryptKey == "" {
 		return fmt.Errorf("SESSION_ENCRYPT_KEY が設定されていません。セキュアな運用のために必須です")
 	}
