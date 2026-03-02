@@ -14,32 +14,27 @@ func (c *Config) IsSecureServiceURL() bool {
 }
 
 // ValidateEssentialConfig は設定バリデーションを行います。
-func ValidateEssentialConfig(cfg *Config) error {
-	if !cfg.IsSecureServiceURL() {
-		return fmt.Errorf("本番環境では SERVICE_URL ('%s') は HTTPS である必要があります", cfg.ServiceURL)
+func (c *Config) ValidateEssentialConfig() error {
+	if !c.IsSecureServiceURL() {
+		return fmt.Errorf("本番環境では SERVICE_URL ('%s') は HTTPS である必要があります", c.ServiceURL)
 	}
 
-	if cfg.GoogleClientID == "" || cfg.GoogleClientSecret == "" || cfg.SessionSecret == "" {
+	if c.GoogleClientID == "" || c.GoogleClientSecret == "" || c.SessionSecret == "" {
 		return fmt.Errorf("Google OAuth 関連の設定（ClientID, ClientSecret, SessionSecret）が不足しています")
 	}
 
-	if len(cfg.AllowedEmails) == 0 && len(cfg.AllowedDomains) == 0 {
+	if len(c.AllowedEmails) == 0 && len(c.AllowedDomains) == 0 {
 		return fmt.Errorf("許可されたメールアドレスまたはドメインが一つも設定されていません（認可リストが空です）")
 	}
 
-	if cfg.SessionEncryptKey == "" {
+	if c.SessionEncryptKey == "" {
 		return fmt.Errorf("SESSION_ENCRYPT_KEY が設定されていません。セキュアな運用のために必須です")
 	}
 
 	// SessionEncryptKey の長さチェック (AES要件: 16, 24, 32 bytes)
-	keyLen := len([]byte(cfg.SessionEncryptKey))
+	keyLen := len(c.SessionEncryptKey)
 	if keyLen != 16 && keyLen != 24 && keyLen != 32 {
 		return fmt.Errorf("SESSION_ENCRYPT_KEY の長さが不正です (%d バイト)。16, 24, 32 バイトのいずれかにしてください", keyLen)
-	}
-
-	// SessionSecret の空チェック
-	if cfg.SessionSecret == "" {
-		return fmt.Errorf("SESSION_SECRET が設定されていません")
 	}
 
 	return nil
