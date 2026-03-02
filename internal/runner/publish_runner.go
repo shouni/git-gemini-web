@@ -18,11 +18,11 @@ import (
 type StoragePublisherRunner struct {
 	publisherService publisher.Publisher
 	urlSigner        remoteio.URLSigner
-	slackNotifier    domain.SlackNotifier
+	slackNotifier    domain.Notifier
 }
 
 // NewStoragePublisherRunner は StoragePublisherRunner の新しいインスタンスを作成します。
-func NewStoragePublisherRunner(publisherService publisher.Publisher, urlSigner remoteio.URLSigner, slackNotifier domain.SlackNotifier) *StoragePublisherRunner {
+func NewStoragePublisherRunner(publisherService publisher.Publisher, urlSigner remoteio.URLSigner, slackNotifier domain.Notifier) *StoragePublisherRunner {
 	return &StoragePublisherRunner{
 		publisherService: publisherService,
 		urlSigner:        urlSigner,
