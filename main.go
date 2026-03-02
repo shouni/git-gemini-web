@@ -21,7 +21,7 @@ func main() {
 
 	// 3. 設定のロードとバリデーション
 	cfg := config.LoadConfig()
-	if err := config.ValidateEssentialConfig(cfg); err != nil {
+	if err := cfg.ValidateEssentialConfig(); err != nil {
 		slog.Error("必須設定のバリデーションに失敗しました", "error", err)
 		os.Exit(1)
 	}
