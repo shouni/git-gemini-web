@@ -22,7 +22,7 @@ type Container struct {
 	Pipeline domain.Pipeline
 	// External Adapters
 	HTTPClient    httpkit.ClientInterface
-	SlackNotifier domain.SlackNotifier
+	SlackNotifier domain.Notifier
 }
 
 // RemoteIO は外部ストレージ操作に関するコンポーネントをまとめます。

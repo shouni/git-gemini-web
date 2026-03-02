@@ -35,7 +35,7 @@ func (f *GitAdapterFactoryImpl) Create(localPath string, baseBranch string) core
 }
 
 // buildPipeline は ReviewPipeline の新しいインスタンスを生成します。
-func buildPipeline(ctx context.Context, cfg *config.Config, rio *app.RemoteIO, slack domain.SlackNotifier) (domain.Pipeline, error) {
+func buildPipeline(ctx context.Context, cfg *config.Config, rio *app.RemoteIO, slack domain.Notifier) (domain.Pipeline, error) {
 	reviewRunner, err := buildReviewRunner(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("ReviewRunnerの構築に失敗: %w", err)
@@ -86,7 +86,7 @@ func buildReviewRunner(
 func buildPublishRunner(
 	ctx context.Context,
 	rio *app.RemoteIO,
-	slack domain.SlackNotifier,
+	slack domain.Notifier,
 ) (domain.PublisherRunner, error) {
 	if rio == nil {
 		return nil, fmt.Errorf("RemoteIO が設定されていません")

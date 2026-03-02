@@ -18,9 +18,8 @@ type PublisherRunner interface {
 	Run(ctx context.Context, req ReviewRequest, outcome ReviewProcessOutcome) (ReviewResult, error)
 }
 
-// SlackNotifier は Slack への通知機能を提供する契約を定義します。
-// publicURL は外部からアクセス可能なリンク (署名済みURLなど) を示し、
-// storageURI は内部的なストレージの場所 (s3://... など) を示します。
-type SlackNotifier interface {
+// Notifier は、生成されたコンテンツまたはエラーに関する通知を指定されたターゲットまたはチャネルに送信するためのインターフェイスです。
+type Notifier interface {
+	// Notify は、パブリック URL やストレージ URL などのメタデータを含む通知をターゲットに送信します。
 	Notify(ctx context.Context, publicURL, storageURI string, req ReviewRequest) error
 }
