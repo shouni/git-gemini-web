@@ -28,3 +28,9 @@ type Notifier interface {
 type PromptBuilder interface {
 	Build(mode string, content string) (string, error)
 }
+
+// CodeReviewAI は、AIとの通信機能の抽象化を提供し、DIで使用されます。
+type CodeReviewAI interface {
+	// ReviewCodeDiff は完成されたプロンプトを基にAIにレビューを依頼します。
+	ReviewCodeDiff(ctx context.Context, finalPrompt string) (string, error)
+}

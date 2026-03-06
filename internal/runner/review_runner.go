@@ -26,14 +26,14 @@ type GitAdapterFactory interface {
 // CodeReviewRunner は ReviewRunner インターフェースの実装です。
 type CodeReviewRunner struct {
 	gitFactory    GitAdapterFactory
-	codeReviewAI  adapters.CodeReviewAI
+	codeReviewAI  domain.CodeReviewAI
 	promptBuilder domain.PromptBuilder
 }
 
 // NewCodeReviewRunner は ReviewRunner の新しいインスタンスを作成
 func NewCodeReviewRunner(
 	gitFactory GitAdapterFactory,
-	codeReviewAI adapters.CodeReviewAI,
+	codeReviewAI domain.CodeReviewAI,
 	pb domain.PromptBuilder,
 ) *CodeReviewRunner {
 	return &CodeReviewRunner{
