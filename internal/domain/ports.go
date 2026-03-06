@@ -23,3 +23,8 @@ type Notifier interface {
 	// Notify は、パブリック URL やストレージ URL などのメタデータを含む通知をターゲットに送信します。
 	Notify(ctx context.Context, publicURL, storageURI string, req ReviewRequest) error
 }
+
+// PromptBuilder は、プロンプト文字列を生成する責務を定義します。
+type PromptBuilder interface {
+	Build(mode string, inputText string) (string, error)
+}
