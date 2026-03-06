@@ -1,6 +1,8 @@
 package domain
 
-import "context"
+import (
+	"context"
+)
 
 // Pipeline は、レビュー要求を処理するために実行される一連のプロセスを表します。
 type Pipeline interface {
@@ -22,15 +24,4 @@ type PublisherRunner interface {
 type Notifier interface {
 	// Notify は、パブリック URL やストレージ URL などのメタデータを含む通知をターゲットに送信します。
 	Notify(ctx context.Context, publicURL, storageURI string, req ReviewRequest) error
-}
-
-// PromptBuilder は、プロンプト文字列を生成する責務を定義します。
-type PromptBuilder interface {
-	Build(mode string, content string) (string, error)
-}
-
-// CodeReviewAI は、AIとの通信機能の抽象化を提供し、DIで使用されます。
-type CodeReviewAI interface {
-	// ReviewCodeDiff は完成されたプロンプトを基にAIにレビューを依頼します。
-	ReviewCodeDiff(ctx context.Context, finalPrompt string) (string, error)
 }

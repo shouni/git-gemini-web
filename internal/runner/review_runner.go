@@ -9,6 +9,7 @@ import (
 	"git-gemini-web/internal/domain"
 
 	"github.com/shouni/gemini-reviewer-core/pkg/adapters"
+	"github.com/shouni/gemini-reviewer-core/pkg/prompts"
 	"github.com/shouni/go-utils/urlpath"
 )
 
@@ -26,15 +27,15 @@ type GitAdapterFactory interface {
 // CodeReviewRunner は ReviewRunner インターフェースの実装です。
 type CodeReviewRunner struct {
 	gitFactory    GitAdapterFactory
-	codeReviewAI  domain.CodeReviewAI
-	promptBuilder domain.PromptBuilder
+	codeReviewAI  adapters.CodeReviewAI
+	promptBuilder prompts.PromptBuilder
 }
 
 // NewCodeReviewRunner は ReviewRunner の新しいインスタンスを作成
 func NewCodeReviewRunner(
 	gitFactory GitAdapterFactory,
-	codeReviewAI domain.CodeReviewAI,
-	pb domain.PromptBuilder,
+	codeReviewAI adapters.CodeReviewAI,
+	pb prompts.PromptBuilder,
 ) *CodeReviewRunner {
 	return &CodeReviewRunner{
 		gitFactory:    gitFactory,
