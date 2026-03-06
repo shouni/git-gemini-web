@@ -67,7 +67,7 @@ func buildReviewRunner(
 	}
 
 	// 3. Prompt Builder の構築
-	promptBuilder, err := prompts.NewPromptBuilder()
+	promptBuilder, err := prompts.NewBuilder()
 	if err != nil {
 		return nil, fmt.Errorf("Prompt Builder の構築に失敗しました: %w", err)
 	}

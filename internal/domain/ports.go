@@ -1,6 +1,8 @@
 package domain
 
-import "context"
+import (
+	"context"
+)
 
 // Pipeline は、レビュー要求を処理するために実行される一連のプロセスを表します。
 type Pipeline interface {
