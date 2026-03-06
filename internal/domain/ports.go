@@ -26,5 +26,5 @@ type Notifier interface {
 
 // PromptBuilder は、プロンプト文字列を生成する責務を定義します。
 type PromptBuilder interface {
-	Build(mode string, inputText string) (string, error)
+	Build(mode string, content string) (string, error)
 }
