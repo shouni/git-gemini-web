@@ -28,14 +28,14 @@ type GitAdapterFactory interface {
 type CodeReviewRunner struct {
 	gitFactory    GitAdapterFactory
 	codeReviewAI  adapters.CodeReviewAI
-	promptBuilder prompts.ReviewPromptBuilder
+	promptBuilder prompts.PromptBuilder
 }
 
 // NewCodeReviewRunner は ReviewRunner の新しいインスタンスを作成
 func NewCodeReviewRunner(
 	gitFactory GitAdapterFactory,
 	codeReviewAI adapters.CodeReviewAI,
-	pb prompts.ReviewPromptBuilder,
+	pb prompts.PromptBuilder,
 ) *CodeReviewRunner {
 	return &CodeReviewRunner{
 		gitFactory:    gitFactory,
@@ -116,7 +116,7 @@ func (r *CodeReviewRunner) prepareRepository(ctx context.Context, git adapters.G
 func (r *CodeReviewRunner) executeAIReview(ctx context.Context, mode string, diff string) (string, error) {
 	slog.InfoContext(ctx, "AIプロンプトを生成・API呼び出し中", "mode", mode)
 
-	prompt, err := r.promptBuilder.Build(mode, prompts.TemplateData{DiffContent: diff})
+	prompt, err := r.promptBuilder.Build(mode, diff)
 	if err != nil {
 		return "", fmt.Errorf("プロンプト生成に失敗: %w", err)
 	}

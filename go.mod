@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/csrf v1.7.3
 	github.com/shouni/gcp-kit v1.0.3
-	github.com/shouni/gemini-reviewer-core v1.2.3
+	github.com/shouni/gemini-reviewer-core v1.2.5
 	github.com/shouni/go-http-kit v1.2.1
 	github.com/shouni/go-notifier v1.1.4
 	github.com/shouni/go-remote-io v1.2.1
