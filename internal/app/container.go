@@ -21,7 +21,7 @@ type Container struct {
 	// Business Logic
 	Pipeline domain.Pipeline
 	// External Adapters
-	HTTPClient    httpkit.ClientInterface
+	HTTPClient    httpkit.RequestExecutor
 	SlackNotifier domain.Notifier
 }
 

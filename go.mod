@@ -8,8 +8,8 @@ require (
 	github.com/gorilla/csrf v1.7.3
 	github.com/shouni/gcp-kit v1.0.3
 	github.com/shouni/gemini-reviewer-core v1.2.5
-	github.com/shouni/go-http-kit v1.2.1
-	github.com/shouni/go-notifier v1.1.4
+	github.com/shouni/go-http-kit v1.3.2
+	github.com/shouni/go-notifier v1.1.5
 	github.com/shouni/go-remote-io v1.2.1
 	github.com/shouni/go-utils v1.0.18
 	github.com/shouni/netarmor v1.0.0
@@ -75,7 +75,7 @@ require (
 	github.com/shouni/go-gemini-client v1.0.13 // indirect
 	github.com/shouni/go-text-format v1.2.0 // indirect
 	github.com/skeema/knownhosts v1.3.1 // indirect
-	github.com/slack-go/slack v0.17.3 // indirect
+	github.com/slack-go/slack v0.19.0 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.6.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/yuin/goldmark v1.7.13 // indirect
