@@ -98,7 +98,7 @@ func buildPublishRunner(
 	if err != nil {
 		return nil, fmt.Errorf("MarkdownToHtmlRunnerの初期化に失敗しました: %w", err)
 	}
-	publisherService, err := publisher.NewPublisher(ctx, rio.Factory, htmlRunner)
+	publisherService, err := publisher.NewPublisher(ctx, rio.Writer, htmlRunner)
 	if err != nil {
 		return nil, fmt.Errorf("Publisherの初期化に失敗しました: %w", err)
 	}
