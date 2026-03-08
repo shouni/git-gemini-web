@@ -11,6 +11,7 @@ import (
 	"git-gemini-web/internal/runner"
 
 	coreadapters "github.com/shouni/gemini-reviewer-core/pkg/adapters"
+	core "github.com/shouni/gemini-reviewer-core/pkg/domain"
 	"github.com/shouni/gemini-reviewer-core/pkg/prompts"
 	"github.com/shouni/gemini-reviewer-core/pkg/publisher"
 )
@@ -22,7 +23,7 @@ type GitAdapterFactoryImpl struct {
 }
 
 // Create は runner.GitAdapterFactory インターフェースを満たします。
-func (f *GitAdapterFactoryImpl) Create(localPath string, baseBranch string) coreadapters.GitService {
+func (f *GitAdapterFactoryImpl) Create(localPath string, baseBranch string) core.GitService {
 	skipHostKeyCheckOption := coreadapters.WithInsecureSkipHostKeyCheck(f.skipHostKeyCheck)
 	baseBranchOption := coreadapters.WithBaseBranch(baseBranch)
 
