@@ -114,6 +114,7 @@ func (r *CodeReviewRunner) prepareRepository(ctx context.Context, git core.GitSe
 // executeAIReview は、指定されたdiffとモードでプロンプトを生成し、AIによるコードレビューを実行します。
 func (r *CodeReviewRunner) executeAIReview(ctx context.Context, mode string, codeDiff string) (string, error) {
 	slog.InfoContext(ctx, "AIプロンプトを生成・API呼び出し中", "mode", mode)
+
 	data := core.TemplateData{
 		DiffContent: codeDiff,
 	}

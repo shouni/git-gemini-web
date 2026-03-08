@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"git-gemini-web/internal/adapters"
 	"git-gemini-web/internal/app"
 	"git-gemini-web/internal/config"
 	"git-gemini-web/internal/domain"
@@ -61,10 +62,10 @@ func buildReviewRunner(
 		skipHostKeyCheck: cfg.SkipHostKeyCheck,
 	}
 
-	// 2. GeminiService (Adapter) の構築
-	geminiService, err := coreadapters.NewGeminiAdapter(ctx, cfg.GeminiModel)
+	// 2. codeReviewAI の構築
+	codeReviewAI, err := adapters.NewCodeReviewAI(ctx, cfg)
 	if err != nil {
-		return nil, fmt.Errorf("Gemini Service の構築に失敗しました: %w", err)
+		return nil, err
 	}
 
 	// 3. Prompt Builder の構築
@@ -76,7 +77,7 @@ func buildReviewRunner(
 	// 4. 依存関係を注入して Runner を組み立てる
 	reviewRunner := runner.NewCodeReviewRunner(
 		gitFactory,
-		geminiService,
+		codeReviewAI,
 		promptBuilder,
 	)
 
