@@ -113,7 +113,7 @@ Webフォームを通じてレビュー依頼を受け付け、高負荷なAI解
 
 ---
 
-## 📁 Git Gemini Web プロジェクトレイアウト
+## 🏗 プロジェクトレイアウト (Project Layout)
 
 ```text
 git-gemini-web/

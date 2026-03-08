@@ -63,7 +63,7 @@ func buildReviewRunner(
 	}
 
 	// 2. codeReviewAI の構築
-	codeReviewAI, err := adapters.NewCodeReviewAI(ctx, cfg)
+	codeReviewAI, err := adapters.NewCodeReviewAI(ctx, cfg.GeminiModel)
 	if err != nil {
 		return nil, err
 	}
