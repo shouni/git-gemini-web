@@ -76,12 +76,17 @@ func buildRemoteIO(ctx context.Context) (*app.RemoteIO, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create GCS factory: %w", err)
 	}
+	w, err := factory.OutputWriter()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create URL signer: %w", err)
+	}
 	s, err := factory.URLSigner()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create URL signer: %w", err)
 	}
 	return &app.RemoteIO{
 		Factory: factory,
+		Writer:  w,
 		Signer:  s,
 	}, nil
 }

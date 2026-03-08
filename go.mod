@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/csrf v1.7.3
 	github.com/shouni/gcp-kit v1.0.3
-	github.com/shouni/gemini-reviewer-core v1.2.7
+	github.com/shouni/gemini-reviewer-core v1.2.8
 	github.com/shouni/go-http-kit v1.3.2
 	github.com/shouni/go-notifier v1.1.5
 	github.com/shouni/go-remote-io v1.2.1
@@ -88,7 +88,6 @@ require (
 	go.opentelemetry.io/otel/sdk v1.39.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.39.0 // indirect
 	go.opentelemetry.io/otel/trace v1.39.0 // indirect
-	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/net v0.49.0 // indirect
 	golang.org/x/oauth2 v0.35.0 // indirect
