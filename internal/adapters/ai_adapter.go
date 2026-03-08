@@ -8,7 +8,7 @@ import (
 	"github.com/shouni/gemini-reviewer-core/pkg/domain"
 )
 
-// NewCodeReviewAI は adapters.CodeReviewAI のインスタンスを構築します。
+// NewCodeReviewAI は core.CodeReviewAI のインスタンスを構築します。
 func NewCodeReviewAI(ctx context.Context, geminiModel string) (domain.CodeReviewAI, error) {
 	codeReviewAI, err := coreAdapters.NewGeminiAdapter(ctx, geminiModel)
 	if err != nil {
