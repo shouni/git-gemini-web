@@ -117,39 +117,17 @@ Webフォームを通じてレビュー依頼を受け付け、高負荷なAI解
 
 ```text
 git-gemini-web/
-├── main.go                         # エントリーポイント（Appの初期化と起動）
 ├── internal/
-│   ├── adapters/                   # 外部システム連携（抽象インターフェースの実装）
-│   │   └── slack_adapter.go        # Slack通知の具体的な送信処理
-│   ├── app/                        # 基盤構造
-│   │   └── container.go            # 依存オブジェクトを保持する Container 定義
-│   ├── builder/                    # DIコンテナの組み立て
-│   │   ├── app.go                  # Container 全体の構築
-│   │   ├── handlers.go             # 各ハンドラー（auth, web, worker）の生成と注入
-│   │   └── pipeline.go             # Pipeline および各 Runner のインスタンス化・依存注入
-│   ├── config/                     # 設定管理
-│   │   ├── config_helpers.go       # 環境変数取得等の補助関数
-│   │   └── config.go               # 設定構造体とバリデーション
-│   ├── domain/                     # 純粋なデータ構造と型定義（ReviewResult, ReviewRequest 等）
-│   │   ├── ports.go                # 各層を繋ぐインターフェース定義（Port）
-│   │   ├── response.go             # レスポンス関連の型定義
-│   │   └── review.go               # レビュー対象・ステータスの型定義
-│   ├── pipeline/                   # ワークフローの指揮（指揮官）
-│   │   └── pipeline.go             # 各 Runner を使い、一連のフロー（手順）を制御
-│   ├── runner/                     # ビジネスロジックの具象（実働部隊）
-│   │   ├── error_report.md         # エラー時レポートのテンプレート
-│   │   ├── publish_runner.go       # GCS保存・レポート出力の実装
-│   │   ├── report_builder.go       # Markdown/HTML レンダリング
-│   │   ├── review_runner.go        # Git操作・Gemini API呼び出しの実装
-│   │   └── skip_report.md          # スキップ時レポートのテンプレート
-│   └── server/                     # 【Server】HTTPサーバー基盤（玄関）
-│       ├── handlers/               # HTTPリクエストハンドラーの実体
-│       │   ├── handler_helpers.go  # ハンドラー共通の補助処理
-│       │   └── handler.go          # ハンドラーの基盤構造
-│       ├── router.go               # chi によるルーティング設定
-│       └── server.go               # サーバーのライフサイクル管理
-└── templates/                      # UI用 HTMLテンプレート
-    └── review_form.html            # 入力フォーム画面
+│   ├── app/           # 【基盤】アプリケーション全体のライフサイクルと依存保持 (Container)
+│   ├── builder/       # 【DI】依存関係の解決と、各コンポーネントのインスタンス構築集約
+│   ├── config/        # 【設定】環境変数のロード、定数管理、バリデーション
+│   ├── domain/        # 【中心】外部依存を持たない純粋なモデル定義と抽象ポート (Ports)
+│   ├── pipeline/      # 【指揮】各 Runner を連携させ、一連の業務フローを制御するオーケストレーター
+│   ├── runner/        # 【実行】ビジネスロジックの具象実装（Git、AI、レポート生成の実働部隊）
+│   ├── adapters/      # 【接続】外部サービス（Slack通知など）との通信を担う実装 (Adapters)
+│   └── server/        # 【玄関】HTTPサーバー、ルーティング、リクエストハンドリング
+├── templates/         # 【UI】Web表示用の HTML テンプレート群
+└── main.go            # 【起点】アプリケーションのブートストラップ（初期化・起動）
 ```
 
 ---
