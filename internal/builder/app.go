@@ -78,7 +78,7 @@ func buildRemoteIO(ctx context.Context) (*app.RemoteIO, error) {
 	}
 	w, err := factory.OutputWriter()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create URL signer: %w", err)
+		return nil, fmt.Errorf("failed to create output writer: %w", err)
 	}
 	s, err := factory.URLSigner()
 	if err != nil {
