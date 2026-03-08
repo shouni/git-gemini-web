@@ -8,8 +8,7 @@ import (
 
 	"git-gemini-web/internal/domain"
 
-	"github.com/shouni/gemini-reviewer-core/pkg/adapters"
-	"github.com/shouni/gemini-reviewer-core/pkg/prompts"
+	core "github.com/shouni/gemini-reviewer-core/pkg/domain"
 	"github.com/shouni/go-utils/urlpath"
 )
 
@@ -21,21 +20,21 @@ const (
 
 // GitAdapterFactory は、リクエスト固有の情報に基づいて GitAdapter を生成する契約を定義します。
 type GitAdapterFactory interface {
-	Create(localPath string, baseBranch string) adapters.GitService
+	Create(localPath string, baseBranch string) core.GitService
 }
 
 // CodeReviewRunner は ReviewRunner インターフェースの実装です。
 type CodeReviewRunner struct {
 	gitFactory    GitAdapterFactory
-	codeReviewAI  adapters.CodeReviewAI
-	promptBuilder prompts.PromptBuilder
+	codeReviewAI  core.CodeReviewAI
+	promptBuilder core.PromptBuilder
 }
 
 // NewCodeReviewRunner は ReviewRunner の新しいインスタンスを作成
 func NewCodeReviewRunner(
 	gitFactory GitAdapterFactory,
-	codeReviewAI adapters.CodeReviewAI,
-	pb prompts.PromptBuilder,
+	codeReviewAI core.CodeReviewAI,
+	pb core.PromptBuilder,
 ) *CodeReviewRunner {
 	return &CodeReviewRunner{
 		gitFactory:    gitFactory,
@@ -95,7 +94,7 @@ func (r *CodeReviewRunner) Run(
 // --- 内部補助メソッド ---
 
 // prepareRepository は、リポジトリを複製し、機能ブランチが存在するかどうかを確認します。
-func (r *CodeReviewRunner) prepareRepository(ctx context.Context, git adapters.GitService, repoURL, branch string) error {
+func (r *CodeReviewRunner) prepareRepository(ctx context.Context, git core.GitService, repoURL, branch string) error {
 	slog.InfoContext(ctx, "1. リポジトリをクローン/更新中", "repo_url", repoURL)
 	if err := git.CloneOrUpdate(ctx, repoURL); err != nil {
 		return fmt.Errorf("リポジトリの準備に失敗: %w", err)
@@ -113,10 +112,13 @@ func (r *CodeReviewRunner) prepareRepository(ctx context.Context, git adapters.G
 }
 
 // executeAIReview は、指定されたdiffとモードでプロンプトを生成し、AIによるコードレビューを実行します。
-func (r *CodeReviewRunner) executeAIReview(ctx context.Context, mode string, diff string) (string, error) {
+func (r *CodeReviewRunner) executeAIReview(ctx context.Context, mode string, codeDiff string) (string, error) {
 	slog.InfoContext(ctx, "AIプロンプトを生成・API呼び出し中", "mode", mode)
 
-	prompt, err := r.promptBuilder.Build(mode, diff)
+	data := core.TemplateData{
+		DiffContent: codeDiff,
+	}
+	prompt, err := r.promptBuilder.Build(mode, data)
 	if err != nil {
 		return "", fmt.Errorf("プロンプト生成に失敗: %w", err)
 	}
@@ -134,7 +136,7 @@ func (r *CodeReviewRunner) executeAIReview(ctx context.Context, mode string, dif
 }
 
 // cleanupGit は、Git リソースのクリーンアップを処理し、クリーンアップ操作が失敗した場合は警告をログに記録します。
-func (r *CodeReviewRunner) cleanupGit(ctx context.Context, git adapters.GitService) {
+func (r *CodeReviewRunner) cleanupGit(ctx context.Context, git core.GitService) {
 	if err := git.Cleanup(ctx); err != nil {
 		slog.WarnContext(ctx, "Gitリソースのクリーンアップに失敗しました", "error", err)
 	}

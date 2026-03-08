@@ -10,19 +10,19 @@ import (
 	"git-gemini-web/internal/config"
 	"git-gemini-web/internal/domain"
 
-	"github.com/shouni/gemini-reviewer-core/pkg/publisher"
+	core "github.com/shouni/gemini-reviewer-core/pkg/domain"
 	"github.com/shouni/go-remote-io/pkg/remoteio"
 )
 
 // StoragePublisherRunner は、レビュー結果の公開処理を実行する具象構造体です。
 type StoragePublisherRunner struct {
-	publisherService publisher.Publisher
+	publisherService core.Publisher
 	urlSigner        remoteio.URLSigner
 	slackNotifier    domain.Notifier
 }
 
 // NewStoragePublisherRunner は StoragePublisherRunner の新しいインスタンスを作成します。
-func NewStoragePublisherRunner(publisherService publisher.Publisher, urlSigner remoteio.URLSigner, slackNotifier domain.Notifier) *StoragePublisherRunner {
+func NewStoragePublisherRunner(publisherService core.Publisher, urlSigner remoteio.URLSigner, slackNotifier domain.Notifier) *StoragePublisherRunner {
 	return &StoragePublisherRunner{
 		publisherService: publisherService,
 		urlSigner:        urlSigner,
@@ -85,7 +85,7 @@ func (p *StoragePublisherRunner) Run(
 // publish は公開処理のパイプライン全体を実行します。
 func (p *StoragePublisherRunner) publish(ctx context.Context, req domain.ReviewRequest, reviewMarkdown string) error {
 	// ReviewDataを構築
-	reviewData := publisher.ReviewData{
+	reviewData := core.ReviewData{
 		RepoURL:        req.RepoURL,
 		BaseBranch:     req.BaseBranch,
 		FeatureBranch:  req.FeatureBranch,
