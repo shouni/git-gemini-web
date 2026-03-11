@@ -2,6 +2,7 @@ package adapters
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -9,7 +10,6 @@ import (
 	"git-gemini-web/internal/domain"
 
 	"github.com/shouni/go-http-kit/pkg/httpkit"
-	"github.com/shouni/go-notifier/pkg/factory"
 	"github.com/shouni/go-notifier/pkg/slack"
 	"github.com/shouni/go-utils/urlpath"
 )
@@ -23,9 +23,14 @@ type SlackAdapter struct {
 // NewSlackAdapter は新しいアダプターインスタンスを作成します。
 func NewSlackAdapter(httpClient httpkit.RequestExecutor, webhookURL string) (*SlackAdapter, error) {
 	if webhookURL == "" {
-		return &SlackAdapter{webhookURL: webhookURL}, nil
+		return nil, errors.New("Slack WebhookURL は必須です")
 	}
-	client, err := factory.GetSlackClient(httpClient)
+
+	if httpClient == nil {
+		return nil, errors.New("http client cannot be nil")
+	}
+
+	client, err := slack.NewClient(httpClient, webhookURL)
 	if err != nil {
 		return nil, fmt.Errorf("Slackクライアントの初期化に失敗しました: %w", err)
 	}
@@ -39,18 +44,9 @@ func NewSlackAdapter(httpClient httpkit.RequestExecutor, webhookURL string) (*Sl
 // Notify は SlackNotifier インターフェースの実装です。
 // publicURL をリンク先として、Slack に投稿します。
 func (s *SlackAdapter) Notify(ctx context.Context, publicURL, storageURI string, req domain.ReviewRequest) error {
-
-	// 1. Slack 認証情報の取得とスキップチェック
-	if s.webhookURL == "" {
-		slog.Info("SLACK_WEBHOOK_URL が設定されていません。Slack通知をスキップします。", "storage_uri", storageURI)
-		return nil
-	}
-
-	// 2. Slack に投稿するメッセージを作成
 	title := "✅ AIコードレビュー結果がアップロードされました。"
 	content := s.buildSlackContent(publicURL, storageURI, req)
 
-	// 3. Slack投稿処理を実行
 	if err := s.slackClient.SendTextWithHeader(ctx, title, content); err != nil {
 		return fmt.Errorf("Slackへの結果URL投稿に失敗しました: %w", err)
 	}
