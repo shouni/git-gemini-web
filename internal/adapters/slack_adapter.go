@@ -23,7 +23,8 @@ type SlackAdapter struct {
 // NewSlackAdapter は新しいアダプターインスタンスを作成します。
 func NewSlackAdapter(httpClient httpkit.RequestExecutor, webhookURL string) (*SlackAdapter, error) {
 	if webhookURL == "" {
-		return nil, errors.New("Slack WebhookURL は必須です")
+		// オプショナル機能として扱い、空のままインスタンスを返す
+		return &SlackAdapter{webhookURL: webhookURL}, nil
 	}
 
 	if httpClient == nil {
@@ -44,6 +45,11 @@ func NewSlackAdapter(httpClient httpkit.RequestExecutor, webhookURL string) (*Sl
 // Notify は SlackNotifier インターフェースの実装です。
 // publicURL をリンク先として、Slack に投稿します。
 func (s *SlackAdapter) Notify(ctx context.Context, publicURL, storageURI string, req domain.ReviewRequest) error {
+	if s.webhookURL == "" || s.slackClient == nil {
+		slog.Info("SLACK_WEBHOOK_URL が設定されていません。Slack通知をスキップします。", "storage_uri", storageURI)
+		return nil
+	}
+
 	title := "✅ AIコードレビュー結果がアップロードされました。"
 	content := s.buildSlackContent(publicURL, storageURI, req)
 
