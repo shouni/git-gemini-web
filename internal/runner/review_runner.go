@@ -23,14 +23,14 @@ type GitAdapterFactory interface {
 	Create(localPath string, baseBranch string) core.GitService
 }
 
-// ReviewRunner は ReviewRunner インターフェースの実装です。
+// ReviewRunner は domain.ReviewRunner インターフェースの実装です。
 type ReviewRunner struct {
 	gitFactory    GitAdapterFactory
 	codeReviewAI  core.CodeReviewAI
 	promptBuilder core.PromptBuilder
 }
 
-// NewReviewRunner は ReviewRunner の新しいインスタンスを作成
+// NewReviewRunner は ReviewRunner の新しいインスタンスを作成します。
 func NewReviewRunner(
 	gitFactory GitAdapterFactory,
 	codeReviewAI core.CodeReviewAI,

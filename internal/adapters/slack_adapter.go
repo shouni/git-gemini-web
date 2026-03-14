@@ -17,7 +17,7 @@ import (
 // SlackAdapter は SlackNotifier インターフェースを満たす具象型です。
 type SlackAdapter struct {
 	slackClient *slack.Client
-	webhookURL  string // Webhook URLを保持
+	webhookURL  string
 }
 
 // NewSlackAdapter は新しいアダプターインスタンスを作成します。
