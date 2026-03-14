@@ -18,15 +18,15 @@ import (
 type PublishRunner struct {
 	publisher core.Publisher
 	urlSigner remoteio.URLSigner
-	Notifier  domain.Notifier
+	notifier  domain.Notifier
 }
 
-// NewPublisherRunner は NewPublisherRunner の新しいインスタンスを作成します。
+// NewPublisherRunner は PublishRunner の新しいインスタンスを作成します。
 func NewPublisherRunner(publisher core.Publisher, urlSigner remoteio.URLSigner, notifier domain.Notifier) *PublishRunner {
 	return &PublishRunner{
 		publisher: publisher,
 		urlSigner: urlSigner,
-		Notifier:  notifier,
+		notifier:  notifier,
 	}
 }
 
@@ -113,7 +113,7 @@ func (p *PublishRunner) publish(ctx context.Context, req domain.ReviewRequest, r
 
 	// Slackへの通知
 	slog.InfoContext(ctx, "レビュー結果(またはエラーレポート)をSlackに通知中")
-	if notifyErr := p.Notifier.Notify(ctx, publicURL, storageURI, req); notifyErr != nil {
+	if notifyErr := p.notifier.Notify(ctx, publicURL, storageURI, req); notifyErr != nil {
 		// 通知は非致命的エラーとして警告ログを出し、処理は継続する
 		slog.WarnContext(ctx, "Slack通知に失敗しました", "error", notifyErr)
 	}
