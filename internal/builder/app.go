@@ -6,14 +6,14 @@ import (
 	"io"
 	"net/url"
 
+	"github.com/shouni/gcp-kit/tasks"
+	"github.com/shouni/go-http-kit/pkg/httpkit"
+	"github.com/shouni/go-remote-io/pkg/gcsfactory"
+
 	"git-gemini-web/internal/adapters"
 	"git-gemini-web/internal/app"
 	"git-gemini-web/internal/config"
 	"git-gemini-web/internal/domain"
-
-	"github.com/shouni/gcp-kit/tasks"
-	"github.com/shouni/go-http-kit/pkg/httpkit"
-	"github.com/shouni/go-remote-io/pkg/gcsfactory"
 )
 
 // BuildContainer は外部サービスとの接続を確立し、依存関係を組み立てた app.Container を返します。

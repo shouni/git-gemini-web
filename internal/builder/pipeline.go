@@ -4,17 +4,17 @@ import (
 	"context"
 	"fmt"
 
+	coreadapters "github.com/shouni/gemini-reviewer-core/pkg/adapters"
+	core "github.com/shouni/gemini-reviewer-core/pkg/domain"
+	"github.com/shouni/gemini-reviewer-core/pkg/prompts"
+	"github.com/shouni/gemini-reviewer-core/pkg/publisher"
+
 	"git-gemini-web/internal/adapters"
 	"git-gemini-web/internal/app"
 	"git-gemini-web/internal/config"
 	"git-gemini-web/internal/domain"
 	"git-gemini-web/internal/pipeline"
 	"git-gemini-web/internal/runner"
-
-	coreadapters "github.com/shouni/gemini-reviewer-core/pkg/adapters"
-	core "github.com/shouni/gemini-reviewer-core/pkg/domain"
-	"github.com/shouni/gemini-reviewer-core/pkg/prompts"
-	"github.com/shouni/gemini-reviewer-core/pkg/publisher"
 )
 
 // GitAdapterFactoryImpl は、runner.GitAdapterFactory インターフェースを満たす具象型です。
@@ -75,7 +75,7 @@ func buildReviewRunner(
 	}
 
 	// 4. 依存関係を注入して Runner を組み立てる
-	reviewRunner := runner.NewCodeReviewRunner(
+	reviewRunner := runner.NewReviewRunner(
 		gitFactory,
 		codeReviewAI,
 		promptBuilder,
@@ -103,7 +103,7 @@ func buildPublishRunner(
 		return nil, fmt.Errorf("Publisherの初期化に失敗しました: %w", err)
 	}
 
-	publishRunner := runner.NewStoragePublisherRunner(
+	publishRunner := runner.NewPublisherRunner(
 		publisherService,
 		rio.Signer,
 		slack,

@@ -9,7 +9,7 @@ require (
 	github.com/shouni/gcp-kit v1.0.4
 	github.com/shouni/gemini-reviewer-core v1.2.11
 	github.com/shouni/go-http-kit v1.3.3
-	github.com/shouni/go-notifier v1.1.7
+	github.com/shouni/go-notifier v1.1.9
 	github.com/shouni/go-remote-io v1.2.2
 	github.com/shouni/go-utils v1.0.20
 	github.com/shouni/netarmor v1.0.1
