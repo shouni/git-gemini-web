@@ -7,17 +7,17 @@ import (
 	"log/slog"
 	"strings"
 
-	"git-gemini-web/internal/domain"
-
 	"github.com/shouni/go-http-kit/pkg/httpkit"
 	"github.com/shouni/go-notifier/pkg/slack"
 	"github.com/shouni/go-utils/urlpath"
+
+	"git-gemini-web/internal/domain"
 )
 
 // SlackAdapter は SlackNotifier インターフェースを満たす具象型です。
 type SlackAdapter struct {
-	webhookURL  string // Webhook URLを保持
 	slackClient *slack.Client
+	webhookURL  string
 }
 
 // NewSlackAdapter は新しいアダプターインスタンスを作成します。
@@ -37,8 +37,8 @@ func NewSlackAdapter(httpClient httpkit.RequestExecutor, webhookURL string) (*Sl
 	}
 
 	return &SlackAdapter{
-		webhookURL:  webhookURL,
 		slackClient: client,
+		webhookURL:  webhookURL,
 	}, nil
 }
 

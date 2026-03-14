@@ -3,12 +3,12 @@ package app
 import (
 	"log/slog"
 
-	"git-gemini-web/internal/config"
-	"git-gemini-web/internal/domain"
-
 	"github.com/shouni/gcp-kit/tasks"
 	"github.com/shouni/go-http-kit/pkg/httpkit"
 	"github.com/shouni/go-remote-io/pkg/remoteio"
+
+	"git-gemini-web/internal/config"
+	"git-gemini-web/internal/domain"
 )
 
 // Container はアプリケーションの依存関係（DIコンテナ）を保持します。

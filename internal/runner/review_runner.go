@@ -6,10 +6,10 @@ import (
 	"log/slog"
 	"time"
 
-	"git-gemini-web/internal/domain"
-
 	core "github.com/shouni/gemini-reviewer-core/pkg/domain"
 	"github.com/shouni/go-utils/urlpath"
+
+	"git-gemini-web/internal/domain"
 )
 
 const (
@@ -23,20 +23,20 @@ type GitAdapterFactory interface {
 	Create(localPath string, baseBranch string) core.GitService
 }
 
-// CodeReviewRunner は ReviewRunner インターフェースの実装です。
-type CodeReviewRunner struct {
+// ReviewRunner は domain.ReviewRunner インターフェースの実装です。
+type ReviewRunner struct {
 	gitFactory    GitAdapterFactory
 	codeReviewAI  core.CodeReviewAI
 	promptBuilder core.PromptBuilder
 }
 
-// NewCodeReviewRunner は ReviewRunner の新しいインスタンスを作成
-func NewCodeReviewRunner(
+// NewReviewRunner は ReviewRunner の新しいインスタンスを作成します。
+func NewReviewRunner(
 	gitFactory GitAdapterFactory,
 	codeReviewAI core.CodeReviewAI,
 	pb core.PromptBuilder,
-) *CodeReviewRunner {
-	return &CodeReviewRunner{
+) *ReviewRunner {
+	return &ReviewRunner{
 		gitFactory:    gitFactory,
 		codeReviewAI:  codeReviewAI,
 		promptBuilder: pb,
@@ -44,7 +44,7 @@ func NewCodeReviewRunner(
 }
 
 // Run はレビューのメインフローを実行します。
-func (r *CodeReviewRunner) Run(
+func (r *ReviewRunner) Run(
 	ctx context.Context,
 	req domain.ReviewRequest,
 ) domain.ReviewProcessOutcome {
@@ -94,7 +94,7 @@ func (r *CodeReviewRunner) Run(
 // --- 内部補助メソッド ---
 
 // prepareRepository は、リポジトリを複製し、機能ブランチが存在するかどうかを確認します。
-func (r *CodeReviewRunner) prepareRepository(ctx context.Context, git core.GitService, repoURL, branch string) error {
+func (r *ReviewRunner) prepareRepository(ctx context.Context, git core.GitService, repoURL, branch string) error {
 	slog.InfoContext(ctx, "1. リポジトリをクローン/更新中", "repo_url", repoURL)
 	if err := git.CloneOrUpdate(ctx, repoURL); err != nil {
 		return fmt.Errorf("リポジトリの準備に失敗: %w", err)
@@ -112,7 +112,7 @@ func (r *CodeReviewRunner) prepareRepository(ctx context.Context, git core.GitSe
 }
 
 // executeAIReview は、指定されたdiffとモードでプロンプトを生成し、AIによるコードレビューを実行します。
-func (r *CodeReviewRunner) executeAIReview(ctx context.Context, mode string, codeDiff string) (string, error) {
+func (r *ReviewRunner) executeAIReview(ctx context.Context, mode string, codeDiff string) (string, error) {
 	slog.InfoContext(ctx, "AIプロンプトを生成・API呼び出し中", "mode", mode)
 
 	data := core.TemplateData{
@@ -136,7 +136,7 @@ func (r *CodeReviewRunner) executeAIReview(ctx context.Context, mode string, cod
 }
 
 // cleanupGit は、Git リソースのクリーンアップを処理し、クリーンアップ操作が失敗した場合は警告をログに記録します。
-func (r *CodeReviewRunner) cleanupGit(ctx context.Context, git core.GitService) {
+func (r *ReviewRunner) cleanupGit(ctx context.Context, git core.GitService) {
 	if err := git.Cleanup(ctx); err != nil {
 		slog.WarnContext(ctx, "Gitリソースのクリーンアップに失敗しました", "error", err)
 	}
