@@ -10,25 +10,25 @@ import (
 
 // ReviewPipeline はパイプラインの実行に必要な外部依存関係を保持するサービス構造体です。
 type ReviewPipeline struct {
-	reviewRunner  domain.ReviewRunner
-	publishRunner domain.PublisherRunner
+	reviewer  domain.ReviewRunner
+	publisher domain.PublisherRunner
 }
 
-func NewReviewPipeline(r domain.ReviewRunner, p domain.PublisherRunner) *ReviewPipeline {
+func NewReviewPipeline(reviewer domain.ReviewRunner, publisher domain.PublisherRunner) *ReviewPipeline {
 	return &ReviewPipeline{
-		reviewRunner:  r,
-		publishRunner: p,
+		reviewer:  reviewer,
+		publisher: publisher,
 	}
 }
 
 // Execute はレビューリクエストの全工程（実行から公開まで）をオーケストレートします。
 func (p *ReviewPipeline) Execute(ctx context.Context, payload domain.ReviewRequest) error {
 	// 1. レビュー実行（中間結果 Outcome を取得）
-	outcome := p.reviewRunner.Run(ctx, payload)
+	outcome := p.reviewer.Run(ctx, payload)
 
 	// 2. 結果のパブリッシュ（GCS保存、Slack通知、エラーレポート生成など）
-	// Outcome 内にエラーが含まれていても、publishRunner が適切に処理して error を返します。
-	result, err := p.publishRunner.Run(ctx, payload, outcome)
+	// Outcome 内にエラーが含まれていても、publisher が適切に処理して error を返します。
+	result, err := p.publisher.Run(ctx, payload, outcome)
 	if err != nil {
 		return fmt.Errorf("publish runner execution failed for repo %s: %w", payload.RepoURL, err)
 	}
