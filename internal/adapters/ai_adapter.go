@@ -6,11 +6,16 @@ import (
 
 	coreAdapters "github.com/shouni/gemini-reviewer-core/pkg/adapters"
 	"github.com/shouni/gemini-reviewer-core/pkg/domain"
+
+	"git-gemini-web/internal/config"
 )
 
-// NewCodeReviewAI は core.CodeReviewAI のインスタンスを構築します。
-func NewCodeReviewAI(ctx context.Context, geminiModel string) (domain.CodeReviewAI, error) {
-	codeReviewAI, err := coreAdapters.NewGeminiAdapter(ctx, geminiModel)
+// NewCodeReviewAI は adapters.CodeReviewAI のインスタンスを構築します。
+func NewCodeReviewAI(ctx context.Context, cfg *config.Config) (domain.CodeReviewAI, error) {
+	opt := coreAdapters.GeminiOptions{
+		ProjectID: cfg.ProjectID,
+	}
+	codeReviewAI, err := coreAdapters.NewGeminiAdapter(ctx, opt)
 	if err != nil {
 		return nil, fmt.Errorf("CodeReviewAIアダプターの構築に失敗しました: %w", err)
 	}

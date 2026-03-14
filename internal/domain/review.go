@@ -9,6 +9,7 @@ type ReviewRequest struct {
 	BaseBranch    string `json:"base_branch"`    // 比較元となるブランチ名 (例: main)
 	FeatureBranch string `json:"feature_branch"` // 比較対象となるブランチ名 (例: develop)
 	Mode          string `json:"mode"`           // レビューモード (例: "detail" または "release")
+	ModelName     string `json:"model_name"`     // モデル名
 
 	// 以下は Runner が結果を保存するために必要な情報
 	GCSBucket string `json:"gcs_bucket"` // 結果を保存するGCSバケット名

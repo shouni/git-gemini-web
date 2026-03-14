@@ -71,6 +71,7 @@ func (h *Handler) HandleReviewSubmit(w http.ResponseWriter, r *http.Request) {
 		BaseBranch:    strings.TrimSpace(r.PostFormValue("base_branch")),
 		FeatureBranch: strings.TrimSpace(r.PostFormValue("feature_branch")),
 		Mode:          r.PostFormValue("review_mode"),
+		ModelName:     h.cfg.GeminiModel,
 		GCSBucket:     h.cfg.GCSBucket,
 	}
 

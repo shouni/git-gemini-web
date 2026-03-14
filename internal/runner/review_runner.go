@@ -84,7 +84,7 @@ func (r *ReviewRunner) Run(
 
 	// 5. AIによるレビュー生成
 	outcome.StepName = "Gemini API呼び出し"
-	markdown, err := r.executeAIReview(ctx, req.Mode, codeDiff)
+	markdown, err := r.executeAIReview(ctx, req.Mode, codeDiff, req.ModelName)
 	outcome.ReviewMarkdown = markdown
 	outcome.Error = err
 
@@ -112,7 +112,7 @@ func (r *ReviewRunner) prepareRepository(ctx context.Context, git core.GitServic
 }
 
 // executeAIReview は、指定されたdiffとモードでプロンプトを生成し、AIによるコードレビューを実行します。
-func (r *ReviewRunner) executeAIReview(ctx context.Context, mode string, codeDiff string) (string, error) {
+func (r *ReviewRunner) executeAIReview(ctx context.Context, mode, codeDiff, model string) (string, error) {
 	slog.InfoContext(ctx, "AIプロンプトを生成・API呼び出し中", "mode", mode)
 
 	data := core.TemplateData{
@@ -123,7 +123,7 @@ func (r *ReviewRunner) executeAIReview(ctx context.Context, mode string, codeDif
 		return "", fmt.Errorf("プロンプト生成に失敗: %w", err)
 	}
 
-	content, err := r.codeReviewAI.ReviewCodeDiff(ctx, prompt)
+	content, err := r.codeReviewAI.ReviewCodeDiff(ctx, model, prompt)
 	if err != nil {
 		return "", fmt.Errorf("Gemini API呼び出しに失敗: %w", err)
 	}
