@@ -7,13 +7,13 @@ import (
 	"net/http"
 	"strings"
 
-	"git-gemini-web/internal/app"
-	"git-gemini-web/internal/config"
-	"git-gemini-web/internal/domain"
-
 	"github.com/google/uuid"
 	"github.com/shouni/gcp-kit/tasks"
 	"github.com/shouni/go-utils/urlpath"
+
+	"git-gemini-web/internal/app"
+	"git-gemini-web/internal/config"
+	"git-gemini-web/internal/domain"
 )
 
 // ReviewFormPageData はフォームテンプレートに渡すデータ構造です。

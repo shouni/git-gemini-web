@@ -29,10 +29,10 @@ func BuildContainer(ctx context.Context, cfg *config.Config) (container *app.Con
 		}
 	}()
 
-	// 1. HttpClient (全アダプターの基盤)
+	// 1. HttpClient
 	httpClient := httpkit.New(config.DefaultHTTPTimeout)
 
-	// 2. I/O Infrastructure (GCS)
+	// 2. I/O Infrastructure
 	rio, err := buildRemoteIO(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize IO components: %w", err)

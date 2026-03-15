@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/shouni/gcp-kit/auth"
+	"github.com/shouni/gcp-kit/worker"
+
 	"git-gemini-web/internal/app"
 	"git-gemini-web/internal/config"
 	"git-gemini-web/internal/domain"
 	"git-gemini-web/internal/server/handlers"
-
-	"github.com/shouni/gcp-kit/auth"
-	"github.com/shouni/gcp-kit/worker"
 )
 
 const defaultSessionName = "git-gemini-session"
