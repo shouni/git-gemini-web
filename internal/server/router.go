@@ -3,12 +3,12 @@ package server
 import (
 	"net/http"
 
-	"git-gemini-web/internal/builder"
-	"git-gemini-web/internal/config"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/gorilla/csrf"
+
+	"git-gemini-web/internal/builder"
+	"git-gemini-web/internal/config"
 )
 
 // NewRouter はハンドラーをルーティングに紐付けた http.Handler を返します。

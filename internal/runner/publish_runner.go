@@ -7,11 +7,11 @@ import (
 	"log/slog"
 	"time"
 
-	"git-gemini-web/internal/config"
-	"git-gemini-web/internal/domain"
-
 	core "github.com/shouni/gemini-reviewer-core/pkg/domain"
 	"github.com/shouni/go-remote-io/pkg/remoteio"
+
+	"git-gemini-web/internal/config"
+	"git-gemini-web/internal/domain"
 )
 
 // PublishRunner は、レビュー結果の公開処理を実行する具象構造体です。
