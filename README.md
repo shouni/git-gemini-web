@@ -44,6 +44,14 @@ Webフォームを通じてレビュー依頼を受け付け、高負荷なAI解
 
 ---
 
+## 🎨 概要イメージ
+
+![Page 1](./assets/manga_page_1.png)
+![Page 2](./assets/manga_page_2.png)
+![Page 3](./assets/manga_page_3.png)
+
+---
+
 ## 🚀 使い方 (Usage) / セットアップ
 
 ### 1\. GCPコンソールでの事前準備 (OAuth) 🔐
