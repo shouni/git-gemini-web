@@ -4,7 +4,7 @@ import (
 	_ "embed"
 
 	"github.com/shouni/gemini-reviewer-core/pkg/domain"
-	"github.com/shouni/gemini-reviewer-core/pkg/prompts"
+	core "github.com/shouni/gemini-reviewer-core/pkg/prompts"
 )
 
 const (
@@ -13,9 +13,9 @@ const (
 )
 
 var (
-	//go:embed prompt_detail.md
+	//go:embed prompts/prompt_detail.md
 	detailPrompt string
-	//go:embed prompt_release.md
+	//go:embed prompts/prompt_release.md
 	releasePrompt string
 )
 
@@ -25,5 +25,5 @@ func NewPromptAdapter() (domain.PromptBuilder, error) {
 		modeDetail:  detailPrompt,
 		modeRelease: releasePrompt,
 	}
-	return prompts.NewBuilder(templates)
+	return core.NewBuilder(templates)
 }

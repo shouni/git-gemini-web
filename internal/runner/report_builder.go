@@ -16,10 +16,10 @@ import (
 // テンプレート埋め込みと初期化
 // ----------------------------------------------------------------------
 
-//go:embed skip_report.md
+//go:embed prompts/skip_report.md
 var skipReportTemplate string
 
-//go:embed error_report.md
+//go:embed prompts/error_report.md
 var errorReportTemplate string
 
 var skipTpl *template.Template
