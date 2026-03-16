@@ -184,8 +184,8 @@ github.com/shouni/go-text-format v1.2.1 h1:Ac4CPv/+Gh3OEGGGxH4umySUpBNGrJUsQhyvO
 github.com/shouni/go-text-format v1.2.1/go.mod h1:cGtR3kNsS4slgG1Yhsc6mzqvTp78Yq816fCQXAmZ5RI=
 github.com/shouni/go-utils v1.0.20 h1:gdjQfqJdY+uJI02FPNSE7B9GTIihGQ4DMjN36+0pd9M=
 github.com/shouni/go-utils v1.0.20/go.mod h1:IGMDiCaF1QlkT/roB0YTrNCUTcfcMhtnOUjG0e3AR8w=
-github.com/shouni/netarmor v1.0.1 h1:amRJcY59yn6Llgv4TJOu9YxzFkdUkddghyc7kGp0LQc=
-github.com/shouni/netarmor v1.0.1/go.mod h1:SOrb359QPM599FUJQ2GsRcUFOvJTaQ+L98Wo9Vr7xMk=
+github.com/shouni/netarmor v1.0.2 h1:R8UyVxqEF4oTWrfDQnag+CD8utQsr+XgVE/ZX+tTg3Q=
+github.com/shouni/netarmor v1.0.2/go.mod h1:SOrb359QPM599FUJQ2GsRcUFOvJTaQ+L98Wo9Vr7xMk=
 github.com/sirupsen/logrus v1.7.0/go.mod h1:yWOB1SBYBC5VeMP7gHvWumXLIWorT60ONWic61uBYv0=
 github.com/skeema/knownhosts v1.3.1 h1:X2osQ+RAjK76shCbvhHHHVl3ZlgDm8apHEHFqRjnBY8=
 github.com/skeema/knownhosts v1.3.1/go.mod h1:r7KTdC8l4uxWRyK2TpQZ/1o5HaSzh06ePQNxPwTcfiY=
