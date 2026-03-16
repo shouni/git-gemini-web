@@ -4,7 +4,7 @@ import (
 	_ "embed"
 
 	"github.com/shouni/gemini-reviewer-core/pkg/domain"
-	core "github.com/shouni/gemini-reviewer-core/pkg/prompts"
+	coreprompts "github.com/shouni/gemini-reviewer-core/pkg/prompts"
 )
 
 const (
@@ -25,5 +25,5 @@ func NewPromptAdapter() (domain.PromptBuilder, error) {
 		modeDetail:  detailPrompt,
 		modeRelease: releasePrompt,
 	}
-	return core.NewBuilder(templates)
+	return coreprompts.NewBuilder(templates)
 }
