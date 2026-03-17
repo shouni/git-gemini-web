@@ -23,6 +23,11 @@ type GitAdapterFactory interface {
 	Create(localPath string, baseBranch string) core.GitService
 }
 
+// TemplateData はレビュープロンプトのテンプレートに渡すデータ構造です。
+type TemplateData struct {
+	DiffContent string
+}
+
 // ReviewRunner は domain.ReviewRunner インターフェースの実装です。
 type ReviewRunner struct {
 	gitFactory    GitAdapterFactory
@@ -114,8 +119,7 @@ func (r *ReviewRunner) prepareRepository(ctx context.Context, git core.GitServic
 // executeAIReview は、指定されたdiffとモードでプロンプトを生成し、AIによるコードレビューを実行します。
 func (r *ReviewRunner) executeAIReview(ctx context.Context, mode, codeDiff, model string) (string, error) {
 	slog.InfoContext(ctx, "AIプロンプトを生成・API呼び出し中", "mode", mode)
-
-	data := core.TemplateData{
+	data := TemplateData{
 		DiffContent: codeDiff,
 	}
 	prompt, err := r.promptBuilder.Build(mode, data)

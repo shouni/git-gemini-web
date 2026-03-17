@@ -1,13 +1,14 @@
 package runner
 
 import (
-	"bytes"
 	"context"
 	_ "embed"
 	"fmt"
 	"log/slog"
-	"text/template"
 	"time"
+
+	coredom "github.com/shouni/gemini-reviewer-core/pkg/domain"
+	coreprompts "github.com/shouni/gemini-reviewer-core/pkg/prompts"
 
 	"git-gemini-web/internal/domain"
 )
@@ -16,14 +17,19 @@ import (
 // テンプレート埋め込みと初期化
 // ----------------------------------------------------------------------
 
+const (
+	skipReport  = "skip_report"
+	errorReport = "error_report"
+)
+
 //go:embed prompts/skip_report.md
 var skipReportTemplate string
 
 //go:embed prompts/error_report.md
 var errorReportTemplate string
 
-var skipTpl *template.Template
-var errorTpl *template.Template
+// reportBuilder は、レポート生成プロンプトの構築と管理に使用される PromptBuilder のインスタンスです。
+var reportBuilder coredom.PromptBuilder
 
 // reportData は、エラーレポートやスキップレポートのテンプレートに渡すデータを集約するための内部構造体です。
 type reportData struct {
@@ -39,17 +45,13 @@ type reportData struct {
 // 同じパッケージ内のどのファイルに書いても、init() はパッケージロード時に実行されます。
 func init() {
 	var err error
-
-	// スキップレポートテンプレートのパース
-	skipTpl, err = template.New("skip_report").Parse(skipReportTemplate)
-	if err != nil {
-		panic(fmt.Sprintf("Failed to parse skip report template: %v", err))
+	templates := map[string]string{
+		skipReport:  skipReportTemplate,
+		errorReport: errorReportTemplate,
 	}
-
-	// エラーレポートテンプレートのパース
-	errorTpl, err = template.New("error_report").Parse(errorReportTemplate)
+	reportBuilder, err = coreprompts.NewBuilder(templates)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to parse error report template: %v", err))
+		panic(fmt.Sprintf("Failed to parse skip report templates: %v", err))
 	}
 }
 
@@ -89,11 +91,11 @@ func executeSkipMarkdown(req domain.ReviewRequest) (string, error) {
 		BaseBranch:    req.BaseBranch,
 		FeatureBranch: req.FeatureBranch,
 	}
-	var buf bytes.Buffer
-	if err := skipTpl.Execute(&buf, data); err != nil {
+	prompt, err := reportBuilder.Build(skipReport, data)
+	if err != nil {
 		return "", fmt.Errorf("スキップテンプレートの実行に失敗: %w", err)
 	}
-	return buf.String(), nil
+	return prompt, nil
 }
 
 // executeErrorMarkdown は埋め込まれたテンプレートからエラーレポートを生成します。
@@ -106,9 +108,9 @@ func executeErrorMarkdown(err error, req domain.ReviewRequest, duration time.Dur
 		BaseBranch:      req.BaseBranch,
 		FeatureBranch:   req.FeatureBranch,
 	}
-	var buf bytes.Buffer
-	if err := errorTpl.Execute(&buf, data); err != nil {
+	prompt, err := reportBuilder.Build(errorReport, data)
+	if err != nil {
 		return "", fmt.Errorf("エラーテンプレートの実行に失敗: %w", err)
 	}
-	return buf.String(), nil
+	return prompt, nil
 }
