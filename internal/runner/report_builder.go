@@ -2,7 +2,6 @@ package runner
 
 import (
 	"context"
-	_ "embed"
 	"fmt"
 	"log/slog"
 	"time"
@@ -10,6 +9,7 @@ import (
 	coredom "github.com/shouni/gemini-reviewer-core/pkg/domain"
 	coreprompts "github.com/shouni/gemini-reviewer-core/pkg/prompts"
 
+	"git-gemini-web/assets"
 	"git-gemini-web/internal/domain"
 )
 
@@ -21,12 +21,6 @@ const (
 	skipReport  = "skip_report"
 	errorReport = "error_report"
 )
-
-//go:embed prompts/skip_report.md
-var skipReportTemplate string
-
-//go:embed prompts/error_report.md
-var errorReportTemplate string
 
 // reportBuilder は、レポート生成プロンプトの構築と管理に使用される PromptBuilder のインスタンスです。
 var reportBuilder coredom.PromptBuilder
@@ -46,8 +40,8 @@ type reportData struct {
 func init() {
 	var err error
 	templates := map[string]string{
-		skipReport:  skipReportTemplate,
-		errorReport: errorReportTemplate,
+		skipReport:  assets.SkipReportTemplate,
+		errorReport: assets.ErrorReportTemplate,
 	}
 	reportBuilder, err = coreprompts.NewBuilder(templates)
 	if err != nil {
