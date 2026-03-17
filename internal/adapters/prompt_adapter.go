@@ -1,10 +1,10 @@
 package adapters
 
 import (
-	_ "embed"
-
 	"github.com/shouni/gemini-reviewer-core/pkg/domain"
 	coreprompts "github.com/shouni/gemini-reviewer-core/pkg/prompts"
+
+	"git-gemini-web/assets"
 )
 
 const (
@@ -12,18 +12,11 @@ const (
 	modeRelease = "release"
 )
 
-var (
-	//go:embed prompts/prompt_detail.md
-	detailPrompt string
-	//go:embed prompts/prompt_release.md
-	releasePrompt string
-)
-
 // NewPromptAdapter は domain.PromptBuilder のインスタンスを構築します。
 func NewPromptAdapter() (domain.PromptBuilder, error) {
 	templates := map[string]string{
-		modeDetail:  detailPrompt,
-		modeRelease: releasePrompt,
+		modeDetail:  assets.DetailPrompt,
+		modeRelease: assets.ReleasePrompt,
 	}
 	return coreprompts.NewBuilder(templates)
 }
