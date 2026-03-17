@@ -51,7 +51,7 @@ func init() {
 	}
 	reportBuilder, err = coreprompts.NewBuilder(templates)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to parse skip report templates: %v", err))
+		panic(fmt.Sprintf("Failed to parse report templates: %v", err))
 	}
 }
 
