@@ -1,6 +1,8 @@
 package assets
 
-import _ "embed"
+import (
+	"embed"
+)
 
 var (
 	// DetailPrompt は詳細レビュー用のプロンプトテンプレートです。
@@ -18,4 +20,8 @@ var (
 	// ErrorReportTemplate はエラー発生時のレポートテンプレートです。
 	//go:embed prompts/error_report.md
 	ErrorReportTemplate string
+
+	// Templates は、HTMLテンプレートです。
+	//go:embed templates/*.html
+	Templates embed.FS
 )
