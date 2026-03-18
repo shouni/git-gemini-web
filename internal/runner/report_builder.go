@@ -6,8 +6,7 @@ import (
 	"log/slog"
 	"time"
 
-	coredom "github.com/shouni/gemini-reviewer-core/pkg/domain"
-	coreprompts "github.com/shouni/gemini-reviewer-core/pkg/prompts"
+	"github.com/shouni/go-prompt-kit/prompts"
 
 	"git-gemini-web/assets"
 	"git-gemini-web/internal/domain"
@@ -18,12 +17,12 @@ import (
 // ----------------------------------------------------------------------
 
 const (
-	skipReport  = "skip_report"
-	errorReport = "error_report"
+	skipReport  = "skip"
+	errorReport = "error"
 )
 
-// reportBuilder は、レポート生成プロンプトの構築と管理に使用される PromptBuilder のインスタンスです。
-var reportBuilder coredom.PromptBuilder
+// reportBuilder は、レポート生成プロンプトの構築と管理に使用される Builder のインスタンスです。
+var reportBuilder domain.PromptBuilder
 
 // reportData は、エラーレポートやスキップレポートのテンプレートに渡すデータを集約するための内部構造体です。
 type reportData struct {
@@ -38,12 +37,11 @@ type reportData struct {
 // init 関数でテンプレートを一度だけパースし、エラーを捕捉します。
 // 同じパッケージ内のどのファイルに書いても、init() はパッケージロード時に実行されます。
 func init() {
-	var err error
-	templates := map[string]string{
-		skipReport:  assets.SkipReportTemplate,
-		errorReport: assets.ErrorReportTemplate,
+	templates, err := assets.LoadReports()
+	if err != nil {
+		panic(fmt.Sprintf("Failed to load report templates: %v", err))
 	}
-	reportBuilder, err = coreprompts.NewBuilder(templates)
+	reportBuilder, err = prompts.NewBuilder(templates)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to parse report templates: %v", err))
 	}

@@ -32,14 +32,14 @@ type TemplateData struct {
 type ReviewRunner struct {
 	gitFactory    GitAdapterFactory
 	codeReviewAI  core.CodeReviewAI
-	promptBuilder core.PromptBuilder
+	promptBuilder domain.PromptBuilder
 }
 
 // NewReviewRunner は ReviewRunner の新しいインスタンスを作成します。
 func NewReviewRunner(
 	gitFactory GitAdapterFactory,
 	codeReviewAI core.CodeReviewAI,
-	pb core.PromptBuilder,
+	pb domain.PromptBuilder,
 ) *ReviewRunner {
 	return &ReviewRunner{
 		gitFactory:    gitFactory,
