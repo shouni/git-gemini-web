@@ -11,6 +11,7 @@ import (
 	"github.com/shouni/gcp-kit/tasks"
 	"github.com/shouni/go-utils/urlpath"
 
+	"git-gemini-web/assets"
 	"git-gemini-web/internal/app"
 	"git-gemini-web/internal/config"
 	"git-gemini-web/internal/domain"
@@ -38,7 +39,7 @@ func NewHandler(
 	taskEnqueuer *tasks.Enqueuer[domain.ReviewRequest],
 	remoteIO *app.RemoteIO,
 ) (*Handler, error) {
-	tmpl, err := template.ParseFiles(cfg.TemplatePath)
+	tmpl, err := template.ParseFS(assets.Templates, "templates/review_form.html")
 	if err != nil {
 		return nil, fmt.Errorf("テンプレートパース失敗: %w", err)
 	}

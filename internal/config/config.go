@@ -1,7 +1,6 @@
 package config
 
 import (
-	"os"
 	"time"
 )
 
@@ -25,7 +24,6 @@ type Config struct {
 	GeminiModel         string
 	SSHKeyPath          string
 	SkipHostKeyCheck    bool
-	TemplatePath        string
 
 	// OAuth & Session Settings
 	GoogleClientID     string
@@ -45,10 +43,6 @@ func LoadConfig() *Config {
 	serviceURL := getEnv("SERVICE_URL", "http://localhost:8080")
 	allowedEmails := getEnv("ALLOWED_EMAILS", "")
 	allowedDomains := getEnv("ALLOWED_DOMAINS", "")
-	templatePath := "templates/review_form.html"
-	if os.Getenv("KO_DATA_PATH") != "" || os.Getenv("K_SERVICE") != "" {
-		templatePath = "/app/templates/review_form.html"
-	}
 
 	return &Config{
 		ServiceURL:          serviceURL,
@@ -64,7 +58,6 @@ func LoadConfig() *Config {
 		GeminiModel:         getEnv("GEMINI_MODEL", "gemini-2.5-flash"),
 		SSHKeyPath:          getEnv("SSH_KEY_PATH", "~/.ssh/id_rsa"),
 		SkipHostKeyCheck:    getEnvAsBool("SKIP_HOST_KEY_CHECK", false),
-		TemplatePath:        templatePath,
 
 		// OAuth & Session
 		GoogleClientID:     getEnv("GOOGLE_CLIENT_ID", ""),
