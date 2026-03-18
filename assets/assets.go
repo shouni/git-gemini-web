@@ -2,7 +2,6 @@ package assets
 
 import (
 	"embed"
-	_ "embed"
 )
 
 var (
