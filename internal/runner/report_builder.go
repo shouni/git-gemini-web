@@ -39,7 +39,7 @@ type reportData struct {
 func init() {
 	templates, err := assets.LoadReports()
 	if err != nil {
-		panic(fmt.Sprintf("Failed to parse report templates: %v", err))
+		panic(fmt.Sprintf("Failed to load report templates: %v", err))
 	}
 	reportBuilder, err = prompts.NewBuilder(templates)
 	if err != nil {
