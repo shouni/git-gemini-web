@@ -1,8 +1,7 @@
 package adapters
 
 import (
-	"github.com/shouni/gemini-reviewer-core/pkg/domain"
-	coreprompts "github.com/shouni/gemini-reviewer-core/pkg/prompts"
+	"github.com/shouni/gemini-reviewer-core/pkg/prompts"
 
 	"git-gemini-web/assets"
 )
@@ -13,10 +12,10 @@ const (
 )
 
 // NewPromptAdapter は domain.PromptBuilder のインスタンスを構築します。
-func NewPromptAdapter() (domain.PromptBuilder, error) {
+func NewPromptAdapter() (*prompts.Builder, error) {
 	templates := map[string]string{
 		modeDetail:  assets.DetailPrompt,
 		modeRelease: assets.ReleasePrompt,
 	}
-	return coreprompts.NewBuilder(templates)
+	return prompts.NewBuilder(templates)
 }
