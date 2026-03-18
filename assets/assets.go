@@ -13,13 +13,13 @@ const (
 )
 
 var (
-	// PromptFiles はプロントテンプレートです。
+	// promptFiles はプロンプトテンプレートです。
 	//go:embed prompts/prompt_*.md
-	PromptFiles embed.FS
+	promptFiles embed.FS
 
-	// ReportFiles はレポートテンプレートです。
+	// reportFiles はレポートテンプレートです。
 	//go:embed prompts/report_*.md
-	ReportFiles embed.FS
+	reportFiles embed.FS
 
 	// Templates は、HTMLテンプレートです。
 	//go:embed templates/*.html
@@ -28,10 +28,10 @@ var (
 
 // LoadPrompts は埋め込まれたプロンプトファイルを読み込みます。
 func LoadPrompts() (map[string]string, error) {
-	return resource.Load(PromptFiles, promptDir, promptPrefix)
+	return resource.Load(promptFiles, promptDir, promptPrefix)
 }
 
 // LoadReports は埋め込まれたレポートファイルを読み込みます。
 func LoadReports() (map[string]string, error) {
-	return resource.Load(ReportFiles, promptDir, reportPrefix)
+	return resource.Load(reportFiles, promptDir, reportPrefix)
 }
