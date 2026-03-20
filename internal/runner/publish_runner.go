@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/shouni/gemini-reviewer-core/pkg/ports"
-	"github.com/shouni/go-remote-io/pkg/remoteio"
+	"github.com/shouni/gemini-reviewer-core/ports"
+	"github.com/shouni/go-remote-io/remoteio"
 
 	"git-gemini-web/internal/config"
 	"git-gemini-web/internal/domain"

@@ -7,8 +7,8 @@ import (
 	"net/url"
 
 	"github.com/shouni/gcp-kit/tasks"
-	"github.com/shouni/go-http-kit/pkg/httpkit"
-	"github.com/shouni/go-remote-io/pkg/gcsfactory"
+	"github.com/shouni/go-http-kit/httpkit"
+	"github.com/shouni/go-remote-io/remoteio/gcs"
 
 	"git-gemini-web/internal/adapters"
 	"git-gemini-web/internal/app"
@@ -72,7 +72,7 @@ func BuildContainer(ctx context.Context, cfg *config.Config) (container *app.Con
 
 // buildRemoteIO は、GCS ベースの I/O コンポーネントを初期化します。
 func buildRemoteIO(ctx context.Context) (*app.RemoteIO, error) {
-	factory, err := gcsfactory.New(ctx)
+	factory, err := gcs.New(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create GCS factory: %w", err)
 	}

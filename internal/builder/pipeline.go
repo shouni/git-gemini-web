@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	coreadapters "github.com/shouni/gemini-reviewer-core/pkg/adapters"
-	"github.com/shouni/gemini-reviewer-core/pkg/ports"
-	"github.com/shouni/gemini-reviewer-core/pkg/publisher"
+	coreadapters "github.com/shouni/gemini-reviewer-core/adapters"
+	"github.com/shouni/gemini-reviewer-core/ports"
+	"github.com/shouni/gemini-reviewer-core/publisher"
 
 	"git-gemini-web/internal/adapters"
 	"git-gemini-web/internal/app"

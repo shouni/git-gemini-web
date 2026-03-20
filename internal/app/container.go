@@ -4,8 +4,8 @@ import (
 	"log/slog"
 
 	"github.com/shouni/gcp-kit/tasks"
-	"github.com/shouni/go-http-kit/pkg/httpkit"
-	"github.com/shouni/go-remote-io/pkg/remoteio"
+	"github.com/shouni/go-http-kit/httpkit"
+	"github.com/shouni/go-remote-io/remoteio"
 
 	"git-gemini-web/internal/config"
 	"git-gemini-web/internal/domain"
@@ -21,7 +21,7 @@ type Container struct {
 	// Business Logic
 	Pipeline domain.Pipeline
 	// External Adapters
-	HTTPClient    httpkit.RequestExecutor
+	HTTPClient    httpkit.Requester
 	SlackNotifier domain.Notifier
 }
 
