@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	coreadapters "github.com/shouni/gemini-reviewer-core/pkg/adapters"
-	core "github.com/shouni/gemini-reviewer-core/pkg/domain"
+	"github.com/shouni/gemini-reviewer-core/pkg/ports"
 	"github.com/shouni/gemini-reviewer-core/pkg/publisher"
 
 	"git-gemini-web/internal/adapters"
@@ -23,7 +23,7 @@ type GitAdapterFactoryImpl struct {
 }
 
 // Create は runner.GitAdapterFactory インターフェースを満たします。
-func (f *GitAdapterFactoryImpl) Create(localPath string, baseBranch string) core.GitService {
+func (f *GitAdapterFactoryImpl) Create(localPath string, baseBranch string) ports.GitService {
 	skipHostKeyCheckOption := coreadapters.WithInsecureSkipHostKeyCheck(f.skipHostKeyCheck)
 	baseBranchOption := coreadapters.WithBaseBranch(baseBranch)
 
@@ -93,11 +93,11 @@ func buildPublishRunner(
 		return nil, fmt.Errorf("RemoteIO が設定されていません")
 	}
 
-	htmlRunner, err := publisher.NewMarkdownToHtmlRunner(ctx)
+	htmlRunner, err := publisher.NewMarkdownConverterAdapter()
 	if err != nil {
 		return nil, fmt.Errorf("MarkdownToHtmlRunnerの初期化に失敗しました: %w", err)
 	}
-	publisherService, err := publisher.NewPublisher(ctx, rio.Writer, htmlRunner)
+	publisherService, err := publisher.NewPublisher(rio.Writer, htmlRunner)
 	if err != nil {
 		return nil, fmt.Errorf("Publisherの初期化に失敗しました: %w", err)
 	}

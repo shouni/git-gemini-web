@@ -7,10 +7,10 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/csrf v1.7.3
 	github.com/shouni/gcp-kit v1.0.4
-	github.com/shouni/gemini-reviewer-core v1.4.0
+	github.com/shouni/gemini-reviewer-core v1.5.1
 	github.com/shouni/go-http-kit v1.3.3
 	github.com/shouni/go-notifier v1.1.9
-	github.com/shouni/go-prompt-kit v1.0.0
+	github.com/shouni/go-prompt-kit v1.0.1
 	github.com/shouni/go-remote-io v1.2.2
 	github.com/shouni/go-utils v1.0.20
 	github.com/shouni/netarmor v1.0.2
@@ -74,12 +74,11 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
 	github.com/shouni/go-gemini-client v1.1.4 // indirect
-	github.com/shouni/go-text-format v1.2.1 // indirect
 	github.com/skeema/knownhosts v1.3.1 // indirect
 	github.com/slack-go/slack v0.19.0 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.6.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
-	github.com/yuin/goldmark v1.7.16 // indirect
+	github.com/yuin/goldmark v1.7.17 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/detectors/gcp v1.39.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.63.0 // indirect
