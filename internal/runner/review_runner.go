@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"time"
 
-	core "github.com/shouni/gemini-reviewer-core/pkg/domain"
+	"github.com/shouni/gemini-reviewer-core/pkg/ports"
 	"github.com/shouni/go-utils/urlpath"
 
 	"git-gemini-web/internal/domain"
@@ -20,7 +20,7 @@ const (
 
 // GitAdapterFactory は、リクエスト固有の情報に基づいて GitAdapter を生成する契約を定義します。
 type GitAdapterFactory interface {
-	Create(localPath string, baseBranch string) core.GitService
+	Create(localPath string, baseBranch string) ports.GitService
 }
 
 // TemplateData はレビュープロンプトのテンプレートに渡すデータ構造です。
@@ -31,14 +31,14 @@ type TemplateData struct {
 // ReviewRunner は domain.ReviewRunner インターフェースの実装です。
 type ReviewRunner struct {
 	gitFactory    GitAdapterFactory
-	codeReviewAI  core.CodeReviewAI
+	codeReviewAI  ports.CodeReviewAI
 	promptBuilder domain.PromptBuilder
 }
 
 // NewReviewRunner は ReviewRunner の新しいインスタンスを作成します。
 func NewReviewRunner(
 	gitFactory GitAdapterFactory,
-	codeReviewAI core.CodeReviewAI,
+	codeReviewAI ports.CodeReviewAI,
 	pb domain.PromptBuilder,
 ) *ReviewRunner {
 	return &ReviewRunner{
@@ -99,7 +99,7 @@ func (r *ReviewRunner) Run(
 // --- 内部補助メソッド ---
 
 // prepareRepository は、リポジトリを複製し、機能ブランチが存在するかどうかを確認します。
-func (r *ReviewRunner) prepareRepository(ctx context.Context, git core.GitService, repoURL, branch string) error {
+func (r *ReviewRunner) prepareRepository(ctx context.Context, git ports.GitService, repoURL, branch string) error {
 	slog.InfoContext(ctx, "1. リポジトリをクローン/更新中", "repo_url", repoURL)
 	if err := git.CloneOrUpdate(ctx, repoURL); err != nil {
 		return fmt.Errorf("リポジトリの準備に失敗: %w", err)
@@ -140,7 +140,7 @@ func (r *ReviewRunner) executeAIReview(ctx context.Context, mode, codeDiff, mode
 }
 
 // cleanupGit は、Git リソースのクリーンアップを処理し、クリーンアップ操作が失敗した場合は警告をログに記録します。
-func (r *ReviewRunner) cleanupGit(ctx context.Context, git core.GitService) {
+func (r *ReviewRunner) cleanupGit(ctx context.Context, git ports.GitService) {
 	if err := git.Cleanup(ctx); err != nil {
 		slog.WarnContext(ctx, "Gitリソースのクリーンアップに失敗しました", "error", err)
 	}
