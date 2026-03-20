@@ -146,6 +146,7 @@ git-gemini-web/
 
 ## 📜 ライセンス (License)
 
-このプロジェクトは [MIT License](https://opensource.org/licenses/MIT) の下で公開されています。
+* デフォルトキャラクター: VOICEVOX:ずんだもん、VOICEVOX:四国めたん
+* このプロジェクトは [MIT License](https://opensource.org/licenses/MIT) の下で公開されています。
 
 ---
