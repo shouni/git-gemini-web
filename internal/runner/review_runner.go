@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/shouni/gemini-reviewer-core/pkg/ports"
+	"github.com/shouni/gemini-reviewer-core/ports"
 	"github.com/shouni/go-utils/urlpath"
 
 	"git-gemini-web/internal/domain"
@@ -106,7 +106,7 @@ func (r *ReviewRunner) prepareRepository(ctx context.Context, git ports.GitServi
 	}
 
 	slog.InfoContext(ctx, "2. フィーチャーブランチの存在を確認中", "branch", branch)
-	exists, err := git.CheckRemoteBranchExists(ctx, branch)
+	exists, err := git.CheckRefExists(ctx, branch)
 	if err != nil {
 		return fmt.Errorf("ブランチ存在確認に失敗: %w", err)
 	}
