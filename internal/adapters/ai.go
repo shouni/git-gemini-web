@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	coreAdapters "github.com/shouni/gemini-reviewer-core/adapters"
+	"github.com/shouni/gemini-reviewer-core/ai"
 	"github.com/shouni/gemini-reviewer-core/ports"
 
 	"git-gemini-web/internal/config"
@@ -12,10 +12,10 @@ import (
 
 // NewCodeReviewAI は domain.CodeReviewAI のインスタンスを構築します。
 func NewCodeReviewAI(ctx context.Context, cfg *config.Config) (ports.CodeReviewAI, error) {
-	opt := coreAdapters.GeminiOptions{
+	opt := ai.GeminiOptions{
 		ProjectID: cfg.ProjectID,
 	}
-	codeReviewAI, err := coreAdapters.NewGeminiAdapter(ctx, opt)
+	codeReviewAI, err := ai.NewGeminiAdapter(ctx, opt)
 	if err != nil {
 		return nil, fmt.Errorf("CodeReviewAIアダプターの構築に失敗しました: %w", err)
 	}

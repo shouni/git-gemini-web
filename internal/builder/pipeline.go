@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	coreadapters "github.com/shouni/gemini-reviewer-core/adapters"
+	"github.com/shouni/gemini-reviewer-core/git"
 	"github.com/shouni/gemini-reviewer-core/ports"
 	"github.com/shouni/gemini-reviewer-core/publisher"
 
@@ -24,10 +24,10 @@ type GitAdapterFactoryImpl struct {
 
 // Create は runner.GitAdapterFactory インターフェースを満たします。
 func (f *GitAdapterFactoryImpl) Create(localPath string, baseBranch string) ports.GitService {
-	skipHostKeyCheckOption := coreadapters.WithInsecureSkipHostKeyCheck(f.skipHostKeyCheck)
-	baseBranchOption := coreadapters.WithBaseBranch(baseBranch)
+	skipHostKeyCheckOption := git.WithInsecureSkipHostKeyCheck(f.skipHostKeyCheck)
+	baseBranchOption := git.WithBaseBranch(baseBranch)
 
-	return coreadapters.NewGitAdapter(
+	return git.NewGitAdapter(
 		localPath,
 		f.sshKeyPath,
 		skipHostKeyCheckOption,
