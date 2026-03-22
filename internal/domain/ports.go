@@ -2,6 +2,8 @@ package domain
 
 import (
 	"context"
+
+	"github.com/shouni/gemini-reviewer-core/ports"
 )
 
 // Pipeline は、レビュー要求を処理するために実行される一連のプロセスを表します。
@@ -30,4 +32,10 @@ type PromptBuilder interface {
 type Notifier interface {
 	// Notify は、パブリック URL やストレージ URL などのメタデータを含む通知をターゲットに送信します。
 	Notify(ctx context.Context, publicURL, storageURI string, req ReviewRequest) error
+}
+
+// GitFactory は、リクエスト固有の情報に基づいて GitAdapter を生成する契約を定義します。
+type GitFactory interface {
+	Create(localPath string, baseBranch string) ports.GitService
+	CloneAndDiff(ctx context.Context, gitService ports.GitService, repoURL, base, feat string) (string, string, error)
 }
