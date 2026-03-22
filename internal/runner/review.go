@@ -46,7 +46,7 @@ func (r *ReviewRunner) Run(ctx context.Context, req domain.ReviewRequest) domain
 		StartTime: time.Now(),
 	}
 
-	// 1. Git リソースの生成, 差分の取得
+	// 1. Git リソースの生成
 	gitService := r.gitFactory.Create(req.RepoURL, req.BaseBranch)
 	defer r.cleanupGit(ctx, gitService)
 
