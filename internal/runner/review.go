@@ -48,14 +48,24 @@ func (r *ReviewRunner) Run(ctx context.Context, req domain.ReviewRequest) domain
 
 	// 1. Git リソースの生成, 差分の取得
 	gitService := r.gitFactory.Create(req.RepoURL, req.BaseBranch)
-	codeDiff, gitStep, err := r.gitFactory.CloneAndDiff(ctx, gitService, req.RepoURL, req.BaseBranch, req.FeatureBranch)
-	if err != nil {
-		outcome.StepName = gitStep
+	defer r.cleanupGit(ctx, gitService)
+
+	// 2. リポジトリの準備
+	outcome.StepName = "リポジトリの準備"
+	if err := r.prepareRepository(ctx, gitService, req.RepoURL, req.FeatureBranch); err != nil {
 		outcome.Error = err
 		return outcome
 	}
 
-	// 2. 差分がない場合のスキップ処理
+	// 3. 差分の取得
+	outcome.StepName = "コード差分取得"
+	codeDiff, err := gitService.GetCodeDiff(ctx, req.BaseBranch, req.FeatureBranch)
+	if err != nil {
+		outcome.Error = err
+		return outcome
+	}
+
+	// 4. 差分がない場合のスキップ処理
 	if len(codeDiff) == 0 {
 		outcome.StepName = "差分チェック"
 		outcome.IsSkipped = true
@@ -65,7 +75,7 @@ func (r *ReviewRunner) Run(ctx context.Context, req domain.ReviewRequest) domain
 		return outcome
 	}
 
-	// 3. AIによるレビュー生成
+	// 5. AIによるレビュー生成
 	outcome.StepName = "Gemini API呼び出し"
 	markdown, err := r.executeAIReview(ctx, req.Mode, codeDiff, req.ModelName)
 	outcome.ReviewMarkdown = markdown
@@ -75,6 +85,24 @@ func (r *ReviewRunner) Run(ctx context.Context, req domain.ReviewRequest) domain
 }
 
 // --- 内部補助メソッド ---
+
+// prepareRepository は、リポジトリを複製し、機能ブランチが存在するかどうかを確認します。
+func (r *ReviewRunner) prepareRepository(ctx context.Context, git ports.GitService, repoURL, branch string) error {
+	slog.InfoContext(ctx, "1. リポジトリをクローン/更新中", "repo_url", repoURL)
+	if err := git.CloneOrUpdate(ctx, repoURL); err != nil {
+		return fmt.Errorf("リポジトリの準備に失敗: %w", err)
+	}
+
+	slog.InfoContext(ctx, "2. フィーチャーブランチの存在を確認中", "branch", branch)
+	exists, err := git.CheckRefExists(ctx, branch)
+	if err != nil {
+		return fmt.Errorf("ブランチ存在確認に失敗: %w", err)
+	}
+	if !exists {
+		return fmt.Errorf("指定されたフィーチャーブランチ '%s' がリモートに存在しません。", branch)
+	}
+	return nil
+}
 
 // executeAIReview は、指定されたdiffとモードでプロンプトを生成し、AIによるコードレビューを実行します。
 func (r *ReviewRunner) executeAIReview(ctx context.Context, mode, codeDiff, model string) (string, error) {
@@ -97,4 +125,11 @@ func (r *ReviewRunner) executeAIReview(ctx context.Context, mode, codeDiff, mode
 		return emptyAPIResponseMessage, nil
 	}
 	return content, nil
+}
+
+// cleanupGit は、Git リソースのクリーンアップを処理し、クリーンアップ操作が失敗した場合は警告をログに記録します。
+func (r *ReviewRunner) cleanupGit(ctx context.Context, git ports.GitService) {
+	if err := git.Cleanup(ctx); err != nil {
+		slog.WarnContext(ctx, "Gitリソースのクリーンアップに失敗しました", "error", err)
+	}
 }

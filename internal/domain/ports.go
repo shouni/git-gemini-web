@@ -36,6 +36,5 @@ type Notifier interface {
 
 // GitFactory は、リクエスト固有の情報に基づいて GitAdapter を生成する契約を定義します。
 type GitFactory interface {
-	Create(localPath string, baseBranch string) ports.GitService
-	CloneAndDiff(ctx context.Context, gitService ports.GitService, repoURL, base, feat string) (string, string, error)
+	Create(repoURL string, baseBranch string) ports.GitService
 }
