@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/shouni/gemini-reviewer-core/git"
-	"github.com/shouni/gemini-reviewer-core/ports"
 	"github.com/shouni/gemini-reviewer-core/publisher"
 
 	"git-gemini-web/internal/adapters"
@@ -15,25 +13,6 @@ import (
 	"git-gemini-web/internal/pipeline"
 	"git-gemini-web/internal/runner"
 )
-
-// GitAdapterFactoryImpl は、runner.GitAdapterFactory インターフェースを満たす具象型です。
-type GitAdapterFactoryImpl struct {
-	sshKeyPath       string
-	skipHostKeyCheck bool
-}
-
-// Create は runner.GitAdapterFactory インターフェースを満たします。
-func (f *GitAdapterFactoryImpl) Create(localPath string, baseBranch string) ports.GitService {
-	skipHostKeyCheckOption := git.WithInsecureSkipHostKeyCheck(f.skipHostKeyCheck)
-	baseBranchOption := git.WithBaseBranch(baseBranch)
-
-	return git.NewGitAdapter(
-		localPath,
-		f.sshKeyPath,
-		skipHostKeyCheckOption,
-		baseBranchOption,
-	)
-}
 
 // buildPipeline は ReviewPipeline の新しいインスタンスを生成します。
 func buildPipeline(ctx context.Context, cfg *config.Config, rio *app.RemoteIO, slack domain.Notifier) (domain.Pipeline, error) {
@@ -56,10 +35,7 @@ func buildReviewRunner(
 	cfg *config.Config,
 ) (domain.ReviewRunner, error) {
 	// 1. Git Factory の構築
-	gitFactory := &GitAdapterFactoryImpl{
-		sshKeyPath:       cfg.SSHKeyPath,
-		skipHostKeyCheck: cfg.SkipHostKeyCheck,
-	}
+	gitFactory := NewGitFactory(cfg)
 
 	// 2. codeReviewAI の構築
 	codeReviewAI, err := adapters.NewCodeReviewAI(ctx, cfg)

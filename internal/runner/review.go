@@ -7,21 +7,13 @@ import (
 	"time"
 
 	"github.com/shouni/gemini-reviewer-core/ports"
-	"github.com/shouni/go-utils/urlpath"
 
 	"git-gemini-web/internal/domain"
 )
 
 const (
-	// baseRepoDirName はリポジトリを一時的にクローンするディレクトリ名です。
-	baseRepoDirName         = "reviewer-repos"
 	emptyAPIResponseMessage = "Gemini APIは応答しましたが、空の結果を返しました。"
 )
-
-// GitAdapterFactory は、リクエスト固有の情報に基づいて GitAdapter を生成する契約を定義します。
-type GitAdapterFactory interface {
-	Create(localPath string, baseBranch string) ports.GitService
-}
 
 // TemplateData はレビュープロンプトのテンプレートに渡すデータ構造です。
 type TemplateData struct {
@@ -30,14 +22,14 @@ type TemplateData struct {
 
 // ReviewRunner は domain.ReviewRunner インターフェースの実装です。
 type ReviewRunner struct {
-	gitFactory    GitAdapterFactory
+	gitFactory    domain.GitFactory
 	codeReviewAI  ports.CodeReviewAI
 	promptBuilder domain.PromptBuilder
 }
 
 // NewReviewRunner は ReviewRunner の新しいインスタンスを作成します。
 func NewReviewRunner(
-	gitFactory GitAdapterFactory,
+	gitFactory domain.GitFactory,
 	codeReviewAI ports.CodeReviewAI,
 	pb domain.PromptBuilder,
 ) *ReviewRunner {
@@ -49,17 +41,13 @@ func NewReviewRunner(
 }
 
 // Run はレビューのメインフローを実行します。
-func (r *ReviewRunner) Run(
-	ctx context.Context,
-	req domain.ReviewRequest,
-) domain.ReviewProcessOutcome {
+func (r *ReviewRunner) Run(ctx context.Context, req domain.ReviewRequest) domain.ReviewProcessOutcome {
 	outcome := domain.ReviewProcessOutcome{
 		StartTime: time.Now(),
 	}
 
 	// 1. Git リソースの生成
-	localPath := urlpath.SanitizeURLToUniquePath(req.RepoURL, baseRepoDirName)
-	gitService := r.gitFactory.Create(localPath, req.BaseBranch)
+	gitService := r.gitFactory.Create(req.RepoURL, req.BaseBranch)
 	defer r.cleanupGit(ctx, gitService)
 
 	// 2. リポジトリの準備
