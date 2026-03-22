@@ -1,4 +1,4 @@
-package adapters
+package builder
 
 import (
 	"github.com/shouni/gemini-reviewer-core/git"
@@ -23,7 +23,7 @@ func NewGitFactory(cfg *config.Config) *GitFactory {
 	}
 }
 
-// Create は runner.GitAdapterFactory インターフェースを満たします。
+// Create は domain.GitFactory インターフェースを満たします。
 func (g *GitFactory) Create(repoURL, baseBranch string) ports.GitService {
 	localPath := urlpath.SanitizeURLToUniquePath(repoURL, baseRepoDirName)
 	skipHostKeyCheckOption := git.WithInsecureSkipHostKeyCheck(g.skipHostKeyCheck)

@@ -34,7 +34,7 @@ type Notifier interface {
 	Notify(ctx context.Context, publicURL, storageURI string, req ReviewRequest) error
 }
 
-// GitFactory は、リクエスト固有の情報に基づいて GitAdapter を生成する契約を定義します。
+// GitFactory は、リクエスト固有の情報に基づいて GitService を生成する契約を定義します。
 type GitFactory interface {
 	Create(repoURL string, baseBranch string) ports.GitService
 }

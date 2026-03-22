@@ -35,7 +35,7 @@ func buildReviewRunner(
 	cfg *config.Config,
 ) (domain.ReviewRunner, error) {
 	// 1. Git Factory の構築
-	gitFactory := adapters.NewGitFactory(cfg)
+	gitFactory := NewGitFactory(cfg)
 
 	// 2. codeReviewAI の構築
 	codeReviewAI, err := adapters.NewCodeReviewAI(ctx, cfg)
