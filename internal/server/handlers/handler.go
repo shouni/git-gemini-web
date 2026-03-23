@@ -86,10 +86,11 @@ func (h *Handler) HandleReviewSubmit(w http.ResponseWriter, r *http.Request) {
 	// 3. 保存先パスの決定
 	now := time.Now().Format("20060102_150405")
 	repoID := urlpath.GenerateGCSKeyName(req.RepoURL)
+	safeBranchName := strings.ReplaceAll(req.FeatureBranch, "/", "-")
 	req.GCSPath = fmt.Sprintf("reviews/%s/%s_%s.html",
 		repoID,
 		now,
-		req.FeatureBranch,
+		safeBranchName,
 	)
 
 	// 4. 結果表示用の署名付きURLを事前に生成します
