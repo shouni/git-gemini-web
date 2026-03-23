@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
-	"github.com/google/uuid"
 	"github.com/shouni/gcp-kit/tasks"
 	"github.com/shouni/go-utils/urlpath"
 
@@ -83,10 +83,14 @@ func (h *Handler) HandleReviewSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 3. ID生成と保存先パスの決定
-	reviewID := uuid.New().String()
+	// 3. 保存先パスの決定
+	now := time.Now().Format("20060102_150405")
 	repoID := urlpath.GenerateGCSKeyName(req.RepoURL)
-	req.GCSPath = fmt.Sprintf("reviews/%s/%s/%s-%s.html", repoID, req.FeatureBranch, req.Mode, reviewID)
+	req.GCSPath = fmt.Sprintf("reviews/%s/%s_%s.html",
+		repoID,
+		now,
+		req.FeatureBranch,
+	)
 
 	// 4. 結果表示用の署名付きURLを事前に生成します
 	publicURL, err := h.generateSignedResultURL(ctx, req.GCSPath)

@@ -9,10 +9,10 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/gorilla/csrf"
+
 	"git-gemini-web/internal/config"
 	"git-gemini-web/internal/domain"
-
-	"github.com/gorilla/csrf"
 )
 
 var (
