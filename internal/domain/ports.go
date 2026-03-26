@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"time"
 
 	"github.com/shouni/gemini-reviewer-core/ports"
 )
@@ -22,10 +23,11 @@ type PublisherRunner interface {
 	Run(ctx context.Context, req ReviewRequest, outcome ReviewProcessOutcome) (ReviewResult, error)
 }
 
-// PromptBuilder は、AIプロンプトを構築するインターフェースです。
-type PromptBuilder interface {
-	// Build は、要求されたモードに応じて適切なテンプレートを実行します。
-	Build(mode string, data any) (string, error)
+// PromptGenerator は、AIプロンプトを生成するインターフェースです。
+type PromptGenerator interface {
+	GenerateReview(mode, diff string) (string, error)
+	GenerateErrorReport(ctx context.Context, originalErr error, req ReviewRequest, duration time.Duration, stepName string) (string, error)
+	ExecuteSkipMarkdown(req ReviewRequest) (string, error)
 }
 
 // Notifier は、生成されたコンテンツまたはエラーに関する通知を指定されたターゲットまたはチャネルに送信するためのインターフェイスです。

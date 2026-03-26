@@ -15,28 +15,23 @@ const (
 	emptyAPIResponseMessage = "Gemini APIは応答しましたが、空の結果を返しました。"
 )
 
-// TemplateData はレビュープロンプトのテンプレートに渡すデータ構造です。
-type TemplateData struct {
-	DiffContent string
-}
-
 // ReviewRunner は domain.ReviewRunner インターフェースの実装です。
 type ReviewRunner struct {
-	gitFactory    domain.GitFactory
-	codeReviewAI  ports.CodeReviewAI
-	promptBuilder domain.PromptBuilder
+	gitFactory   domain.GitFactory
+	codeReviewAI ports.CodeReviewAI
+	promptGen    domain.PromptGenerator
 }
 
 // NewReviewRunner は ReviewRunner の新しいインスタンスを作成します。
 func NewReviewRunner(
 	gitFactory domain.GitFactory,
 	codeReviewAI ports.CodeReviewAI,
-	pb domain.PromptBuilder,
+	promptGen domain.PromptGenerator,
 ) *ReviewRunner {
 	return &ReviewRunner{
-		gitFactory:    gitFactory,
-		codeReviewAI:  codeReviewAI,
-		promptBuilder: pb,
+		gitFactory:   gitFactory,
+		codeReviewAI: codeReviewAI,
+		promptGen:    promptGen,
 	}
 }
 
@@ -69,7 +64,7 @@ func (r *ReviewRunner) Run(ctx context.Context, req domain.ReviewRequest) domain
 	if len(codeDiff) == 0 {
 		outcome.StepName = "差分チェック"
 		outcome.IsSkipped = true
-		markdown, err := executeSkipMarkdown(req)
+		markdown, err := r.promptGen.ExecuteSkipMarkdown(req)
 		outcome.ReviewMarkdown = markdown
 		outcome.Error = err // 生成失敗の可能性も含める
 		return outcome
@@ -107,10 +102,8 @@ func (r *ReviewRunner) prepareRepository(ctx context.Context, git ports.GitServi
 // executeAIReview は、指定されたdiffとモードでプロンプトを生成し、AIによるコードレビューを実行します。
 func (r *ReviewRunner) executeAIReview(ctx context.Context, mode, codeDiff, model string) (string, error) {
 	slog.InfoContext(ctx, "AIプロンプトを生成・API呼び出し中", "mode", mode)
-	data := TemplateData{
-		DiffContent: codeDiff,
-	}
-	prompt, err := r.promptBuilder.Build(mode, data)
+
+	prompt, err := r.promptGen.GenerateReview(mode, codeDiff)
 	if err != nil {
 		return "", fmt.Errorf("プロンプト生成に失敗: %w", err)
 	}
