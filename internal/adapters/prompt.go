@@ -32,13 +32,15 @@ type reportData struct {
 	FeatureBranch   string
 }
 
+// promptBuilder は、フォーマット済みのプロンプトを作成するためのインターフェース
 type promptBuilder interface {
 	Build(mode string, data any) (string, error)
 }
 
+// PromptAdapter は、さまざまなモードとデータに基づいてプロンプトを生成する役割を担います。
 type PromptAdapter struct {
-	reviewBuilder promptBuilder
-	repotBuilder  promptBuilder
+	reviewModeBuilder promptBuilder
+	reportBuilder     promptBuilder
 }
 
 // NewPromptAdapter は動的に読み込んだテンプレートを使用して Builder を構築します。
@@ -47,7 +49,7 @@ func NewPromptAdapter() (*PromptAdapter, error) {
 	if err != nil {
 		return nil, err
 	}
-	reviewBuilder, err := prompts.NewBuilder(templates)
+	reviewModeBuilder, err := prompts.NewBuilder(templates)
 	if err != nil {
 		return nil, err
 	}
@@ -62,8 +64,8 @@ func NewPromptAdapter() (*PromptAdapter, error) {
 	}
 
 	return &PromptAdapter{
-		reviewBuilder: reviewBuilder,
-		repotBuilder:  repotBuilder,
+		reviewModeBuilder: reviewModeBuilder,
+		reportBuilder:     repotBuilder,
 	}, nil
 }
 
@@ -72,7 +74,7 @@ func (pa *PromptAdapter) GenerateReview(mode, codeDiff string) (string, error) {
 	data := reviewData{
 		DiffContent: codeDiff,
 	}
-	prompt, err := pa.reviewBuilder.Build(mode, data)
+	prompt, err := pa.reviewModeBuilder.Build(mode, data)
 	if err != nil {
 		return "", fmt.Errorf("レビューテンプレートの実行に失敗: %w", err)
 	}
@@ -112,7 +114,7 @@ func (pa *PromptAdapter) ExecuteSkipMarkdown(req domain.ReviewRequest) (string, 
 		BaseBranch:    req.BaseBranch,
 		FeatureBranch: req.FeatureBranch,
 	}
-	prompt, err := pa.repotBuilder.Build(skipReport, data)
+	prompt, err := pa.reportBuilder.Build(skipReport, data)
 	if err != nil {
 		return "", fmt.Errorf("スキップテンプレートの実行に失敗: %w", err)
 	}
@@ -129,7 +131,7 @@ func (pa *PromptAdapter) executeErrorMarkdown(err error, req domain.ReviewReques
 		BaseBranch:      req.BaseBranch,
 		FeatureBranch:   req.FeatureBranch,
 	}
-	prompt, err := pa.repotBuilder.Build(errorReport, data)
+	prompt, err := pa.reportBuilder.Build(errorReport, data)
 	if err != nil {
 		return "", fmt.Errorf("エラーテンプレートの実行に失敗: %w", err)
 	}
