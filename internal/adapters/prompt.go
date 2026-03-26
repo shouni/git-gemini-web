@@ -32,8 +32,13 @@ type reportData struct {
 	FeatureBranch   string
 }
 
+type promptBuilder interface {
+	Build(mode string, data any) (string, error)
+}
+
 type PromptAdapter struct {
-	promptBuilder *prompts.Builder
+	reviewBuilder promptBuilder
+	repotBuilder  promptBuilder
 }
 
 // NewPromptAdapter は動的に読み込んだテンプレートを使用して Builder を構築します。
@@ -42,13 +47,23 @@ func NewPromptAdapter() (*PromptAdapter, error) {
 	if err != nil {
 		return nil, err
 	}
-	b, err := prompts.NewBuilder(templates)
+	reviewBuilder, err := prompts.NewBuilder(templates)
+	if err != nil {
+		return nil, err
+	}
+
+	reportTemplates, err := assets.LoadReports()
+	if err != nil {
+		return nil, err
+	}
+	repotBuilder, err := prompts.NewBuilder(reportTemplates)
 	if err != nil {
 		return nil, err
 	}
 
 	return &PromptAdapter{
-		promptBuilder: b,
+		reviewBuilder: reviewBuilder,
+		repotBuilder:  repotBuilder,
 	}, nil
 }
 
@@ -57,10 +72,9 @@ func (pa *PromptAdapter) GenerateReview(mode, codeDiff string) (string, error) {
 	data := reviewData{
 		DiffContent: codeDiff,
 	}
-
-	prompt, err := pa.promptBuilder.Build(mode, data)
+	prompt, err := pa.reviewBuilder.Build(mode, data)
 	if err != nil {
-		return "", fmt.Errorf("スキップテンプレートの実行に失敗: %w", err)
+		return "", fmt.Errorf("レビューテンプレートの実行に失敗: %w", err)
 	}
 	return prompt, nil
 }
@@ -98,7 +112,7 @@ func (pa *PromptAdapter) ExecuteSkipMarkdown(req domain.ReviewRequest) (string, 
 		BaseBranch:    req.BaseBranch,
 		FeatureBranch: req.FeatureBranch,
 	}
-	prompt, err := pa.promptBuilder.Build(skipReport, data)
+	prompt, err := pa.repotBuilder.Build(skipReport, data)
 	if err != nil {
 		return "", fmt.Errorf("スキップテンプレートの実行に失敗: %w", err)
 	}
@@ -115,7 +129,7 @@ func (pa *PromptAdapter) executeErrorMarkdown(err error, req domain.ReviewReques
 		BaseBranch:      req.BaseBranch,
 		FeatureBranch:   req.FeatureBranch,
 	}
-	prompt, err := pa.promptBuilder.Build(errorReport, data)
+	prompt, err := pa.repotBuilder.Build(errorReport, data)
 	if err != nil {
 		return "", fmt.Errorf("エラーテンプレートの実行に失敗: %w", err)
 	}
