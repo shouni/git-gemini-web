@@ -39,33 +39,33 @@ type promptBuilder interface {
 
 // PromptAdapter は、さまざまなモードとデータに基づいてプロンプトを生成する役割を担います。
 type PromptAdapter struct {
-	reviewModeBuilder promptBuilder
-	reportBuilder     promptBuilder
+	reviewMode promptBuilder
+	report     promptBuilder
 }
 
 // NewPromptAdapter は動的に読み込んだテンプレートを使用して Builder を構築します。
 func NewPromptAdapter() (*PromptAdapter, error) {
-	templates, err := assets.LoadPrompts()
+	reviewTemplates, err := assets.LoadPrompts()
 	if err != nil {
 		return nil, err
 	}
-	reviewModeBuilder, err := prompts.NewBuilder(templates)
-	if err != nil {
-		return nil, err
-	}
-
 	reportTemplates, err := assets.LoadReports()
 	if err != nil {
 		return nil, err
 	}
-	repotBuilder, err := prompts.NewBuilder(reportTemplates)
+
+	reviewMode, err := prompts.NewBuilder(reviewTemplates)
+	if err != nil {
+		return nil, err
+	}
+	report, err := prompts.NewBuilder(reportTemplates)
 	if err != nil {
 		return nil, err
 	}
 
 	return &PromptAdapter{
-		reviewModeBuilder: reviewModeBuilder,
-		reportBuilder:     repotBuilder,
+		reviewMode: reviewMode,
+		report:     report,
 	}, nil
 }
 
@@ -74,7 +74,7 @@ func (pa *PromptAdapter) GenerateReview(mode, codeDiff string) (string, error) {
 	data := reviewData{
 		DiffContent: codeDiff,
 	}
-	prompt, err := pa.reviewModeBuilder.Build(mode, data)
+	prompt, err := pa.reviewMode.Build(mode, data)
 	if err != nil {
 		return "", fmt.Errorf("レビューテンプレートの実行に失敗: %w", err)
 	}
@@ -114,7 +114,7 @@ func (pa *PromptAdapter) ExecuteSkipMarkdown(req domain.ReviewRequest) (string, 
 		BaseBranch:    req.BaseBranch,
 		FeatureBranch: req.FeatureBranch,
 	}
-	prompt, err := pa.reportBuilder.Build(skipReport, data)
+	prompt, err := pa.report.Build(skipReport, data)
 	if err != nil {
 		return "", fmt.Errorf("スキップテンプレートの実行に失敗: %w", err)
 	}
@@ -131,7 +131,7 @@ func (pa *PromptAdapter) executeErrorMarkdown(err error, req domain.ReviewReques
 		BaseBranch:      req.BaseBranch,
 		FeatureBranch:   req.FeatureBranch,
 	}
-	prompt, err := pa.reportBuilder.Build(errorReport, data)
+	prompt, err := pa.report.Build(errorReport, data)
 	if err != nil {
 		return "", fmt.Errorf("エラーテンプレートの実行に失敗: %w", err)
 	}
