@@ -56,8 +56,8 @@ func (p *PublishRunner) Run(
 		outcome.ReviewMarkdown, reportErr = p.promptGen.GenerateErrorReport(ctx, params)
 
 		// レポート生成自体のエラーがあれば結合する
-		if !errors.Is(reportErr, err) {
-			err = errors.Join(err, reportErr)
+		if reportErr != nil {
+			err = errors.Join(err, fmt.Errorf("レポート生成エラー: %w", reportErr))
 		}
 		result = domain.NewFailureResult(req, err, finalDuration)
 

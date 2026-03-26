@@ -64,7 +64,7 @@ func (r *ReviewRunner) Run(ctx context.Context, req domain.ReviewRequest) domain
 	if len(codeDiff) == 0 {
 		outcome.StepName = "差分チェック"
 		outcome.IsSkipped = true
-		markdown, err := r.promptGen.ExecuteSkipMarkdown(req)
+		markdown, err := r.promptGen.GenerateSkipReport(req)
 		outcome.ReviewMarkdown = markdown
 		outcome.Error = err // 生成失敗の可能性も含める
 		return outcome

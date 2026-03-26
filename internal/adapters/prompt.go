@@ -46,11 +46,11 @@ type PromptAdapter struct {
 func NewPromptAdapter() (*PromptAdapter, error) {
 	reviewTemplates, err := assets.LoadPrompts()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("レビューテンプレートの読み込みに失敗: %w", err)
 	}
 	reportTemplates, err := assets.LoadReports()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("レポートテンプレートの読み込みに失敗: %w", err)
 	}
 
 	reviewMode, err := prompts.NewBuilder(reviewTemplates)
@@ -101,11 +101,12 @@ func (pa *PromptAdapter) GenerateErrorReport(
 		)
 		return fallbackMarkdown, fmt.Errorf("エラーレポート生成失敗: %w", buildErr)
 	}
-	return markdown, params.OriginalErr
+	// 成功時はレポート生成エラーなしとして nil を返す
+	return markdown, nil
 }
 
-// ExecuteSkipMarkdown は埋め込まれたテンプレートからスキップメッセージを生成します。
-func (pa *PromptAdapter) ExecuteSkipMarkdown(req domain.ReviewRequest) (string, error) {
+// GenerateSkipReport は埋め込まれたテンプレートからスキップメッセージを生成します。
+func (pa *PromptAdapter) GenerateSkipReport(req domain.ReviewRequest) (string, error) {
 	data := reportData{
 		BaseBranch:    req.BaseBranch,
 		FeatureBranch: req.FeatureBranch,

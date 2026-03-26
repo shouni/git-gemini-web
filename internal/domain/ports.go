@@ -26,7 +26,7 @@ type PublisherRunner interface {
 type PromptGenerator interface {
 	GenerateReview(mode, diff string) (string, error)
 	GenerateErrorReport(ctx context.Context, params ErrorReportParams) (string, error)
-	ExecuteSkipMarkdown(req ReviewRequest) (string, error)
+	GenerateSkipReport(req ReviewRequest) (string, error)
 }
 
 // Notifier は、生成されたコンテンツまたはエラーに関する通知を指定されたターゲットまたはチャネルに送信するためのインターフェイスです。
