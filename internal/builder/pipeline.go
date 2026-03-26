@@ -15,13 +15,13 @@ import (
 )
 
 // buildPipeline は ReviewPipeline の新しいインスタンスを生成します。
-func buildPipeline(ctx context.Context, cfg *config.Config, rio *app.RemoteIO, slack domain.Notifier) (domain.Pipeline, error) {
-	reviewRunner, err := buildReviewRunner(ctx, cfg)
+func buildPipeline(ctx context.Context, cfg *config.Config, rio *app.RemoteIO, slack domain.Notifier, promptGen domain.PromptGenerator) (domain.Pipeline, error) {
+	reviewRunner, err := buildReviewRunner(ctx, cfg, promptGen)
 	if err != nil {
 		return nil, fmt.Errorf("ReviewRunnerの構築に失敗: %w", err)
 	}
 
-	publishRunner, err := buildPublishRunner(ctx, rio, slack)
+	publishRunner, err := buildPublishRunner(rio, slack, promptGen)
 	if err != nil {
 		return nil, fmt.Errorf("PublishRunnerの構築に失敗: %w", err)
 	}
@@ -33,6 +33,7 @@ func buildPipeline(ctx context.Context, cfg *config.Config, rio *app.RemoteIO, s
 func buildReviewRunner(
 	ctx context.Context,
 	cfg *config.Config,
+	promptGen domain.PromptGenerator,
 ) (domain.ReviewRunner, error) {
 	// 1. Git Factory の構築
 	gitFactory := NewGitFactory(cfg)
@@ -43,17 +44,11 @@ func buildReviewRunner(
 		return nil, err
 	}
 
-	// 3. Prompt Builder の構築
-	promptBuilder, err := adapters.NewPromptAdapter()
-	if err != nil {
-		return nil, fmt.Errorf("Prompt Builder の構築に失敗しました: %w", err)
-	}
-
-	// 4. 依存関係を注入して Runner を組み立てる
+	// 3. 依存関係を注入して Runner を組み立てる
 	reviewRunner := runner.NewReviewRunner(
 		gitFactory,
 		codeReviewAI,
-		promptBuilder,
+		promptGen,
 	)
 
 	return reviewRunner, nil
@@ -61,9 +56,9 @@ func buildReviewRunner(
 
 // buildPublishRunner は、実行可能な PublisherRunner のインターフェースを返します。
 func buildPublishRunner(
-	ctx context.Context,
 	rio *app.RemoteIO,
 	slack domain.Notifier,
+	promptGen domain.PromptGenerator,
 ) (domain.PublisherRunner, error) {
 	if rio == nil {
 		return nil, fmt.Errorf("RemoteIO が設定されていません")
@@ -82,6 +77,7 @@ func buildPublishRunner(
 		publisherService,
 		rio.Signer,
 		slack,
+		promptGen,
 	)
 
 	return publishRunner, nil

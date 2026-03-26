@@ -19,14 +19,16 @@ type PublishRunner struct {
 	publisher ports.Publisher
 	urlSigner remoteio.URLSigner
 	notifier  domain.Notifier
+	promptGen domain.PromptGenerator
 }
 
 // NewPublisherRunner は PublishRunner の新しいインスタンスを作成します。
-func NewPublisherRunner(publisher ports.Publisher, urlSigner remoteio.URLSigner, notifier domain.Notifier) *PublishRunner {
+func NewPublisherRunner(publisher ports.Publisher, urlSigner remoteio.URLSigner, notifier domain.Notifier, promptGen domain.PromptGenerator) *PublishRunner {
 	return &PublishRunner{
 		publisher: publisher,
 		urlSigner: urlSigner,
 		notifier:  notifier,
+		promptGen: promptGen,
 	}
 }
 
@@ -45,11 +47,17 @@ func (p *PublishRunner) Run(
 		slog.ErrorContext(ctx, "エラーレポートをGCSに公開準備中", "step", outcome.StepName, "error", err)
 
 		var reportErr error
-		outcome.ReviewMarkdown, reportErr = generateErrorReport(ctx, err, req, finalDuration, outcome.StepName)
+		params := domain.ErrorReportParams{
+			OriginalErr: err,
+			Req:         req,
+			Duration:    finalDuration,
+			StepName:    outcome.StepName,
+		}
+		outcome.ReviewMarkdown, reportErr = p.promptGen.GenerateErrorReport(ctx, params)
 
 		// レポート生成自体のエラーがあれば結合する
-		if !errors.Is(reportErr, err) {
-			err = errors.Join(err, reportErr)
+		if reportErr != nil {
+			err = errors.Join(err, fmt.Errorf("レポート生成エラー: %w", reportErr))
 		}
 		result = domain.NewFailureResult(req, err, finalDuration)
 

@@ -24,3 +24,11 @@ type ReviewProcessOutcome struct {
 	IsSkipped      bool
 	Error          error
 }
+
+// ErrorReportParams は、エラーレポートのためのパラメータを保持します。
+type ErrorReportParams struct {
+	OriginalErr error
+	Req         ReviewRequest
+	Duration    time.Duration
+	StepName    string
+}
