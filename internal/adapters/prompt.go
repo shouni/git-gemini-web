@@ -55,11 +55,11 @@ func NewPromptAdapter() (*PromptAdapter, error) {
 
 	reviewMode, err := prompts.NewBuilder(reviewTemplates)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("レビュービルダーの構築に失敗: %w", err)
 	}
 	report, err := prompts.NewBuilder(reportTemplates)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("レポートビルダーの構築に失敗: %w", err)
 	}
 
 	return &PromptAdapter{
@@ -97,7 +97,7 @@ func (pa *PromptAdapter) GenerateErrorReport(
 				"- **発生ステップ:** %s\n"+
 				"- **元のエラー:** `%v`\n"+
 				"- **レポート生成エラー:** `%v`",
-			params.StepName, params.StepName, buildErr,
+			params.StepName, params.OriginalErr, buildErr,
 		)
 		return fallbackMarkdown, fmt.Errorf("エラーレポート生成失敗: %w", buildErr)
 	}
