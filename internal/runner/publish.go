@@ -47,7 +47,13 @@ func (p *PublishRunner) Run(
 		slog.ErrorContext(ctx, "エラーレポートをGCSに公開準備中", "step", outcome.StepName, "error", err)
 
 		var reportErr error
-		outcome.ReviewMarkdown, reportErr = p.promptGen.GenerateErrorReport(ctx, err, req, finalDuration, outcome.StepName)
+		params := domain.ErrorReportParams{
+			OriginalErr: err,
+			Req:         req,
+			Duration:    finalDuration,
+			StepName:    outcome.StepName,
+		}
+		outcome.ReviewMarkdown, reportErr = p.promptGen.GenerateErrorReport(ctx, params)
 
 		// レポート生成自体のエラーがあれば結合する
 		if !errors.Is(reportErr, err) {

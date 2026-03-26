@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"time"
 
 	"github.com/shouni/go-prompt-kit/prompts"
 
@@ -84,13 +83,10 @@ func (pa *PromptAdapter) GenerateReview(mode, codeDiff string) (string, error) {
 // GenerateErrorReport はエラー発生時にユーザーに提示するMarkdownレポートを生成します。
 func (pa *PromptAdapter) GenerateErrorReport(
 	ctx context.Context,
-	originalErr error,
-	req domain.ReviewRequest,
-	duration time.Duration,
-	stepName string,
+	params domain.ErrorReportParams,
 ) (string, error) {
 	// テンプレートを使用してリッチなMarkdownを生成
-	markdown, buildErr := pa.executeErrorMarkdown(originalErr, req, duration, stepName)
+	markdown, buildErr := pa.executeErrorMarkdown(params)
 	if buildErr != nil {
 		slog.ErrorContext(ctx, "致命的エラー: エラーレポートMarkdownの生成に失敗しました", "error", buildErr)
 
@@ -101,11 +97,11 @@ func (pa *PromptAdapter) GenerateErrorReport(
 				"- **発生ステップ:** %s\n"+
 				"- **元のエラー:** `%v`\n"+
 				"- **レポート生成エラー:** `%v`",
-			stepName, originalErr, buildErr,
+			params.StepName, params.StepName, buildErr,
 		)
 		return fallbackMarkdown, fmt.Errorf("エラーレポート生成失敗: %w", buildErr)
 	}
-	return markdown, originalErr
+	return markdown, params.OriginalErr
 }
 
 // ExecuteSkipMarkdown は埋め込まれたテンプレートからスキップメッセージを生成します。
@@ -122,14 +118,14 @@ func (pa *PromptAdapter) ExecuteSkipMarkdown(req domain.ReviewRequest) (string, 
 }
 
 // executeErrorMarkdown は埋め込まれたテンプレートからエラーレポートを生成します。
-func (pa *PromptAdapter) executeErrorMarkdown(err error, req domain.ReviewRequest, duration time.Duration, stepName string) (string, error) {
+func (pa *PromptAdapter) executeErrorMarkdown(params domain.ErrorReportParams) (string, error) {
 	data := reportData{
-		StepName:        stepName,
-		ErrorMessage:    err.Error(),
-		DurationSeconds: duration.Seconds(),
-		RepoURL:         req.RepoURL,
-		BaseBranch:      req.BaseBranch,
-		FeatureBranch:   req.FeatureBranch,
+		StepName:        params.StepName,
+		ErrorMessage:    params.OriginalErr.Error(),
+		DurationSeconds: params.Duration.Seconds(),
+		RepoURL:         params.Req.RepoURL,
+		BaseBranch:      params.Req.BaseBranch,
+		FeatureBranch:   params.Req.FeatureBranch,
 	}
 	prompt, err := pa.report.Build(errorReport, data)
 	if err != nil {
