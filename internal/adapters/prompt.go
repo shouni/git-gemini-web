@@ -120,9 +120,13 @@ func (pa *PromptAdapter) GenerateSkipReport(req domain.ReviewRequest) (string, e
 
 // executeErrorMarkdown は埋め込まれたテンプレートからエラーレポートを生成します。
 func (pa *PromptAdapter) executeErrorMarkdown(params domain.ErrorReportParams) (string, error) {
+	errMsg := "Unknown error"
+	if params.OriginalErr != nil {
+		errMsg = params.OriginalErr.Error()
+	}
 	data := reportData{
 		StepName:        params.StepName,
-		ErrorMessage:    params.OriginalErr.Error(),
+		ErrorMessage:    errMsg,
 		DurationSeconds: params.Duration.Seconds(),
 		RepoURL:         params.Req.RepoURL,
 		BaseBranch:      params.Req.BaseBranch,
