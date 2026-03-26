@@ -38,8 +38,8 @@ type promptBuilder interface {
 
 // PromptAdapter は、さまざまなモードとデータに基づいてプロンプトを生成する役割を担います。
 type PromptAdapter struct {
-	reviewMode promptBuilder
-	report     promptBuilder
+	reviewBuilder promptBuilder
+	reportBuilder promptBuilder
 }
 
 // NewPromptAdapter は動的に読み込んだテンプレートを使用して Builder を構築します。
@@ -53,7 +53,7 @@ func NewPromptAdapter() (*PromptAdapter, error) {
 		return nil, fmt.Errorf("レポートテンプレートの読み込みに失敗: %w", err)
 	}
 
-	reviewMode, err := prompts.NewBuilder(reviewTemplates)
+	review, err := prompts.NewBuilder(reviewTemplates)
 	if err != nil {
 		return nil, fmt.Errorf("レビュービルダーの構築に失敗: %w", err)
 	}
@@ -63,8 +63,8 @@ func NewPromptAdapter() (*PromptAdapter, error) {
 	}
 
 	return &PromptAdapter{
-		reviewMode: reviewMode,
-		report:     report,
+		reviewBuilder: review,
+		reportBuilder: report,
 	}, nil
 }
 
@@ -73,7 +73,7 @@ func (pa *PromptAdapter) GenerateReview(mode, codeDiff string) (string, error) {
 	data := reviewData{
 		DiffContent: codeDiff,
 	}
-	prompt, err := pa.reviewMode.Build(mode, data)
+	prompt, err := pa.reviewBuilder.Build(mode, data)
 	if err != nil {
 		return "", fmt.Errorf("レビューテンプレートの実行に失敗: %w", err)
 	}
@@ -111,7 +111,7 @@ func (pa *PromptAdapter) GenerateSkipReport(req domain.ReviewRequest) (string, e
 		BaseBranch:    req.BaseBranch,
 		FeatureBranch: req.FeatureBranch,
 	}
-	prompt, err := pa.report.Build(skipReport, data)
+	prompt, err := pa.reportBuilder.Build(skipReport, data)
 	if err != nil {
 		return "", fmt.Errorf("スキップテンプレートの実行に失敗: %w", err)
 	}
@@ -128,7 +128,7 @@ func (pa *PromptAdapter) executeErrorMarkdown(params domain.ErrorReportParams) (
 		BaseBranch:      params.Req.BaseBranch,
 		FeatureBranch:   params.Req.FeatureBranch,
 	}
-	prompt, err := pa.report.Build(errorReport, data)
+	prompt, err := pa.reportBuilder.Build(errorReport, data)
 	if err != nil {
 		return "", fmt.Errorf("エラーテンプレートの実行に失敗: %w", err)
 	}
