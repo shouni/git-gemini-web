@@ -66,10 +66,10 @@ func (s *SlackAdapter) Notify(ctx context.Context, publicURL, storageURI string,
 func (s *SlackAdapter) buildSlackContent(publicURL, storageURI string, req domain.ReviewRequest) string {
 	repoPath := urlpath.GetRepositoryPath(req.RepoURL)
 	content := fmt.Sprintf(
-		"**詳細URL:** <%s|%s>\n"+
-			"**リポジトリ:** `%s`\n"+
-			"**ブランチ:** `%s` ← `%s`\n"+
-			"**モード:** `%s`",
+		"*詳細URL:* <%s|%s>\n"+
+			"*リポジトリ:* `%s`\n"+
+			"*ブランチ:* `%s` ← `%s`\n"+
+			"*モード:* `%s`",
 		publicURL,
 		storageURI,
 		repoPath,
