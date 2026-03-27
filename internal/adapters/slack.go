@@ -7,11 +7,10 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/shouni/gemini-reviewer-core/ports"
 	"github.com/shouni/go-http-kit/httpkit"
 	"github.com/shouni/go-notifier/pkg/slack"
 	"github.com/shouni/go-utils/urlpath"
-
-	"git-gemini-web/internal/domain"
 )
 
 // SlackAdapter は SlackNotifier インターフェースを満たす具象型です。
@@ -44,7 +43,7 @@ func NewSlackAdapter(httpClient httpkit.Requester, webhookURL string) (*SlackAda
 
 // Notify は SlackNotifier インターフェースの実装です。
 // publicURL をリンク先として、Slack に投稿します。
-func (s *SlackAdapter) Notify(ctx context.Context, publicURL, storageURI string, req domain.ReviewRequest) error {
+func (s *SlackAdapter) Notify(ctx context.Context, publicURL, storageURI string, req ports.ReviewRequest) error {
 	if s.webhookURL == "" || s.slackClient == nil {
 		slog.Info("Slack通知が無効化されているか、クライアントが未初期化のためスキップします。", "storage_uri", storageURI)
 		return nil
@@ -63,13 +62,13 @@ func (s *SlackAdapter) Notify(ctx context.Context, publicURL, storageURI string,
 
 // buildSlackContent は投稿メッセージの本文を組み立てます。
 // publicURLをメッセージ内のリンク先URL、storageURIをそのリンクの表示テキストとして使用します。
-func (s *SlackAdapter) buildSlackContent(publicURL, storageURI string, req domain.ReviewRequest) string {
+func (s *SlackAdapter) buildSlackContent(publicURL, storageURI string, req ports.ReviewRequest) string {
 	repoPath := urlpath.GetRepositoryPath(req.RepoURL)
 	content := fmt.Sprintf(
-		"**詳細URL:** <%s|%s>\n"+
-			"**リポジトリ:** `%s`\n"+
-			"**ブランチ:** `%s` ← `%s`\n"+
-			"**モード:** `%s`",
+		"*詳細URL:* <%s|%s>\n"+
+			"*リポジトリ:* `%s`\n"+
+			"*ブランチ:* `%s` ← `%s`\n"+
+			"*モード:* `%s`",
 		publicURL,
 		storageURI,
 		repoPath,

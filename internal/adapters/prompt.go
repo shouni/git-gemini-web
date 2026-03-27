@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/shouni/gemini-reviewer-core/ports"
 	"github.com/shouni/go-prompt-kit/prompts"
 
 	"git-gemini-web/assets"
-	"git-gemini-web/internal/domain"
 )
 
 const (
@@ -83,7 +83,7 @@ func (pa *PromptAdapter) GenerateReview(mode, codeDiff string) (string, error) {
 // GenerateErrorReport はエラー発生時にユーザーに提示するMarkdownレポートを生成します。
 func (pa *PromptAdapter) GenerateErrorReport(
 	ctx context.Context,
-	params domain.ErrorReportParams,
+	params ports.ErrorReportParams,
 ) (string, error) {
 	// テンプレートを使用してリッチなMarkdownを生成
 	markdown, buildErr := pa.executeErrorMarkdown(params)
@@ -106,7 +106,7 @@ func (pa *PromptAdapter) GenerateErrorReport(
 }
 
 // GenerateSkipReport は埋め込まれたテンプレートからスキップメッセージを生成します。
-func (pa *PromptAdapter) GenerateSkipReport(req domain.ReviewRequest) (string, error) {
+func (pa *PromptAdapter) GenerateSkipReport(req ports.ReviewRequest) (string, error) {
 	data := reportData{
 		BaseBranch:    req.BaseBranch,
 		FeatureBranch: req.FeatureBranch,
@@ -119,7 +119,7 @@ func (pa *PromptAdapter) GenerateSkipReport(req domain.ReviewRequest) (string, e
 }
 
 // executeErrorMarkdown は埋め込まれたテンプレートからエラーレポートを生成します。
-func (pa *PromptAdapter) executeErrorMarkdown(params domain.ErrorReportParams) (string, error) {
+func (pa *PromptAdapter) executeErrorMarkdown(params ports.ErrorReportParams) (string, error) {
 	errMsg := "Unknown error"
 	if params.OriginalErr != nil {
 		errMsg = params.OriginalErr.Error()
