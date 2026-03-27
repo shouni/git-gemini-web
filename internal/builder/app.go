@@ -59,16 +59,16 @@ func BuildContainer(ctx context.Context, cfg *config.Config) (container *app.Con
 	}
 
 	appCtx := &app.Container{
-		Config:        cfg,
-		RemoteIO:      rio,
-		TaskEnqueuer:  enqueuer,
-		HTTPClient:    httpClient,
-		PromptGen:     promptGen,
-		SlackNotifier: slack,
+		Config:       cfg,
+		RemoteIO:     rio,
+		TaskEnqueuer: enqueuer,
+		HTTPClient:   httpClient,
+		PromptGen:    promptGen,
+		Notifier:     slack,
 	}
 
 	// 5. Pipeline (Core Logic)
-	reviewPipeline, err := buildPipeline(ctx, appCtx.Config, appCtx.RemoteIO, appCtx.SlackNotifier, appCtx.PromptGen)
+	reviewPipeline, err := buildPipeline(ctx, appCtx.Config, appCtx.RemoteIO, appCtx.Notifier, appCtx.PromptGen)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize review pipeline: %w", err)
 	}

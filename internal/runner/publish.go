@@ -22,8 +22,8 @@ type PublishRunner struct {
 	promptGen domain.PromptGenerator
 }
 
-// NewPublisherRunner は PublishRunner の新しいインスタンスを作成します。
-func NewPublisherRunner(publisher ports.Publisher, urlSigner remoteio.URLSigner, notifier domain.Notifier, promptGen domain.PromptGenerator) *PublishRunner {
+// NewPublishRunner は PublishRunner の新しいインスタンスを作成します。
+func NewPublishRunner(publisher ports.Publisher, urlSigner remoteio.URLSigner, notifier domain.Notifier, promptGen domain.PromptGenerator) *PublishRunner {
 	return &PublishRunner{
 		publisher: publisher,
 		urlSigner: urlSigner,

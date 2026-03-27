@@ -17,8 +17,8 @@ type ReviewRunner interface {
 	Run(ctx context.Context, req ReviewRequest) ReviewProcessOutcome
 }
 
-// PublisherRunner は、レビュー結果の公開処理を実行する責務を持つインターフェースです。
-type PublisherRunner interface {
+// PublishRunner は、レビュー結果の公開処理を実行する責務を持つインターフェースです。
+type PublishRunner interface {
 	Run(ctx context.Context, req ReviewRequest, outcome ReviewProcessOutcome) (ReviewResult, error)
 }
 
