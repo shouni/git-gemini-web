@@ -59,7 +59,7 @@ func buildPublishRunner(
 	rio *app.RemoteIO,
 	slack domain.Notifier,
 	promptGen domain.PromptGenerator,
-) (domain.PublisherRunner, error) {
+) (domain.PublishRunner, error) {
 	if rio == nil {
 		return nil, fmt.Errorf("RemoteIO が設定されていません")
 	}
@@ -73,7 +73,7 @@ func buildPublishRunner(
 		return nil, fmt.Errorf("Publisherの初期化に失敗しました: %w", err)
 	}
 
-	publishRunner := runner.NewPublisherRunner(
+	publishRunner := runner.NewPublishRunner(
 		publisherService,
 		rio.Signer,
 		slack,

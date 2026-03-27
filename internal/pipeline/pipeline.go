@@ -11,10 +11,10 @@ import (
 // ReviewPipeline はパイプラインの実行に必要な外部依存関係を保持するサービス構造体です。
 type ReviewPipeline struct {
 	reviewer  domain.ReviewRunner
-	publisher domain.PublisherRunner
+	publisher domain.PublishRunner
 }
 
-func NewReviewPipeline(reviewer domain.ReviewRunner, publisher domain.PublisherRunner) *ReviewPipeline {
+func NewReviewPipeline(reviewer domain.ReviewRunner, publisher domain.PublishRunner) *ReviewPipeline {
 	return &ReviewPipeline{
 		reviewer:  reviewer,
 		publisher: publisher,
