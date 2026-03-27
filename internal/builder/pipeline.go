@@ -4,24 +4,30 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/shouni/gemini-reviewer-core/publisher"
-
 	"git-gemini-web/internal/adapters"
 	"git-gemini-web/internal/app"
 	"git-gemini-web/internal/config"
 	"git-gemini-web/internal/domain"
 	"git-gemini-web/internal/pipeline"
 	"git-gemini-web/internal/runner"
+
+	"github.com/shouni/gemini-reviewer-core/publisher"
 )
 
 // buildPipeline は ReviewPipeline の新しいインスタンスを生成します。
-func buildPipeline(ctx context.Context, cfg *config.Config, rio *app.RemoteIO, notifier domain.Notifier, promptGen domain.PromptGenerator) (domain.Pipeline, error) {
+func buildPipeline(
+	ctx context.Context,
+	cfg *config.Config,
+	rio *app.RemoteIO,
+	notifier domain.Notifier,
+	promptGen domain.PromptGenerator,
+) (domain.Pipeline, error) {
 	reviewRunner, err := buildReviewRunner(ctx, cfg, promptGen)
 	if err != nil {
 		return nil, fmt.Errorf("ReviewRunnerの構築に失敗: %w", err)
 	}
 
-	publishRunner, err := buildPublishRunner(rio, notifier, promptGen)
+	publishRunner, err := buildPublishRunner(ctx, rio, notifier, promptGen)
 	if err != nil {
 		return nil, fmt.Errorf("PublishRunnerの構築に失敗: %w", err)
 	}
@@ -56,6 +62,7 @@ func buildReviewRunner(
 
 // buildPublishRunner は、実行可能な PublisherRunner のインターフェースを返します。
 func buildPublishRunner(
+	ctx context.Context,
 	rio *app.RemoteIO,
 	notifier domain.Notifier,
 	promptGen domain.PromptGenerator,
