@@ -9,12 +9,12 @@ import (
 	"time"
 
 	"github.com/shouni/gcp-kit/tasks"
+	"github.com/shouni/gemini-reviewer-core/ports"
 	"github.com/shouni/go-utils/urlpath"
 
 	"git-gemini-web/assets"
 	"git-gemini-web/internal/app"
 	"git-gemini-web/internal/config"
-	"git-gemini-web/internal/domain"
 )
 
 // ReviewFormPageData はフォームテンプレートに渡すデータ構造です。
@@ -28,7 +28,7 @@ type ReviewFormPageData struct {
 // Handler は HTTPリクエストを処理する構造体です。
 type Handler struct {
 	cfg          *config.Config
-	taskEnqueuer *tasks.Enqueuer[domain.ReviewRequest]
+	taskEnqueuer *tasks.Enqueuer[ports.ReviewRequest]
 	remoteIO     *app.RemoteIO
 	template     *template.Template
 }
@@ -36,7 +36,7 @@ type Handler struct {
 // NewHandler は新しい Handler インスタンスを作成します。
 func NewHandler(
 	cfg *config.Config,
-	taskEnqueuer *tasks.Enqueuer[domain.ReviewRequest],
+	taskEnqueuer *tasks.Enqueuer[ports.ReviewRequest],
 	remoteIO *app.RemoteIO,
 ) (*Handler, error) {
 	// assets.Templates (embed.FS) からすべての .html をパース
@@ -68,7 +68,7 @@ func (h *Handler) HandleReviewSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 1. フォーム値の取得
-	req := domain.ReviewRequest{
+	req := ports.ReviewRequest{
 		RepoURL:       strings.TrimSpace(r.PostFormValue("repo_url")),
 		BaseBranch:    strings.TrimSpace(r.PostFormValue("base_branch")),
 		FeatureBranch: strings.TrimSpace(r.PostFormValue("feature_branch")),
