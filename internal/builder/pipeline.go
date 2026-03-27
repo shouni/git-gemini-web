@@ -15,13 +15,13 @@ import (
 )
 
 // buildPipeline は ReviewPipeline の新しいインスタンスを生成します。
-func buildPipeline(ctx context.Context, cfg *config.Config, rio *app.RemoteIO, slack domain.Notifier, promptGen domain.PromptGenerator) (domain.Pipeline, error) {
+func buildPipeline(ctx context.Context, cfg *config.Config, rio *app.RemoteIO, notifier domain.Notifier, promptGen domain.PromptGenerator) (domain.Pipeline, error) {
 	reviewRunner, err := buildReviewRunner(ctx, cfg, promptGen)
 	if err != nil {
 		return nil, fmt.Errorf("ReviewRunnerの構築に失敗: %w", err)
 	}
 
-	publishRunner, err := buildPublishRunner(rio, slack, promptGen)
+	publishRunner, err := buildPublishRunner(rio, notifier, promptGen)
 	if err != nil {
 		return nil, fmt.Errorf("PublishRunnerの構築に失敗: %w", err)
 	}
@@ -57,7 +57,7 @@ func buildReviewRunner(
 // buildPublishRunner は、実行可能な PublisherRunner のインターフェースを返します。
 func buildPublishRunner(
 	rio *app.RemoteIO,
-	slack domain.Notifier,
+	notifier domain.Notifier,
 	promptGen domain.PromptGenerator,
 ) (domain.PublishRunner, error) {
 	if rio == nil {
@@ -76,7 +76,7 @@ func buildPublishRunner(
 	publishRunner := runner.NewPublishRunner(
 		publisherService,
 		rio.Signer,
-		slack,
+		notifier,
 		promptGen,
 	)
 
