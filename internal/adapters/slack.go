@@ -43,14 +43,16 @@ func NewSlackAdapter(httpClient httpkit.Requester, webhookURL string) (*SlackAda
 
 // Notify は ports.Notifier インターフェースの実装です。
 // publicURL をリンク先として、Slack に投稿します。
-func (s *SlackAdapter) Notify(ctx context.Context, publicURL, storageURI string, req ports.ReviewRequest) error {
+func (s *SlackAdapter) Notify(ctx context.Context, outcome ports.ReviewProcessOutcome) error {
+	storageURI := outcome.Req.StorageURI
+	publicURL := outcome.Req.PublicURL
 	if s.webhookURL == "" || s.slackClient == nil {
 		slog.Info("Slack通知が無効化されているか、クライアントが未初期化のためスキップします。", "storage_uri", storageURI)
 		return nil
 	}
 
 	title := "✅ AIコードレビュー結果がアップロードされました。"
-	content := s.buildSlackContent(publicURL, storageURI, req)
+	content := s.buildSlackContent(outcome.Req)
 
 	if err := s.slackClient.SendTextWithHeader(ctx, title, content); err != nil {
 		return fmt.Errorf("Slackへの結果URL投稿に失敗しました: %w", err)
@@ -62,15 +64,15 @@ func (s *SlackAdapter) Notify(ctx context.Context, publicURL, storageURI string,
 
 // buildSlackContent は投稿メッセージの本文を組み立てます。
 // publicURLをメッセージ内のリンク先URL、storageURIをそのリンクの表示テキストとして使用します。
-func (s *SlackAdapter) buildSlackContent(publicURL, storageURI string, req ports.ReviewRequest) string {
+func (s *SlackAdapter) buildSlackContent(req ports.ReviewRequest) string {
 	repoPath := urlpath.GetRepositoryPath(req.RepoURL)
 	content := fmt.Sprintf(
 		"*詳細URL:* <%s|%s>\n"+
 			"*リポジトリ:* `%s`\n"+
 			"*ブランチ:* `%s` ← `%s`\n"+
 			"*モード:* `%s`",
-		publicURL,
-		storageURI,
+		req.PublicURL,
+		req.StorageURI,
 		repoPath,
 		req.BaseBranch,
 		req.FeatureBranch,

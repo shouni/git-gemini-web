@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -13,7 +12,6 @@ import (
 	"github.com/shouni/gemini-reviewer-core/ports"
 
 	"git-gemini-web/assets"
-	"git-gemini-web/internal/config"
 )
 
 var (
@@ -80,10 +78,4 @@ func validateBranchName(branchName string) error {
 		return fmt.Errorf("末尾に '/' や '.' は使用できません。")
 	}
 	return nil
-}
-
-// generateSignedResultURL は GCS のパスから署名付きURLを作るヘルパーです。
-func (h *Handler) generateSignedResultURL(ctx context.Context, gcsPath string) (string, error) {
-	fullGSPath := fmt.Sprintf("gs://%s/%s", h.cfg.GCSBucket, gcsPath)
-	return h.remoteIO.Signer.GenerateSignedURL(ctx, fullGSPath, "GET", config.SignedURLExpiration)
 }
