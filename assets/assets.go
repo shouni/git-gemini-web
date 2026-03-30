@@ -45,8 +45,8 @@ func LoadReports() (map[string]string, error) {
 func IsValidMode(mode string) bool {
 	mu.RLock()
 	if cachedPrompts != nil {
-		defer mu.RUnlock()
 		_, ok := cachedPrompts[mode]
+		mu.RUnlock()
 		return ok
 	}
 	mu.RUnlock()
