@@ -44,20 +44,20 @@ type PromptAdapter struct {
 
 // NewPromptAdapter は動的に読み込んだテンプレートを使用して Builder を構築します。
 func NewPromptAdapter() (*PromptAdapter, error) {
-	// レビュープロンプト
+	// 1. テンプレートの読み込み
 	reviewTemplates, err := assets.LoadPrompts()
 	if err != nil {
 		return nil, fmt.Errorf("レビューテンプレートの読み込みに失敗: %w", err)
 	}
-	review, err := prompts.NewBuilder(reviewTemplates)
-	if err != nil {
-		return nil, fmt.Errorf("レビュービルダーの構築に失敗: %w", err)
-	}
-
-	// レポートプロンプト
 	reportTemplates, err := assets.LoadReports()
 	if err != nil {
 		return nil, fmt.Errorf("レポートテンプレートの読み込みに失敗: %w", err)
+	}
+
+	// 2. ビルダーの構築
+	review, err := prompts.NewBuilder(reviewTemplates)
+	if err != nil {
+		return nil, fmt.Errorf("レビュービルダーの構築に失敗: %w", err)
 	}
 	report, err := prompts.NewBuilder(reportTemplates)
 	if err != nil {

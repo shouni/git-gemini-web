@@ -2,6 +2,7 @@ package assets
 
 import (
 	"embed"
+	"log/slog"
 	"sync"
 
 	"github.com/shouni/go-prompt-kit/resource"
@@ -45,9 +46,11 @@ func IsValidMode(mode string) bool {
 	once.Do(func() {
 		// 初回のみプロンプトを読み込み、キャッシュを構築する
 		p, err := LoadPrompts()
-		if err == nil {
-			cachedPrompts = p
+		if err != nil {
+			slog.Error("failed to load prompts for validation", "error", err)
+			return
 		}
+		cachedPrompts = p
 	})
 
 	if cachedPrompts == nil {
