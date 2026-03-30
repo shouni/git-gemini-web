@@ -28,7 +28,7 @@ var (
 	Templates embed.FS
 
 	cachedPrompts map[string]string
-	once          sync.Once
+	mu            sync.RWMutex
 )
 
 // LoadPrompts は埋め込まれたプロンプトファイルを読み込みます。
@@ -43,19 +43,26 @@ func LoadReports() (map[string]string, error) {
 
 // IsValidMode は、指定されたモード名に対応するプロンプトファイルが存在するか確認します。
 func IsValidMode(mode string) bool {
-	once.Do(func() {
-		// 初回のみプロンプトを読み込み、キャッシュを構築する
+	mu.RLock()
+	if cachedPrompts != nil {
+		defer mu.RUnlock()
+		_, ok := cachedPrompts[mode]
+		return ok
+	}
+	mu.RUnlock()
+
+	mu.Lock()
+	defer mu.Unlock()
+	// Double-checked locking
+	if cachedPrompts == nil {
 		p, err := LoadPrompts()
 		if err != nil {
 			slog.Error("failed to load prompts for validation", "error", err)
-			return
+			return false
 		}
 		cachedPrompts = p
-	})
-
-	if cachedPrompts == nil {
-		return false
 	}
+
 	_, ok := cachedPrompts[mode]
 	return ok
 }
