@@ -33,7 +33,7 @@ type Config struct {
 	// SessionEncryptKey はセッションデータのAES暗号化用シークレットキーです。 16, 24, 32 バイトのいずれかである必要があります。
 	SessionEncryptKey string
 
-	// Authz Settings
+	// Auth Settings
 	AllowedEmails  []string
 	AllowedDomains []string
 }

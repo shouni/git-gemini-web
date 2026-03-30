@@ -10,7 +10,7 @@ import (
 	"git-gemini-web/internal/config"
 )
 
-// NewCodeReviewAI は domain.CodeReviewAI のインスタンスを構築します。
+// NewCodeReviewAI は ports.CodeReviewAI のインスタンスを構築します。
 func NewCodeReviewAI(ctx context.Context, cfg *config.Config) (ports.CodeReviewAI, error) {
 	opt := ai.GeminiOptions{
 		ProjectID: cfg.ProjectID,

@@ -4,16 +4,12 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net/url"
 
-	"github.com/shouni/gcp-kit/tasks"
 	"github.com/shouni/go-http-kit/httpkit"
-	"github.com/shouni/go-remote-io/remoteio/gcs"
 
 	"git-gemini-web/internal/adapters"
 	"git-gemini-web/internal/app"
 	"git-gemini-web/internal/config"
-	"git-gemini-web/internal/domain"
 )
 
 // BuildContainer は外部サービスとの接続を確立し、依存関係を組み立てた app.Container を返します。
@@ -59,59 +55,19 @@ func BuildContainer(ctx context.Context, cfg *config.Config) (container *app.Con
 	}
 
 	appCtx := &app.Container{
-		Config:        cfg,
-		RemoteIO:      rio,
-		TaskEnqueuer:  enqueuer,
-		HTTPClient:    httpClient,
-		PromptGen:     promptGen,
-		SlackNotifier: slack,
+		Config:       cfg,
+		RemoteIO:     rio,
+		TaskEnqueuer: enqueuer,
+		PromptGen:    promptGen,
+		Notifier:     slack,
 	}
 
 	// 5. Pipeline (Core Logic)
-	reviewPipeline, err := buildPipeline(ctx, appCtx.Config, appCtx.RemoteIO, appCtx.SlackNotifier, appCtx.PromptGen)
+	pipeline, err := buildPipeline(ctx, appCtx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize review pipeline: %w", err)
 	}
-	appCtx.Pipeline = reviewPipeline
+	appCtx.Pipeline = pipeline
 
 	return appCtx, nil
-}
-
-// buildRemoteIO は、GCS ベースの I/O コンポーネントを初期化します。
-func buildRemoteIO(ctx context.Context) (*app.RemoteIO, error) {
-	factory, err := gcs.New(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create GCS factory: %w", err)
-	}
-	w, err := factory.OutputWriter()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create output writer: %w", err)
-	}
-	s, err := factory.URLSigner()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create URL signer: %w", err)
-	}
-	return &app.RemoteIO{
-		Factory: factory,
-		Writer:  w,
-		Signer:  s,
-	}, nil
-}
-
-// buildTaskEnqueuer は、Cloud Tasks エンキューアを初期化します。
-func buildTaskEnqueuer(ctx context.Context, cfg *config.Config) (*tasks.Enqueuer[domain.ReviewRequest], error) {
-	workerURL, err := url.JoinPath(cfg.ServiceURL, "/tasks/execute_review")
-	if err != nil {
-		return nil, fmt.Errorf("failed to build worker URL: %w", err)
-	}
-
-	taskCfg := tasks.Config{
-		ProjectID:           cfg.ProjectID,
-		LocationID:          cfg.LocationID,
-		QueueID:             cfg.QueueID,
-		WorkerURL:           workerURL,
-		ServiceAccountEmail: cfg.ServiceAccountEmail,
-		Audience:            cfg.TaskAudienceURL,
-	}
-	return tasks.NewEnqueuer[domain.ReviewRequest](ctx, taskCfg)
 }

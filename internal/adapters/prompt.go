@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/shouni/gemini-reviewer-core/ports"
 	"github.com/shouni/go-prompt-kit/prompts"
 
 	"git-gemini-web/assets"
-	"git-gemini-web/internal/domain"
 )
 
 const (
@@ -44,6 +44,7 @@ type PromptAdapter struct {
 
 // NewPromptAdapter は動的に読み込んだテンプレートを使用して Builder を構築します。
 func NewPromptAdapter() (*PromptAdapter, error) {
+	// 1. テンプレートの読み込み
 	reviewTemplates, err := assets.LoadPrompts()
 	if err != nil {
 		return nil, fmt.Errorf("レビューテンプレートの読み込みに失敗: %w", err)
@@ -53,6 +54,7 @@ func NewPromptAdapter() (*PromptAdapter, error) {
 		return nil, fmt.Errorf("レポートテンプレートの読み込みに失敗: %w", err)
 	}
 
+	// 2. ビルダーの構築
 	review, err := prompts.NewBuilder(reviewTemplates)
 	if err != nil {
 		return nil, fmt.Errorf("レビュービルダーの構築に失敗: %w", err)
@@ -83,7 +85,7 @@ func (pa *PromptAdapter) GenerateReview(mode, codeDiff string) (string, error) {
 // GenerateErrorReport はエラー発生時にユーザーに提示するMarkdownレポートを生成します。
 func (pa *PromptAdapter) GenerateErrorReport(
 	ctx context.Context,
-	params domain.ErrorReportParams,
+	params ports.ErrorReportParams,
 ) (string, error) {
 	// テンプレートを使用してリッチなMarkdownを生成
 	markdown, buildErr := pa.executeErrorMarkdown(params)
@@ -106,7 +108,7 @@ func (pa *PromptAdapter) GenerateErrorReport(
 }
 
 // GenerateSkipReport は埋め込まれたテンプレートからスキップメッセージを生成します。
-func (pa *PromptAdapter) GenerateSkipReport(req domain.ReviewRequest) (string, error) {
+func (pa *PromptAdapter) GenerateSkipReport(req ports.ReviewRequest) (string, error) {
 	data := reportData{
 		BaseBranch:    req.BaseBranch,
 		FeatureBranch: req.FeatureBranch,
@@ -119,7 +121,7 @@ func (pa *PromptAdapter) GenerateSkipReport(req domain.ReviewRequest) (string, e
 }
 
 // executeErrorMarkdown は埋め込まれたテンプレートからエラーレポートを生成します。
-func (pa *PromptAdapter) executeErrorMarkdown(params domain.ErrorReportParams) (string, error) {
+func (pa *PromptAdapter) executeErrorMarkdown(params ports.ErrorReportParams) (string, error) {
 	errMsg := "Unknown error"
 	if params.OriginalErr != nil {
 		errMsg = params.OriginalErr.Error()

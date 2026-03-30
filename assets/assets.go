@@ -2,6 +2,8 @@ package assets
 
 import (
 	"embed"
+	"log/slog"
+	"sync"
 
 	"github.com/shouni/go-prompt-kit/resource"
 )
@@ -24,6 +26,9 @@ var (
 	// Templates は、HTMLテンプレートです。
 	//go:embed templates/*.html
 	Templates embed.FS
+
+	cachedPrompts map[string]string
+	mu            sync.RWMutex
 )
 
 // LoadPrompts は埋め込まれたプロンプトファイルを読み込みます。
@@ -34,4 +39,30 @@ func LoadPrompts() (map[string]string, error) {
 // LoadReports は埋め込まれたレポートファイルを読み込みます。
 func LoadReports() (map[string]string, error) {
 	return resource.Load(reportFiles, promptDir, reportPrefix)
+}
+
+// IsValidMode は、指定されたモード名に対応するプロンプトファイルが存在するか確認します。
+func IsValidMode(mode string) bool {
+	mu.RLock()
+	if cachedPrompts != nil {
+		_, ok := cachedPrompts[mode]
+		mu.RUnlock()
+		return ok
+	}
+	mu.RUnlock()
+
+	mu.Lock()
+	defer mu.Unlock()
+	// Double-checked locking
+	if cachedPrompts == nil {
+		p, err := LoadPrompts()
+		if err != nil {
+			slog.Error("failed to load prompts for validation", "error", err)
+			return false
+		}
+		cachedPrompts = p
+	}
+
+	_, ok := cachedPrompts[mode]
+	return ok
 }
