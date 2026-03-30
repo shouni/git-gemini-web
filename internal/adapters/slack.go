@@ -44,10 +44,8 @@ func NewSlackAdapter(httpClient httpkit.Requester, webhookURL string) (*SlackAda
 // Notify は ports.Notifier インターフェースの実装です。
 // publicURL をリンク先として、Slack に投稿します。
 func (s *SlackAdapter) Notify(ctx context.Context, outcome ports.ReviewProcessOutcome) error {
-	storageURI := outcome.Req.StorageURI
-	publicURL := outcome.Req.PublicURL
 	if s.webhookURL == "" || s.slackClient == nil {
-		slog.Info("Slack通知が無効化されているか、クライアントが未初期化のためスキップします。", "storage_uri", storageURI)
+		slog.Info("Slack通知が無効化されているか、クライアントが未初期化のためスキップします。", "storage_uri", outcome.Req.StorageURI)
 		return nil
 	}
 
@@ -58,7 +56,7 @@ func (s *SlackAdapter) Notify(ctx context.Context, outcome ports.ReviewProcessOu
 		return fmt.Errorf("Slackへの結果URL投稿に失敗しました: %w", err)
 	}
 
-	slog.Info("レビュー結果のURLを Slack に投稿しました。", "public_url", publicURL)
+	slog.Info("レビュー結果のURLを Slack に投稿しました。", "public_url", outcome.Req.PublicURL)
 	return nil
 }
 
