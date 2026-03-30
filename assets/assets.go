@@ -43,7 +43,7 @@ func LoadReports() (map[string]string, error) {
 // IsValidMode は、指定されたモード名に対応するプロンプトファイルが存在するか確認します。
 func IsValidMode(mode string) bool {
 	once.Do(func() {
-		// 初回だけ読み込んでキャッシュするのだ
+		// 初回のみプロンプトを読み込み、キャッシュを構築する
 		p, err := LoadPrompts()
 		if err == nil {
 			cachedPrompts = p

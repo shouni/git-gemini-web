@@ -30,7 +30,6 @@ func buildPipeline(
 		return nil, fmt.Errorf("PublishRunnerの構築に失敗: %w", err)
 	}
 
-	//	pipeline := workflow.New(reviewRunner, publishRunner)
 	return workflow.New(reviewRunner, publishRunner), nil
 }
 
