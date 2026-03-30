@@ -49,7 +49,12 @@ func (s *SlackAdapter) Notify(ctx context.Context, outcome ports.ReviewProcessOu
 		return nil
 	}
 
-	title := "✅ AIコードレビュー結果がアップロードされました。"
+	var title string
+	if outcome.Error != nil {
+		title = "❌ AIコードレビューの生成に失敗しました。"
+	} else {
+		title = "✅ AIコードレビュー結果がアップロードされました。"
+	}
 	content := s.buildSlackContent(outcome.Req)
 
 	if err := s.slackClient.SendTextWithHeader(ctx, title, content); err != nil {
