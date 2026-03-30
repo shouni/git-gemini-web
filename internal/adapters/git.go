@@ -1,4 +1,4 @@
-package builder
+package adapters
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	"git-gemini-web/internal/config"
 )
 
-// GitFactory は、domain.GitFactory インターフェースを満たす具象型です。
+// GitFactory は、ports.GitFactory インターフェースを満たす具象型です。
 type GitFactory struct {
 	sshKeyPath       string
 	skipHostKeyCheck bool
@@ -24,18 +24,15 @@ func NewGitFactory(cfg *config.Config) *GitFactory {
 	}
 }
 
-// Create は domain.GitFactory インターフェースを満たします。
+// Create は ports.GitFactory インターフェースを満たします。
 func (g *GitFactory) Create(repoURL, baseBranch string) ports.GitService {
 	localPath := g.generateLocalPath(repoURL)
-	skipHostKeyCheckOption := git.WithInsecureSkipHostKeyCheck(g.skipHostKeyCheck)
-	baseBranchOption := git.WithBaseBranch(baseBranch)
+	opts := []git.Option{
+		git.WithInsecureSkipHostKeyCheck(g.skipHostKeyCheck),
+		git.WithBaseBranch(baseBranch),
+	}
 
-	return git.NewGitAdapter(
-		localPath,
-		g.sshKeyPath,
-		skipHostKeyCheckOption,
-		baseBranchOption,
-	)
+	return git.NewGitAdapter(localPath, g.sshKeyPath, opts...)
 }
 
 // generateLocalPath はリポジトリURLから実行ごとにユニークなローカルパスを生成します。

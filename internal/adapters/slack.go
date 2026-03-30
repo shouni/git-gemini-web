@@ -13,7 +13,7 @@ import (
 	"github.com/shouni/go-utils/urlpath"
 )
 
-// SlackAdapter は SlackNotifier インターフェースを満たす具象型です。
+// SlackAdapter は ports.Notifier インターフェースを満たす具象型です。
 type SlackAdapter struct {
 	slackClient *slack.Client
 	webhookURL  string
@@ -41,7 +41,7 @@ func NewSlackAdapter(httpClient httpkit.Requester, webhookURL string) (*SlackAda
 	}, nil
 }
 
-// Notify は SlackNotifier インターフェースの実装です。
+// Notify は ports.Notifier インターフェースの実装です。
 // publicURL をリンク先として、Slack に投稿します。
 func (s *SlackAdapter) Notify(ctx context.Context, publicURL, storageURI string, req ports.ReviewRequest) error {
 	if s.webhookURL == "" || s.slackClient == nil {

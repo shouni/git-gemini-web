@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/csrf"
 	"github.com/shouni/gemini-reviewer-core/ports"
 
+	"git-gemini-web/assets"
 	"git-gemini-web/internal/config"
 )
 
@@ -47,11 +48,9 @@ func (h *Handler) validateReviewRequest(req ports.ReviewRequest) error {
 		return fmt.Errorf("すべてのフィールドを入力してください。")
 	}
 
-	switch req.Mode {
-	case "detail", "release":
-		// OK
-	default:
-		return fmt.Errorf("不正なレビューモードです。")
+	// レビューモードの動的バリデーション
+	if !assets.IsValidMode(req.Mode) {
+		return fmt.Errorf("不正なレビューモードです: %s", req.Mode)
 	}
 
 	if !gitURLRegexp.MatchString(req.RepoURL) {
