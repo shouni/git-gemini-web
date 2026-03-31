@@ -2,9 +2,12 @@ package config
 
 import (
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/shouni/go-utils/envutil"
 	"github.com/shouni/go-utils/text"
+	"github.com/shouni/go-utils/urlpath"
 	"github.com/shouni/netarmor/securenet"
 )
 
@@ -38,6 +41,20 @@ func (c *Config) ValidateEssentialConfig() error {
 	}
 
 	return nil
+}
+
+// StorageURI は、 保存先 URI の決定 (gs://bucket/path 形式)
+func (c *Config) StorageURI(repoURL, feature string) string {
+	now := time.Now().Format("20060102_150405")
+	repoID := urlpath.GenerateGCSKeyName(repoURL)
+	safeBranchName := strings.ReplaceAll(feature, "/", "-")
+
+	return fmt.Sprintf("gs://%s/reviews/%s/%s_%s.html",
+		c.GCSBucket,
+		repoID,
+		now,
+		safeBranchName,
+	)
 }
 
 // getEnv は環境変数を取得し、存在しない場合はデフォルト値を返します。
