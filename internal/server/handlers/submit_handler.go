@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/shouni/gemini-reviewer-core/ports"
-	"github.com/shouni/go-utils/urlpath"
 
 	"git-gemini-web/internal/config"
 )
@@ -39,16 +38,8 @@ func (h *Handler) HandleReviewSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 3. 保存先 URI の決定 (gs://bucket/path 形式)
-	now := time.Now().Format("20060102_150405")
-	repoID := urlpath.GenerateGCSKeyName(req.RepoURL)
-	safeBranchName := strings.ReplaceAll(req.FeatureBranch, "/", "-")
-	req.StorageURI = fmt.Sprintf("gs://%s/reviews/%s/%s_%s.html",
-		h.cfg.GCSBucket,
-		repoID,
-		now,
-		safeBranchName,
-	)
+	// 3. 保存先 URI の決定
+	req.StorageURI = h.cfg.StorageURI(req.RepoURL, req.FeatureBranch, time.Now())
 
 	// 4. 結果表示用の署名付きURLを事前に生成し、Request に保持させる
 	publicURL, err := h.generateSignedResultURL(ctx, req.StorageURI)
