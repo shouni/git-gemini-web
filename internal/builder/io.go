@@ -15,7 +15,7 @@ func buildRemoteIO(ctx context.Context) (*app.RemoteIO, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create GCS factory: %w", err)
 	}
-	w, err := factory.OutputWriter()
+	w, err := factory.Writer()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create output writer: %w", err)
 	}
