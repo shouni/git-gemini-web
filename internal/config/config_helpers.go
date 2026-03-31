@@ -43,9 +43,9 @@ func (c *Config) ValidateEssentialConfig() error {
 	return nil
 }
 
-// StorageURI は、 保存先 URI の決定 (gs://bucket/path 形式)
-func (c *Config) StorageURI(repoURL, feature string) string {
-	now := time.Now().Format("20060102_150405")
+// StorageURI は、保存先 URI (gs://bucket/path 形式) を生成します。
+func (c *Config) StorageURI(repoURL, feature string, t time.Time) string {
+	now := t.Format("20060102_150405")
 	repoID := urlpath.GenerateGCSKeyName(repoURL)
 	safeBranchName := strings.ReplaceAll(feature, "/", "-")
 

@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/shouni/gemini-reviewer-core/ports"
 
@@ -38,7 +39,7 @@ func (h *Handler) HandleReviewSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 3. 保存先 URI の決定
-	req.StorageURI = h.cfg.StorageURI(req.RepoURL, req.FeatureBranch)
+	req.StorageURI = h.cfg.StorageURI(req.RepoURL, req.FeatureBranch, time.Now())
 
 	// 4. 結果表示用の署名付きURLを事前に生成し、Request に保持させる
 	publicURL, err := h.generateSignedResultURL(ctx, req.StorageURI)
