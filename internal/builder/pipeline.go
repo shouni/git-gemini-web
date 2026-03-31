@@ -57,7 +57,7 @@ func buildReviewRunner(
 // buildPublishRunner は、実行可能な ports.PublishRunner のインターフェースを返します。
 func buildPublishRunner(
 	promptGen ports.PromptGenerator,
-	writer remoteio.OutputWriter,
+	writer remoteio.Writer,
 	notifier ports.Notifier,
 ) (*runner.PublishRunner, error) {
 	converter, err := publisher.NewConverterAdapter()
