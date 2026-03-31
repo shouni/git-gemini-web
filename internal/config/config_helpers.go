@@ -44,10 +44,10 @@ func (c *Config) ValidateEssentialConfig() error {
 }
 
 // StorageURI は、保存先 URI (gs://bucket/path 形式) を生成します。
-func (c *Config) StorageURI(repoURL, feature string, t time.Time) string {
+func (c *Config) StorageURI(repoURL, featureBranch string, t time.Time) string {
 	now := t.Format("20060102_150405")
 	repoID := urlpath.GenerateGCSKeyName(repoURL)
-	safeBranchName := strings.ReplaceAll(feature, "/", "-")
+	safeBranchName := strings.ReplaceAll(featureBranch, "/", "-")
 
 	return fmt.Sprintf("gs://%s/reviews/%s/%s_%s.html",
 		c.GCSBucket,
