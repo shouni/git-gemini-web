@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/shouni/go-remote-io/remoteio"
 	"github.com/shouni/go-utils/envutil"
 	"github.com/shouni/go-utils/text"
 	"github.com/shouni/go-utils/urlpath"
@@ -48,13 +49,10 @@ func (c *Config) StorageURI(repoURL, featureBranch string, t time.Time) string {
 	now := t.Format("20060102_150405")
 	repoID := urlpath.GenerateGCSKeyName(repoURL)
 	safeBranchName := strings.ReplaceAll(featureBranch, "/", "-")
+	path := fmt.Sprintf("reviews/%s/%s_%s.html", repoID, now, safeBranchName)
+	storageURI := remoteio.BuildGCSURI(c.GCSBucket, path)
 
-	return fmt.Sprintf("gs://%s/reviews/%s/%s_%s.html",
-		c.GCSBucket,
-		repoID,
-		now,
-		safeBranchName,
-	)
+	return storageURI
 }
 
 // getEnv は環境変数を取得し、存在しない場合はデフォルト値を返します。
