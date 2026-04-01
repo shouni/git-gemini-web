@@ -50,9 +50,7 @@ func (c *Config) StorageURI(repoURL, featureBranch string, t time.Time) string {
 	repoID := urlpath.GenerateGCSKeyName(repoURL)
 	safeBranchName := strings.ReplaceAll(featureBranch, "/", "-")
 	path := fmt.Sprintf("reviews/%s/%s_%s.html", repoID, now, safeBranchName)
-	storageURI := remoteio.BuildGCSURI(c.GCSBucket, path)
-
-	return storageURI
+	return remoteio.BuildGCSURI(c.GCSBucket, path)
 }
 
 // getEnv は環境変数を取得し、存在しない場合はデフォルト値を返します。
