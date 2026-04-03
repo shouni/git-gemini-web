@@ -6,10 +6,10 @@ import (
 
 	"github.com/shouni/gcp-kit/auth"
 	"github.com/shouni/gcp-kit/worker"
-	"github.com/shouni/gemini-reviewer-core/ports"
 
 	"git-gemini-web/internal/app"
 	"git-gemini-web/internal/config"
+	"git-gemini-web/internal/domain"
 	"git-gemini-web/internal/server/handlers"
 )
 
@@ -19,7 +19,7 @@ const defaultSessionName = "git-gemini-session"
 type AppHandlers struct {
 	Auth   *auth.Handler
 	Web    *handlers.Handler
-	Worker *worker.Handler[ports.ReviewRequest]
+	Worker *worker.Handler[domain.ReviewRequest]
 }
 
 // BuildHandlers は依存関係を注入し、各エンドポイント用のハンドラーを生成します。
@@ -39,7 +39,7 @@ func BuildHandlers(
 	}
 
 	// Worker ハンドラーの生成
-	workerHandler := worker.NewHandler[ports.ReviewRequest](appCtx.Pipeline)
+	workerHandler := worker.NewHandler[domain.ReviewRequest](appCtx.Pipeline)
 
 	return &AppHandlers{
 		Auth:   authHandler,

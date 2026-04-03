@@ -8,9 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/shouni/gemini-reviewer-core/ports"
-
 	"git-gemini-web/internal/config"
+	"git-gemini-web/internal/domain"
 )
 
 // HandleReviewSubmit は POST リクエストを処理します。
@@ -24,7 +23,7 @@ func (h *Handler) HandleReviewSubmit(w http.ResponseWriter, r *http.Request) {
 
 	// 1. フォーム値の取得
 	// Note: ModelNameなどは共通設定から取得
-	req := ports.ReviewRequest{
+	req := domain.ReviewRequest{
 		RepoURL:       strings.TrimSpace(r.PostFormValue("repo_url")),
 		BaseBranch:    strings.TrimSpace(r.PostFormValue("base_branch")),
 		FeatureBranch: strings.TrimSpace(r.PostFormValue("feature_branch")),

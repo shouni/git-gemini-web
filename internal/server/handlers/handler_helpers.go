@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"github.com/gorilla/csrf"
-	"github.com/shouni/gemini-reviewer-core/ports"
 
 	"git-gemini-web/assets"
+	"git-gemini-web/internal/domain"
 )
 
 var (
@@ -41,7 +41,7 @@ func (h *Handler) renderForm(w http.ResponseWriter, r *http.Request, status int,
 }
 
 // validateReviewRequest は入力内容が正しいかまとめてチェックする。
-func (h *Handler) validateReviewRequest(req ports.ReviewRequest) error {
+func (h *Handler) validateReviewRequest(req domain.ReviewRequest) error {
 	if req.RepoURL == "" || req.BaseBranch == "" || req.FeatureBranch == "" || req.Mode == "" {
 		return fmt.Errorf("すべてのフィールドを入力してください。")
 	}

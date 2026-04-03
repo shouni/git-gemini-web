@@ -6,13 +6,13 @@ import (
 	"net/url"
 
 	"github.com/shouni/gcp-kit/tasks"
-	"github.com/shouni/gemini-reviewer-core/ports"
 
 	"git-gemini-web/internal/config"
+	"git-gemini-web/internal/domain"
 )
 
 // buildTaskEnqueuer は、Cloud Tasks エンキューアを初期化します。
-func buildTaskEnqueuer(ctx context.Context, cfg *config.Config) (*tasks.Enqueuer[ports.ReviewRequest], error) {
+func buildTaskEnqueuer(ctx context.Context, cfg *config.Config) (*tasks.Enqueuer[domain.ReviewRequest], error) {
 	workerURL, err := url.JoinPath(cfg.ServiceURL, "/tasks/execute_review")
 	if err != nil {
 		return nil, fmt.Errorf("failed to build worker URL: %w", err)
@@ -26,5 +26,5 @@ func buildTaskEnqueuer(ctx context.Context, cfg *config.Config) (*tasks.Enqueuer
 		ServiceAccountEmail: cfg.ServiceAccountEmail,
 		Audience:            cfg.TaskAudienceURL,
 	}
-	return tasks.NewEnqueuer[ports.ReviewRequest](ctx, taskCfg)
+	return tasks.NewEnqueuer[domain.ReviewRequest](ctx, taskCfg)
 }
