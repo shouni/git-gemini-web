@@ -6,11 +6,11 @@ import (
 	"net/http"
 
 	"github.com/shouni/gcp-kit/tasks"
-	"github.com/shouni/gemini-reviewer-core/ports"
 
 	"git-gemini-web/assets"
 	"git-gemini-web/internal/app"
 	"git-gemini-web/internal/config"
+	"git-gemini-web/internal/domain"
 )
 
 // ReviewFormPageData はフォームテンプレートに渡すデータ構造です。
@@ -24,7 +24,7 @@ type ReviewFormPageData struct {
 // Handler は HTTPリクエストを処理する構造体です。
 type Handler struct {
 	cfg          *config.Config
-	taskEnqueuer *tasks.Enqueuer[ports.ReviewRequest]
+	taskEnqueuer *tasks.Enqueuer[domain.ReviewRequest]
 	remoteIO     *app.RemoteIO
 	template     *template.Template
 }
@@ -32,7 +32,7 @@ type Handler struct {
 // NewHandler は新しい Handler インスタンスを作成します。
 func NewHandler(
 	cfg *config.Config,
-	taskEnqueuer *tasks.Enqueuer[ports.ReviewRequest],
+	taskEnqueuer *tasks.Enqueuer[domain.ReviewRequest],
 	remoteIO *app.RemoteIO,
 ) (*Handler, error) {
 	tmpl, err := template.ParseFS(assets.Templates, "templates/*.html")
