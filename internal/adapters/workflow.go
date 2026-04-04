@@ -24,6 +24,7 @@ func (a *CoreWorkflowAdapter) Execute(ctx context.Context, req domain.ReviewRequ
 	return a.core.Execute(ctx, toCoreReviewRequest(req))
 }
 
+// toCoreReviewRequest は domain.ReviewRequest を coreports.ReviewRequest に変換します。
 func toCoreReviewRequest(req domain.ReviewRequest) coreports.ReviewRequest {
 	return coreports.ReviewRequest{
 		RepoURL:       req.RepoURL,
