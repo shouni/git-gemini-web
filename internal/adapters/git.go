@@ -17,7 +17,8 @@ type GitFactory struct {
 	skipHostKeyCheck bool
 }
 
-func NewGitFactory(cfg *config.Config) *GitFactory {
+// NewGitFactory は、ports.GitFactory インターフェースを満たす GitFactory を生成します。
+func NewGitFactory(cfg *config.Config) ports.GitFactory {
 	return &GitFactory{
 		sshKeyPath:       cfg.SSHKeyPath,
 		skipHostKeyCheck: cfg.SkipHostKeyCheck,
