@@ -19,6 +19,7 @@ import (
 type noopTaskEnqueuer struct{}
 
 func (noopTaskEnqueuer) Enqueue(context.Context, domain.ReviewRequest) error { return nil }
+func (noopTaskEnqueuer) Close() error                                        { return nil }
 
 type noopPipeline struct{}
 
