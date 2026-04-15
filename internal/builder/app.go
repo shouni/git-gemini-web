@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/shouni/go-http-kit/httpkit"
+	"github.com/shouni/go-remote-io/remoteio/gcs"
 
 	"git-gemini-web/internal/adapters"
 	"git-gemini-web/internal/app"
@@ -29,16 +30,20 @@ func BuildContainer(ctx context.Context, cfg *config.Config) (container *app.Con
 	httpClient := httpkit.New(config.DefaultHTTPTimeout)
 
 	// 2. I/O Infrastructure
-	rio, err := buildRemoteIO(ctx)
+	storage, err := gcs.New(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize IO components: %w", err)
+		return nil, fmt.Errorf("GCSストレージの生成に失敗しました: %w", err)
 	}
-	resources = append(resources, rio)
+	resources = append(resources, storage)
+	rio, err := buildRemoteIO(storage)
+	if err != nil {
+		return nil, fmt.Errorf("I/Oコンポーネントの初期化に失敗しました: %w", err)
+	}
 
 	// 3. Task Enqueuer
 	enqueuer, err := buildTaskEnqueuer(ctx, cfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize task enqueuer: %w", err)
+		return nil, fmt.Errorf("TaskEnqueuer の構築に失敗しました: %w", err)
 	}
 	resources = append(resources, enqueuer)
 
@@ -51,7 +56,7 @@ func BuildContainer(ctx context.Context, cfg *config.Config) (container *app.Con
 	// 4. Slack Adapter
 	slack, err := adapters.NewSlackAdapter(httpClient, cfg.SlackWebhookURL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize Slack adapter: %w", err)
+		return nil, fmt.Errorf("SlackAdapter の構築に失敗しました: %w", err)
 	}
 
 	appCtx := &app.Container{
@@ -65,7 +70,7 @@ func BuildContainer(ctx context.Context, cfg *config.Config) (container *app.Con
 	// 5. Pipeline (Core Logic)
 	pipeline, err := buildPipeline(ctx, appCtx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize review pipeline: %w", err)
+		return nil, fmt.Errorf("パイプラインの初期化に失敗しました: %w", err)
 	}
 	appCtx.Pipeline = pipeline
 

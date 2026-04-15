@@ -1,15 +1,21 @@
 package server
 
 import (
+	"bytes"
+	"html/template"
+	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/gorilla/csrf"
 
+	"git-gemini-web/assets"
 	"git-gemini-web/internal/builder"
 	"git-gemini-web/internal/config"
 )
+
+const csrfErrorTemplatePath = "templates/csrf_error.html"
 
 // NewRouter はハンドラーをルーティングに紐付けた http.Handler を返します。
 // CSRF設定のために config.Config を引数に追加するのが望ましいのだ。
@@ -24,6 +30,7 @@ func NewRouter(h *builder.AppHandlers, cfg *config.Config) http.Handler {
 	CSRF := csrf.Protect(
 		[]byte(cfg.SessionEncryptKey),
 		csrf.Path("/"),
+		csrf.ErrorHandler(csrfErrorHandler()),
 	)
 
 	// A. 公開ルート（認証もCSRFも不要なログイン周り）
@@ -48,4 +55,30 @@ func NewRouter(h *builder.AppHandlers, cfg *config.Config) http.Handler {
 	})
 
 	return r
+}
+
+func csrfErrorHandler() http.Handler {
+	tmpl := template.Must(template.ParseFS(assets.Templates, csrfErrorTemplatePath))
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if reason := csrf.FailureReason(r); reason != nil {
+			slog.WarnContext(r.Context(), "csrf validation failed", "error", reason)
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusForbidden)
+
+		var buf bytes.Buffer
+		if err := tmpl.Execute(&buf, nil); err != nil {
+			slog.ErrorContext(r.Context(), "failed to render csrf error template", "error", err)
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = w.Write([]byte("セッションが無効です。ページを再読み込みして再送信してください。"))
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = buf.WriteTo(w)
+	})
 }
