@@ -1,6 +1,7 @@
 package server
 
 import (
+	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -24,6 +25,7 @@ func NewRouter(h *builder.AppHandlers, cfg *config.Config) http.Handler {
 	CSRF := csrf.Protect(
 		[]byte(cfg.SessionEncryptKey),
 		csrf.Path("/"),
+		csrf.ErrorHandler(csrfErrorHandler()),
 	)
 
 	// A. 公開ルート（認証もCSRFも不要なログイン周り）
@@ -48,4 +50,29 @@ func NewRouter(h *builder.AppHandlers, cfg *config.Config) http.Handler {
 	})
 
 	return r
+}
+
+func csrfErrorHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if reason := csrf.FailureReason(r); reason != nil {
+			slog.WarnContext(r.Context(), "csrf validation failed", "error", reason)
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte(`<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>セッションエラー</title>
+</head>
+<body>
+  <h1>セッションが無効です</h1>
+  <p>フォームの有効期限が切れたか、トークンが一致しませんでした。</p>
+  <p>ページを再読み込みして、もう一度送信してください。</p>
+  <p><a href="/">フォームに戻る</a></p>
+</body>
+</html>`))
+	})
 }

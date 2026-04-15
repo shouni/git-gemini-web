@@ -15,10 +15,12 @@ import (
 
 // ReviewFormPageData はフォームテンプレートに渡すデータ構造です。
 type ReviewFormPageData struct {
-	Message   string
-	Error     string
-	ResultURL string
-	CSRFToken string
+	Message        string
+	Error          string
+	ResultURL      string
+	CSRFToken      string
+	RepoURLPattern string
+	BranchPattern  string
 }
 
 type reviewTaskEnqueuer interface {

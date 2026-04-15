@@ -15,15 +15,20 @@ import (
 )
 
 var (
+	repoURLPattern = `^((https?|git|ssh)://|git@)[^\s;|&]+\.git$`
+	branchPattern  = `^[\w.-]+(/[\w.-]+)*$`
+
 	// gitURLRegexp は、GitリポジトリURLの形式をチェックします。
-	gitURLRegexp = regexp.MustCompile(`^((https?|git|ssh):\/\/|git@)[^ \t\n\r\f\v;\|&]+\.git$`)
+	gitURLRegexp = regexp.MustCompile(repoURLPattern)
 	// gitBranchRegexp は、ブランチ名の命名規則をチェックします。
-	gitBranchRegexp = regexp.MustCompile(`^[\w.-]+(/[\w.-]+)*$`)
+	gitBranchRegexp = regexp.MustCompile(branchPattern)
 )
 
 // renderForm はテンプレートの表示を一括管理するヘルパーメソッドです。
 func (h *Handler) renderForm(w http.ResponseWriter, r *http.Request, status int, data ReviewFormPageData) {
 	data.CSRFToken = csrf.Token(r)
+	data.RepoURLPattern = repoURLPattern
+	data.BranchPattern = branchPattern
 
 	var buf bytes.Buffer
 	// バッファに書き込むことで、パースエラー時に中途半端なレスポンスを防ぐ

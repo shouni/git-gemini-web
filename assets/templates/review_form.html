@@ -110,21 +110,21 @@
         <label for="repo_url">リポジトリURL (SSH/HTTPS)</label>
         <input type="text" id="repo_url" name="repo_url"
                placeholder="例: https://github.com/user/repo.git"
-               pattern="^(https?|git|ssh):\/\/.*\.git$|^git@.*:.*\.git$"
+               pattern="{{.RepoURLPattern}}"
                title="有効なGitリポジトリURL (https://, ssh://, git@) を入力してください。"
                required>
 
         <label for="base_branch">ベースブランチ (比較元)</label>
         <input type="text" id="base_branch" name="base_branch"
                value="main"
-               pattern="^(?!.*\.\.)[\w.-]+(/[\w.-]+)*$"
+               pattern="{{.BranchPattern}}"
                title="有効なブランチ名を入力してください。"
                required>
 
         <label for="feature_branch">フィーチャーブランチ (比較対象)</label>
         <input type="text" id="feature_branch" name="feature_branch"
                value="develop"
-               pattern="^(?!.*\.\.)[\w.-]+(/[\w.-]+)*$"
+               pattern="{{.BranchPattern}}"
                title="有効なブランチ名を入力してください。"
                required>
 
@@ -144,7 +144,39 @@
 
 <script>
     const submitBtn = document.getElementById('submitBtn');
-    document.getElementById('reviewForm').onsubmit = function() {
+    const reviewForm = document.getElementById('reviewForm');
+    const baseBranchInput = document.getElementById('base_branch');
+    const featureBranchInput = document.getElementById('feature_branch');
+
+    function validateBranchInput(input) {
+        const value = input.value || '';
+        if (value.includes('..') || value.includes('//')) {
+            input.setCustomValidity("'..' または '//' は使用できません。");
+            return false;
+        }
+        if (value.endsWith('/') || value.endsWith('.')) {
+            input.setCustomValidity("末尾に '/' や '.' は使用できません。");
+            return false;
+        }
+        input.setCustomValidity('');
+        return true;
+    }
+
+    baseBranchInput.addEventListener('input', function () {
+        validateBranchInput(baseBranchInput);
+    });
+    featureBranchInput.addEventListener('input', function () {
+        validateBranchInput(featureBranchInput);
+    });
+
+    reviewForm.onsubmit = function(event) {
+        const baseOK = validateBranchInput(baseBranchInput);
+        const featureOK = validateBranchInput(featureBranchInput);
+        if (!baseOK || !featureOK || !reviewForm.checkValidity()) {
+            event.preventDefault();
+            reviewForm.reportValidity();
+            return;
+        }
         submitBtn.disabled = true;
         submitBtn.innerText = '送信中...';
     };
