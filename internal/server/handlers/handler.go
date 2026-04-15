@@ -1,11 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"net/http"
-
-	"github.com/shouni/gcp-kit/tasks"
+	"time"
 
 	"git-gemini-web/assets"
 	"git-gemini-web/internal/app"
@@ -21,18 +21,23 @@ type ReviewFormPageData struct {
 	CSRFToken string
 }
 
+type reviewTaskEnqueuer interface {
+	Enqueue(ctx context.Context, payload domain.ReviewRequest) error
+}
+
 // Handler は HTTPリクエストを処理する構造体です。
 type Handler struct {
 	cfg          *config.Config
-	taskEnqueuer *tasks.Enqueuer[domain.ReviewRequest]
+	taskEnqueuer reviewTaskEnqueuer
 	remoteIO     *app.RemoteIO
 	template     *template.Template
+	now          func() time.Time
 }
 
 // NewHandler は新しい Handler インスタンスを作成します。
 func NewHandler(
 	cfg *config.Config,
-	taskEnqueuer *tasks.Enqueuer[domain.ReviewRequest],
+	taskEnqueuer reviewTaskEnqueuer,
 	remoteIO *app.RemoteIO,
 ) (*Handler, error) {
 	tmpl, err := template.ParseFS(assets.Templates, "templates/*.html")
@@ -45,6 +50,7 @@ func NewHandler(
 		taskEnqueuer: taskEnqueuer,
 		remoteIO:     remoteIO,
 		template:     tmpl,
+		now:          time.Now,
 	}, nil
 }
 
