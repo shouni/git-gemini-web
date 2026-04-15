@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"html"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -23,15 +24,14 @@ func TestHandleReviewForm_RendersValidationPatterns(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("unexpected status: got %d want %d", w.Code, http.StatusOK)
 	}
-	body := w.Body.String()
+	body := html.UnescapeString(w.Body.String())
 	if !strings.Contains(body, `name="repo_url"`) ||
-		!strings.Contains(body, `pattern="^((https?|git|ssh)://|git@)`) ||
-		!strings.Contains(body, `\.git$"`) {
+		!strings.Contains(body, `pattern="`+repoURLPattern+`"`) {
 		t.Fatalf("repo url pattern not rendered: %s", body)
 	}
 	if !strings.Contains(body, `name="base_branch"`) ||
 		!strings.Contains(body, `name="feature_branch"`) ||
-		!strings.Contains(body, `pattern="^[\w.-]`) {
+		!strings.Contains(body, `pattern="`+branchPattern+`"`) {
 		t.Fatalf("branch pattern not rendered: %s", body)
 	}
 }

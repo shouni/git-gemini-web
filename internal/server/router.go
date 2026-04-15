@@ -71,10 +71,14 @@ func csrfErrorHandler() http.Handler {
 		var buf bytes.Buffer
 		if err := tmpl.Execute(&buf, nil); err != nil {
 			slog.ErrorContext(r.Context(), "failed to render csrf error template", "error", err)
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			w.WriteHeader(http.StatusForbidden)
 			_, _ = w.Write([]byte("セッションが無効です。ページを再読み込みして再送信してください。"))
 			return
 		}
 
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusForbidden)
 		_, _ = buf.WriteTo(w)
 	})
 }

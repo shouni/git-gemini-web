@@ -16,7 +16,7 @@ import (
 
 const (
 	repoURLPattern = `^((https?|git|ssh)://|git@)[a-zA-Z0-9_./:@-]+\.git$`
-	branchPattern  = `^[\w.-]+(/[\w.-]+)*$`
+	branchPattern  = `^[a-zA-Z0-9_.-]+(/[a-zA-Z0-9_.-]+)*$`
 )
 
 var (
