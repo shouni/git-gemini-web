@@ -1,9 +1,9 @@
 package app
 
 import (
+	"context"
 	"log/slog"
 
-	"github.com/shouni/gcp-kit/tasks"
 	coreports "github.com/shouni/gemini-reviewer-core/ports"
 	"github.com/shouni/go-http-kit/httpkit"
 	"github.com/shouni/go-remote-io/remoteio"
@@ -18,13 +18,18 @@ type Container struct {
 	// I/O and Storage
 	RemoteIO *RemoteIO
 	// Asynchronous Task
-	TaskEnqueuer *tasks.Enqueuer[domain.ReviewRequest]
+	TaskEnqueuer TaskEnqueuer
 	// Business Logic
 	Pipeline domain.Pipeline
 	// External Adapters
 	HTTPClient httpkit.Requester
 	Notifier   coreports.Notifier
 	PromptGen  coreports.PromptGenerator
+}
+
+type TaskEnqueuer interface {
+	Enqueue(ctx context.Context, payload domain.ReviewRequest) error
+	Close() error
 }
 
 // RemoteIO は外部ストレージ操作に関するコンポーネントをまとめます。
