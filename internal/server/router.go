@@ -1,6 +1,8 @@
 package server
 
 import (
+	"bytes"
+	"html/template"
 	"log/slog"
 	"net/http"
 
@@ -8,9 +10,12 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/gorilla/csrf"
 
+	"git-gemini-web/assets"
 	"git-gemini-web/internal/builder"
 	"git-gemini-web/internal/config"
 )
+
+const csrfErrorTemplatePath = "templates/csrf_error.html"
 
 // NewRouter はハンドラーをルーティングに紐付けた http.Handler を返します。
 // CSRF設定のために config.Config を引数に追加するのが望ましいのだ。
@@ -60,19 +65,21 @@ func csrfErrorHandler() http.Handler {
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusForbidden)
-		_, _ = w.Write([]byte(`<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>セッションエラー</title>
-</head>
-<body>
-  <h1>セッションが無効です</h1>
-  <p>フォームの有効期限が切れたか、トークンが一致しませんでした。</p>
-  <p>ページを再読み込みして、もう一度送信してください。</p>
-  <p><a href="/">フォームに戻る</a></p>
-</body>
-</html>`))
+
+		tmpl, err := template.ParseFS(assets.Templates, csrfErrorTemplatePath)
+		if err != nil {
+			slog.ErrorContext(r.Context(), "failed to parse csrf error template", "error", err)
+			_, _ = w.Write([]byte("セッションが無効です。ページを再読み込みして再送信してください。"))
+			return
+		}
+
+		var buf bytes.Buffer
+		if err := tmpl.Execute(&buf, nil); err != nil {
+			slog.ErrorContext(r.Context(), "failed to render csrf error template", "error", err)
+			_, _ = w.Write([]byte("セッションが無効です。ページを再読み込みして再送信してください。"))
+			return
+		}
+
+		_, _ = buf.WriteTo(w)
 	})
 }

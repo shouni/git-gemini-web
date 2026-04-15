@@ -14,10 +14,12 @@ import (
 	"git-gemini-web/internal/domain"
 )
 
-var (
+const (
 	repoURLPattern = `^((https?|git|ssh)://|git@)[^\s;|&]+\.git$`
 	branchPattern  = `^[\w.-]+(/[\w.-]+)*$`
+)
 
+var (
 	// gitURLRegexp は、GitリポジトリURLの形式をチェックします。
 	gitURLRegexp = regexp.MustCompile(repoURLPattern)
 	// gitBranchRegexp は、ブランチ名の命名規則をチェックします。
