@@ -72,46 +72,34 @@ func TestNewRouter_RouteReachabilityAndGuards(t *testing.T) {
 	r := newRouterForTest(t)
 
 	tests := []struct {
-		name    string
-		method  string
-		path    string
-		allowed map[int]bool
+		name         string
+		method       string
+		path         string
+		expectedCode int
 	}{
 		{
-			name:   "auth login is reachable",
-			method: http.MethodGet,
-			path:   "/auth/login",
-			allowed: map[int]bool{
-				http.StatusFound:             true,
-				http.StatusTemporaryRedirect: true,
-			},
+			name:         "auth login is reachable",
+			method:       http.MethodGet,
+			path:         "/auth/login",
+			expectedCode: http.StatusTemporaryRedirect,
 		},
 		{
-			name:   "root requires auth",
-			method: http.MethodGet,
-			path:   "/",
-			allowed: map[int]bool{
-				http.StatusFound:        true,
-				http.StatusUnauthorized: true,
-				http.StatusForbidden:    true,
-			},
+			name:         "root requires auth",
+			method:       http.MethodGet,
+			path:         "/",
+			expectedCode: http.StatusFound,
 		},
 		{
-			name:   "worker route requires oidc",
-			method: http.MethodPost,
-			path:   "/tasks/execute_review",
-			allowed: map[int]bool{
-				http.StatusUnauthorized: true,
-				http.StatusForbidden:    true,
-			},
+			name:         "worker route requires oidc",
+			method:       http.MethodPost,
+			path:         "/tasks/execute_review",
+			expectedCode: http.StatusUnauthorized,
 		},
 		{
-			name:   "unknown route is 404",
-			method: http.MethodGet,
-			path:   "/not-found",
-			allowed: map[int]bool{
-				http.StatusNotFound: true,
-			},
+			name:         "unknown route is 404",
+			method:       http.MethodGet,
+			path:         "/not-found",
+			expectedCode: http.StatusNotFound,
 		},
 	}
 
@@ -121,8 +109,8 @@ func TestNewRouter_RouteReachabilityAndGuards(t *testing.T) {
 			w := httptest.NewRecorder()
 			r.ServeHTTP(w, req)
 
-			if !tt.allowed[w.Code] {
-				t.Fatalf("unexpected status for %s %s: got %d", tt.method, tt.path, w.Code)
+			if w.Code != tt.expectedCode {
+				t.Fatalf("unexpected status for %s %s: got %d, want %d", tt.method, tt.path, w.Code, tt.expectedCode)
 			}
 		})
 	}
