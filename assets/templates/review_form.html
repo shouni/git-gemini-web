@@ -177,8 +177,10 @@
             reviewForm.reportValidity();
             return;
         }
-        submitBtn.disabled = true;
-        submitBtn.innerText = '送信中...';
+        setTimeout(() => {
+            submitBtn.disabled = true;
+            submitBtn.innerText = '送信中...';
+        }, 0);
     };
 
     // ブラウザバック時のボタン復帰対策

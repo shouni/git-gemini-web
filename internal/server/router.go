@@ -58,6 +58,11 @@ func NewRouter(h *builder.AppHandlers, cfg *config.Config) http.Handler {
 }
 
 func csrfErrorHandler() http.Handler {
+	tmpl, err := template.ParseFS(assets.Templates, csrfErrorTemplatePath)
+	if err != nil {
+		panic("failed to parse csrf error template: " + err.Error())
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if reason := csrf.FailureReason(r); reason != nil {
 			slog.WarnContext(r.Context(), "csrf validation failed", "error", reason)
@@ -65,13 +70,6 @@ func csrfErrorHandler() http.Handler {
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusForbidden)
-
-		tmpl, err := template.ParseFS(assets.Templates, csrfErrorTemplatePath)
-		if err != nil {
-			slog.ErrorContext(r.Context(), "failed to parse csrf error template", "error", err)
-			_, _ = w.Write([]byte("セッションが無効です。ページを再読み込みして再送信してください。"))
-			return
-		}
 
 		var buf bytes.Buffer
 		if err := tmpl.Execute(&buf, nil); err != nil {

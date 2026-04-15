@@ -42,7 +42,7 @@ func NewHandler(
 	taskEnqueuer reviewTaskEnqueuer,
 	remoteIO *app.RemoteIO,
 ) (*Handler, error) {
-	tmpl, err := template.ParseFS(assets.Templates, "templates/review_form.html")
+	tmpl, err := template.ParseFS(assets.Templates, "templates/*.html")
 	if err != nil {
 		return nil, fmt.Errorf("テンプレートパース失敗: %w", err)
 	}

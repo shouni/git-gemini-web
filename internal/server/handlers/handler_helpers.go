@@ -34,7 +34,7 @@ func (h *Handler) renderForm(w http.ResponseWriter, r *http.Request, status int,
 
 	var buf bytes.Buffer
 	// バッファに書き込むことで、パースエラー時に中途半端なレスポンスを防ぐ
-	if err := h.template.Execute(&buf, data); err != nil {
+	if err := h.template.ExecuteTemplate(&buf, "review_form.html", data); err != nil {
 		slog.ErrorContext(r.Context(), "テンプレート実行エラー", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
