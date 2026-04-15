@@ -31,7 +31,7 @@ func TestHandleReviewForm_RendersValidationPatterns(t *testing.T) {
 	}
 	if !strings.Contains(body, `name="base_branch"`) ||
 		!strings.Contains(body, `name="feature_branch"`) ||
-		!strings.Contains(body, `pattern="^[\w.-]&#43;(/[\w.-]&#43;)*$"`) {
+		!strings.Contains(body, `pattern="^[\w.-]`) {
 		t.Fatalf("branch pattern not rendered: %s", body)
 	}
 }

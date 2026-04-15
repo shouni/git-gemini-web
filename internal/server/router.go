@@ -58,10 +58,7 @@ func NewRouter(h *builder.AppHandlers, cfg *config.Config) http.Handler {
 }
 
 func csrfErrorHandler() http.Handler {
-	tmpl, err := template.ParseFS(assets.Templates, csrfErrorTemplatePath)
-	if err != nil {
-		panic("failed to parse csrf error template: " + err.Error())
-	}
+	tmpl := template.Must(template.ParseFS(assets.Templates, csrfErrorTemplatePath))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if reason := csrf.FailureReason(r); reason != nil {
