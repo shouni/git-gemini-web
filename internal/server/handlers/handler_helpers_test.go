@@ -20,24 +20,24 @@ func TestValidateBranchName(t *testing.T) {
 		{name: "contains double slash", branch: "feature//bad", wantErr: true},
 		{name: "ends with slash", branch: "feature/", wantErr: true},
 		{name: "ends with dot", branch: "feature.", wantErr: true},
+		{name: "empty branch", branch: "", wantErr: true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := validateBranchName(tt.branch)
-			if tt.wantErr && err == nil {
-				t.Fatalf("expected error for %q", tt.branch)
-			}
-			if !tt.wantErr && err != nil {
-				t.Fatalf("unexpected error for %q: %v", tt.branch, err)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("validateBranchName(%q) error = %v, wantErr %v", tt.branch, err, tt.wantErr)
 			}
 		})
 	}
 }
 
 func TestValidateReviewRequest(t *testing.T) {
+	// Handler のフィールドが空でもバリデーション自体は動作するように設計されている想定
 	h := &Handler{}
-	valid := domain.ReviewRequest{
+
+	validRequest := domain.ReviewRequest{
 		RepoURL:       "https://github.com/org/repo.git",
 		BaseBranch:    "main",
 		FeatureBranch: "feature/new-ui",
@@ -47,31 +47,34 @@ func TestValidateReviewRequest(t *testing.T) {
 	tests := []struct {
 		name    string
 		mutate  func(*domain.ReviewRequest)
-		wantErr string
+		wantErr string // エラーメッセージに含まれるべき文字列
 	}{
-		{name: "valid", mutate: func(r *domain.ReviewRequest) {}},
 		{
-			name:    "missing required",
+			name:   "valid request",
+			mutate: func(r *domain.ReviewRequest) {},
+		},
+		{
+			name:    "missing repo url",
 			mutate:  func(r *domain.ReviewRequest) { r.RepoURL = "" },
 			wantErr: "すべてのフィールド",
 		},
 		{
 			name:    "invalid mode",
-			mutate:  func(r *domain.ReviewRequest) { r.Mode = "unknown" },
+			mutate:  func(r *domain.ReviewRequest) { r.Mode = "invalid-mode" },
 			wantErr: "不正なレビューモード",
 		},
 		{
-			name:    "invalid repo url",
-			mutate:  func(r *domain.ReviewRequest) { r.RepoURL = "https://github.com/org/repo" },
+			name:    "invalid repo url format",
+			mutate:  func(r *domain.ReviewRequest) { r.RepoURL = "invalid-url" },
 			wantErr: "URLの形式",
 		},
 		{
-			name:    "invalid base branch",
-			mutate:  func(r *domain.ReviewRequest) { r.BaseBranch = "main..bad" },
+			name:    "invalid base branch name",
+			mutate:  func(r *domain.ReviewRequest) { r.BaseBranch = "main..error" },
 			wantErr: "ベースブランチ名",
 		},
 		{
-			name:    "invalid feature branch",
+			name:    "invalid feature branch name",
 			mutate:  func(r *domain.ReviewRequest) { r.FeatureBranch = "feature/" },
 			wantErr: "フィーチャーブランチ名",
 		},
@@ -79,20 +82,28 @@ func TestValidateReviewRequest(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := valid
+			// ベースとなる有効なリクエストをコピーして使用
+			req := validRequest
 			tt.mutate(&req)
 
 			err := h.validateReviewRequest(req)
-			if tt.wantErr == "" && err != nil {
-				t.Fatalf("unexpected error: %v", err)
+
+			// エラーを期待していない場合
+			if tt.wantErr == "" {
+				if err != nil {
+					t.Errorf("unexpected error for %s: %v", tt.name, err)
+				}
+				return
 			}
-			if tt.wantErr != "" {
-				if err == nil {
-					t.Fatalf("expected error containing %q, got nil", tt.wantErr)
-				}
-				if !strings.Contains(err.Error(), tt.wantErr) {
-					t.Fatalf("error %q does not contain %q", err.Error(), tt.wantErr)
-				}
+
+			// エラーを期待している場合
+			if err == nil {
+				t.Errorf("expected error containing %q, but got nil for %s", tt.wantErr, tt.name)
+				return
+			}
+
+			if !strings.Contains(err.Error(), tt.wantErr) {
+				t.Errorf("error %q does not contain expected substring %q for %s", err.Error(), tt.wantErr, tt.name)
 			}
 		})
 	}

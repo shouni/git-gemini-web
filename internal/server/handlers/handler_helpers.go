@@ -33,15 +33,14 @@ func (h *Handler) renderForm(w http.ResponseWriter, r *http.Request, status int,
 	data.BranchPattern = branchPattern
 
 	var buf bytes.Buffer
-	// バッファに書き込むことで、パースエラー時に中途半端なレスポンスを防ぐ
-	if err := h.template.ExecuteTemplate(&buf, "review_form.html", data); err != nil {
-		slog.ErrorContext(r.Context(), "テンプレート実行エラー", "error", err)
+	if err := h.template.ExecuteTemplate(&buf, "layout.html", data); err != nil {
+		slog.ErrorContext(r.Context(), "テンプレート実行エラー", "error", err, "templateName", "layout.html")
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(status) // ここで初めてステータスコードを確定させる
+	w.WriteHeader(status)
 	if _, err := buf.WriteTo(w); err != nil {
 		slog.ErrorContext(r.Context(), "レスポンス書き込みエラー", "error", err)
 	}
