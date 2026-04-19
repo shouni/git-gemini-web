@@ -1,195 +1,153 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIコードレビューランナー</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f4f7f9;
-            color: #333;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            max-width: 700px;
-            margin: 50px auto;
-            background: #ffffff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
-            color: #0056b3;
-            border-bottom: 2px solid #e0e0e0;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            color: #555;
-        }
-        input[type="text"], select {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 20px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        button {
-            background-color: #007bff;
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s ease;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-        .note {
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #f0f8ff;
-            border-left: 4px solid #007bff;
-            color: #333;
-            font-size: 0.9em;
-        }
-        .error-message {
-            padding: 15px;
-            margin-bottom: 20px;
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-            border-radius: 4px;
-        }
-        .success-message {
-            padding: 15px;
-            margin-bottom: 20px;
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-            border-radius: 4px;
-        }
-    </style>
-</head>
-<body>
-<div class="container">
+{{define "content"}}
+<section class="py-4">
+    <div class="d-flex align-items-center mb-3">
+        <i class="bi bi-robot h3 me-2 text-primary"></i>
+        <h1 class="h3 mb-0">AIコードレビュー依頼フォーム</h1>
+    </div>
 
     {{if .Error}}
-    <div class="error-message">
-        <strong>エラーが発生しました:</strong> {{.Error}}
+    <div class="alert alert-danger shadow-sm d-flex align-items-center" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <div><strong>エラーが発生しました:</strong> {{.Error}}</div>
     </div>
     {{end}}
 
     {{if .Message}}
-    <div class="success-message">
-        <p><strong>成功:</strong> {{.Message}}</p>
+    <div class="alert alert-success shadow-sm" role="alert">
+        <h4 class="alert-heading text-success fw-bold"><i class="bi bi-check-circle-fill me-2"></i>成功</h4>
+        <p class="mb-0">{{.Message}}</p>
         {{if .ResultURL}}
-        <p><strong>結果URL:</strong> <a href="{{.ResultURL}}" target="_blank" rel="noopener noreferrer">レビュー結果をこちらから確認</a></p>
-        <p class="text-muted"><small>※セキュリティのため、URLは一定時間後に無効になります。</small></p>
+        <hr>
+        <p class="mb-2"><strong>結果URL:</strong></p>
+        <a href="{{.ResultURL}}" class="btn btn-outline-success btn-sm" target="_blank" rel="noopener noreferrer">
+            <i class="bi bi-file-earmark-text me-1"></i>レビュー結果をこちらから確認
+        </a>
+        <div class="mt-2 text-muted small"><i class="bi bi-shield-lock me-1"></i>※セキュリティのため、URLは一定時間後に無効になります。</div>
         {{end}}
     </div>
     {{end}}
 
-    <h1>🤖 AIコードレビュー依頼フォーム</h1>
-
-    <form action="/submit_review" method="POST" id="reviewForm">
+    <form action="/submit_review" method="POST" id="reviewForm" class="card p-4 shadow-sm border-0">
         <input type="hidden" name="gorilla.csrf.Token" value="{{.CSRFToken}}">
 
-        <label for="repo_url">リポジトリURL (SSH/HTTPS)</label>
-        <input type="text" id="repo_url" name="repo_url"
-               placeholder="例: https://github.com/user/repo.git"
-               pattern="{{.RepoURLPattern}}"
-               title="有効なGitリポジトリURL (https://, ssh://, git@) を入力してください。"
-               required>
+        <div class="mb-3">
+            <label for="repo_url" class="form-label fw-bold text-secondary">リポジトリURL (SSH/HTTPS)</label>
+            <input type="text" id="repo_url" name="repo_url" class="form-control"
+                   placeholder="例: https://github.com/user/repo.git"
+                   pattern="{{.RepoURLPattern}}"
+                   title="有効なGitリポジトリURL (https://, ssh://, git@) を入力してください。"
+                   required>
+        </div>
 
-        <label for="base_branch">ベースブランチ (比較元)</label>
-        <input type="text" id="base_branch" name="base_branch"
-               value="main"
-               pattern="{{.BranchPattern}}"
-               title="有効なブランチ名を入力してください。"
-               required>
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="base_branch" class="form-label fw-bold text-secondary">ベースブランチ (比較元)</label>
+                <input type="text" id="base_branch" name="base_branch" class="form-control"
+                       value="main" pattern="{{.BranchPattern}}"
+                       title="有効なブランチ名を入力してください。" required>
+            </div>
+            <div class="col-md-6">
+                <label for="feature_branch" class="form-label fw-bold text-secondary">フィーチャーブランチ (比較対象)</label>
+                <input type="text" id="feature_branch" name="feature_branch" class="form-control"
+                       value="develop" pattern="{{.BranchPattern}}"
+                       title="有効なブランチ名を入力してください。" required>
+            </div>
+        </div>
 
-        <label for="feature_branch">フィーチャーブランチ (比較対象)</label>
-        <input type="text" id="feature_branch" name="feature_branch"
-               value="develop"
-               pattern="{{.BranchPattern}}"
-               title="有効なブランチ名を入力してください。"
-               required>
+        <div class="mb-4">
+            <label for="review_mode" class="form-label fw-bold text-secondary">レビューモード</label>
+            <select id="review_mode" name="review_mode" class="form-select" required>
+                <option value="detail">detail (詳細な品質レビュー)</option>
+                <option value="release">release (リリース可否判定)</option>
+            </select>
+        </div>
 
-        <label for="review_mode">レビューモード</label>
-        <select id="review_mode" name="review_mode" required>
-            <option value="detail">detail (詳細な品質レビュー)</option>
-            <option value="release">release (リリース可否判定)</option>
-        </select>
-
-        <button type="submit" id="submitBtn">レビュー開始 (Cloud Tasksにキューイング)</button>
+        <button type="submit" id="submitBtn" class="btn btn-primary w-100 py-2 fw-bold shadow-sm">
+            <i id="btnIcon" class="bi bi-cpu-fill me-2"></i>
+            <span id="btnSpinner" class="spinner-border spinner-border-sm me-2 d-none" aria-hidden="true"></span>
+            <span id="btnText">レビュー開始 (Queue Job)</span>
+        </button>
     </form>
 
-    <div class="note">
-        <p><strong>注意:</strong> このリクエストはバックエンドのCloud Tasksに非同期でキューイングされ、処理完了後に結果がGCSに保存されます。</p>
+    <div class="mt-4 p-3 bg-light border-start border-4 border-primary rounded shadow-sm">
+        <p class="mb-0 small text-muted">
+            <i class="bi bi-info-circle-fill me-1"></i>
+            <strong>注意:</strong> このリクエストはバックエンドのCloud Tasksに非同期でキューイングされ、処理完了後に結果がGCSに保存されます。
+        </p>
     </div>
-</div>
+</section>
 
 <script>
-    const submitBtn = document.getElementById('submitBtn');
-    const reviewForm = document.getElementById('reviewForm');
-    const baseBranchInput = document.getElementById('base_branch');
-    const featureBranchInput = document.getElementById('feature_branch');
+    (function() {
+        const submitBtn = document.getElementById('submitBtn');
+        const btnIcon = document.getElementById('btnIcon');
+        const btnSpinner = document.getElementById('btnSpinner');
+        const btnText = document.getElementById('btnText');
 
-    function validateBranchInput(input) {
-        const value = input.value || '';
-        if (value.includes('..') || value.includes('//')) {
-            input.setCustomValidity("'..' または '//' は使用できません。");
-            return false;
-        }
-        if (value.endsWith('/') || value.endsWith('.')) {
-            input.setCustomValidity("末尾に '/' や '.' は使用できません。");
-            return false;
-        }
-        input.setCustomValidity('');
-        return true;
-    }
+        const reviewForm = document.getElementById('reviewForm');
+        const baseBranchInput = document.getElementById('base_branch');
+        const featureBranchInput = document.getElementById('feature_branch');
 
-    baseBranchInput.addEventListener('input', function () {
-        validateBranchInput(baseBranchInput);
-    });
-    featureBranchInput.addEventListener('input', function () {
-        validateBranchInput(featureBranchInput);
-    });
-
-    reviewForm.onsubmit = function(event) {
-        const baseOK = validateBranchInput(baseBranchInput);
-        const featureOK = validateBranchInput(featureBranchInput);
-        if (!baseOK || !featureOK || !reviewForm.checkValidity()) {
-            event.preventDefault();
-            reviewForm.reportValidity();
-            return;
+        /**
+         * ブランチ名のバリデーション
+         */
+        function validateBranchInput(input) {
+            const value = input.value || '';
+            if (value.includes('..') || value.includes('//')) {
+                input.setCustomValidity("'..' または '//' は使用できません。");
+                return false;
+            }
+            if (value.endsWith('/') || value.endsWith('.')) {
+                input.setCustomValidity("末尾に '/' や '.' は使用できません。");
+                return false;
+            }
+            input.setCustomValidity('');
+            return true;
         }
-        setTimeout(() => {
-            submitBtn.disabled = true;
-            submitBtn.innerText = '送信中...';
-        }, 0);
-    };
 
-    // ブラウザバック時のボタン復帰対策
-    window.addEventListener('pageshow', function(event) {
-        if (event.persisted) {
-            submitBtn.disabled = false;
-            submitBtn.innerText = 'レビュー開始 (Cloud Tasksにキューイング)';
+        /**
+         * ボタンの表示状態を切り替えるヘルパー
+         */
+        function setSubmittingState(isSubmitting) {
+            submitBtn.disabled = isSubmitting;
+            if (isSubmitting) {
+                btnIcon.classList.add('d-none');
+                btnSpinner.classList.remove('d-none');
+                btnText.textContent = '送信中...';
+            } else {
+                btnIcon.classList.remove('d-none');
+                btnSpinner.classList.add('d-none');
+                btnText.textContent = 'レビュー開始 (Queue Job)';
+            }
         }
-    });
+
+        baseBranchInput.addEventListener('input', () => validateBranchInput(baseBranchInput));
+        featureBranchInput.addEventListener('input', () => validateBranchInput(featureBranchInput));
+
+        reviewForm.addEventListener('submit', function(event) {
+            const baseOK = validateBranchInput(baseBranchInput);
+            const featureOK = validateBranchInput(featureBranchInput);
+
+            if (!baseOK || !featureOK || !reviewForm.checkValidity()) {
+                event.preventDefault();
+                reviewForm.reportValidity();
+                return;
+            }
+
+            // 即時無効化による送信キャンセルを避けるためsetTimeoutを使用
+            setTimeout(() => {
+                setSubmittingState(true);
+            }, 0);
+        });
+
+        /**
+         * ブラウザの「戻る」ボタン等でBFキャッシュから復元された際の処理
+         */
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                setSubmittingState(false);
+            }
+        });
+    })();
 </script>
-</body>
-</html>
+{{end}}
