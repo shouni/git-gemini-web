@@ -65,7 +65,7 @@ func newRouterForTest(t *testing.T) http.Handler {
 		Web:    webHandler,
 		Worker: workerHandler,
 	}
-	return NewRouter(cfg, appHandlers)
+	return NewRouter(appHandlers)
 }
 
 func TestNewRouter_RouteReachabilityAndGuards(t *testing.T) {

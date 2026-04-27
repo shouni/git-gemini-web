@@ -11,7 +11,6 @@ import (
 
 	"git-gemini-web/assets"
 	"git-gemini-web/internal/builder"
-	"git-gemini-web/internal/config"
 )
 
 const (
@@ -20,10 +19,10 @@ const (
 )
 
 // NewRouter は、ミドルウェアとルーティングを統合した http.Handler を構築します。
-func NewRouter(cfg *config.Config, h *builder.AppHandlers) http.Handler {
+func NewRouter(h *builder.AppHandlers) http.Handler {
 	r := chi.NewRouter()
 	setupCommonMiddleware(r)
-	setupRoutes(r, cfg, h)
+	setupRoutes(r, h)
 
 	return r
 }
@@ -36,7 +35,7 @@ func setupCommonMiddleware(r *chi.Mux) {
 }
 
 // setupRoutes は、各コンポーネントのハンドラーをルーティングに登録します。
-func setupRoutes(r chi.Router, cfg *config.Config, h *builder.AppHandlers) {
+func setupRoutes(r chi.Router, h *builder.AppHandlers) {
 	// --- 1. 公開ルート (ヘルスチェック) ---
 	r.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
