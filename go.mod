@@ -5,7 +5,6 @@ go 1.26
 require (
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/google/uuid v1.6.0
-	github.com/gorilla/csrf v1.7.3
 	github.com/shouni/gcp-kit v1.0.5
 	github.com/shouni/gemini-reviewer-core v1.7.13
 	github.com/shouni/go-http-kit v1.4.0

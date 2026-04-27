@@ -18,7 +18,6 @@ type ReviewFormPageData struct {
 	Message        string
 	Error          string
 	ResultURL      string
-	CSRFToken      string
 	RepoURLPattern string
 	BranchPattern  string
 }
