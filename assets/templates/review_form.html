@@ -28,8 +28,6 @@
     {{end}}
 
     <form action="/submit_review" method="POST" id="reviewForm" class="card p-4 shadow-sm border-0">
-        <input type="hidden" name="gorilla.csrf.Token" value="{{.CSRFToken}}">
-
         <div class="mb-3">
             <label for="repo_url" class="form-label fw-bold text-secondary">リポジトリURL (SSH/HTTPS)</label>
             <input type="text" id="repo_url" name="repo_url" class="form-control"

@@ -8,8 +8,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/gorilla/csrf"
-
 	"git-gemini-web/assets"
 	"git-gemini-web/internal/domain"
 )
@@ -28,7 +26,6 @@ var (
 
 // renderForm はテンプレートの表示を一括管理するヘルパーメソッドです。
 func (h *Handler) renderForm(w http.ResponseWriter, r *http.Request, status int, data ReviewFormPageData) {
-	data.CSRFToken = csrf.Token(r)
 	data.RepoURLPattern = repoURLPattern
 	data.BranchPattern = branchPattern
 

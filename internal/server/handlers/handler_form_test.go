@@ -34,4 +34,7 @@ func TestHandleReviewForm_RendersValidationPatterns(t *testing.T) {
 		!strings.Contains(body, `pattern="`+branchPattern+`"`) {
 		t.Fatalf("branch pattern not rendered: %s", body)
 	}
+	if strings.Contains(body, `gorilla.csrf.Token`) {
+		t.Fatalf("csrf hidden token should not be rendered: %s", body)
+	}
 }
