@@ -19,13 +19,34 @@ const (
 	crossOriginErrorTemplatePath = "templates/csrf_error.html"
 )
 
-// NewRouter はハンドラーをルーティングに紐付けた http.Handler を返します。
-func NewRouter(h *builder.AppHandlers, cfg *config.Config) http.Handler {
+// NewRouter は、ミドルウェアとルーティングを統合した http.Handler を構築します。
+func NewRouter(cfg *config.Config, h *builder.AppHandlers) http.Handler {
 	r := chi.NewRouter()
+	setupCommonMiddleware(r)
+	setupRoutes(r, cfg, h)
 
+	return r
+}
+
+// setupCommonMiddleware は、標準的なミドルウェアを構成します。
+func setupCommonMiddleware(r *chi.Mux) {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.CleanPath)
+}
+
+// setupRoutes は、各コンポーネントのハンドラーをルーティングに登録します。
+func setupRoutes(r chi.Router, cfg *config.Config, h *builder.AppHandlers) {
+	// --- 1. 公開ルート (ヘルスチェック) ---
+	r.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	})
+
+	if h == nil {
+		slog.Warn("AppHandlers is nil, skipping application routes registration")
+		return
+	}
 
 	// 同一オリジンのブラウザ送信だけを許可する。
 	crossOriginProtection := http.NewCrossOriginProtection()
@@ -51,8 +72,6 @@ func NewRouter(h *builder.AppHandlers, cfg *config.Config) http.Handler {
 		r.Use(h.Auth.TaskOIDCVerificationMiddleware)
 		r.Post("/tasks/execute_review", h.Worker.ProcessTask)
 	})
-
-	return r
 }
 
 func crossOriginErrorHandler() http.Handler {
@@ -63,19 +82,23 @@ func crossOriginErrorHandler() http.Handler {
 	))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		slog.WarnContext(r.Context(), "cross-origin request blocked", "method", r.Method, "path", r.URL.Path)
-
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.WriteHeader(http.StatusForbidden)
-
-		var buf bytes.Buffer
-		if err := tmpl.ExecuteTemplate(&buf, "layout.html", nil); err != nil {
-			slog.ErrorContext(r.Context(), "failed to render cross-origin error template", "error", err)
-			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-			_, _ = w.Write([]byte("送信元を確認できなかったため、リクエストをブロックしました。ページを開き直して再送信してください。"))
-			return
-		}
-
-		_, _ = buf.WriteTo(w)
+		writeCrossOriginErrorResponse(w, r, tmpl)
 	})
+}
+
+func writeCrossOriginErrorResponse(w http.ResponseWriter, r *http.Request, tmpl *template.Template) {
+	slog.WarnContext(r.Context(), "cross-origin request blocked", "method", r.Method, "path", r.URL.Path)
+
+	var buf bytes.Buffer
+	if err := tmpl.ExecuteTemplate(&buf, "layout.html", nil); err != nil {
+		slog.ErrorContext(r.Context(), "failed to render cross-origin error template", "error", err)
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte("送信元を確認できなかったため、リクエストをブロックしました。ページを開き直して再送信してください。"))
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusForbidden)
+	_, _ = buf.WriteTo(w)
 }
