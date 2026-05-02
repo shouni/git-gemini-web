@@ -38,3 +38,26 @@ func TestHandleReviewForm_RendersValidationPatterns(t *testing.T) {
 		t.Fatalf("csrf hidden token should not be rendered: %s", body)
 	}
 }
+
+func TestHandleReviewForm_RendersCSRFTokenFromContext(t *testing.T) {
+	h, err := NewHandler(&config.Config{}, &fakeEnqueuer{}, &app.RemoteIO{})
+	if err != nil {
+		t.Fatalf("failed to create handler: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req = req.WithContext(WithCSRFToken(req.Context(), "test-csrf-token"))
+	w := httptest.NewRecorder()
+	h.HandleReviewForm(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("unexpected status: got %d want %d", w.Code, http.StatusOK)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, `name="csrf_token"`) {
+		t.Fatalf("csrf field name not rendered: %s", body)
+	}
+	if !strings.Contains(body, `value="test-csrf-token"`) {
+		t.Fatalf("csrf token value not rendered: %s", body)
+	}
+}

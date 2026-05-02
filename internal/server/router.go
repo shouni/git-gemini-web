@@ -11,6 +11,7 @@ import (
 
 	"git-gemini-web/assets"
 	"git-gemini-web/internal/builder"
+	"git-gemini-web/internal/server/handlers"
 )
 
 const (
@@ -63,15 +64,21 @@ func setupRoutes(r chi.Router, h *builder.AppHandlers) {
 		// GETリクエスト時にCSRFトークンがなければ自動生成してセッションに保存するミドルウェア
 		r.Use(func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				csrfToken := h.Auth.GetCSRFTokenFromSession(r)
 				if r.Method == http.MethodGet {
 					// セッションにトークンがない場合のみ生成
-					if h.Auth.GetCSRFTokenFromSession(r) == "" {
-						if _, err := h.Auth.GenerateAndSaveCSRFToken(w, r); err != nil {
+					if csrfToken == "" {
+						var err error
+						csrfToken, err = h.Auth.GenerateAndSaveCSRFToken(w, r)
+						if err != nil {
 							slog.Error("Failed to auto-generate CSRF token", "error", err)
 							http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 							return
 						}
 					}
+				}
+				if csrfToken != "" {
+					r = r.WithContext(handlers.WithCSRFToken(r.Context(), csrfToken))
 				}
 				next.ServeHTTP(w, r)
 			})
