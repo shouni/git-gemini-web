@@ -4,8 +4,12 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"regexp"
+	"strings"
 	"testing"
 
+	"github.com/gorilla/sessions"
 	"github.com/shouni/gcp-kit/auth"
 	"github.com/shouni/gcp-kit/worker"
 
@@ -24,6 +28,35 @@ func (noopTaskEnqueuer) Close() error                                        { r
 type noopPipeline struct{}
 
 func (noopPipeline) Execute(context.Context, domain.ReviewRequest) error { return nil }
+
+func authenticatedSessionCookie(t *testing.T) *http.Cookie {
+	t.Helper()
+
+	store := sessions.NewCookieStore([]byte("1234567890abcdef"), []byte("1234567890123456"))
+	store.Options = &sessions.Options{
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "https://service.example.com/", nil)
+	w := httptest.NewRecorder()
+	session, err := store.Get(req, "test-session")
+	if err != nil {
+		t.Fatalf("failed to create session: %v", err)
+	}
+	session.Values[auth.DefaultUserSessionKey] = "tester@example.com"
+	if err := session.Save(req, w); err != nil {
+		t.Fatalf("failed to save session: %v", err)
+	}
+
+	cookies := w.Result().Cookies()
+	if len(cookies) == 0 {
+		t.Fatal("session cookie was not set")
+	}
+	return cookies[0]
+}
 
 func newRouterForTest(t *testing.T) http.Handler {
 	t.Helper()
@@ -113,5 +146,45 @@ func TestNewRouter_RouteReachabilityAndGuards(t *testing.T) {
 				t.Fatalf("unexpected status for %s %s: got %d, want %d", tt.method, tt.path, w.Code, tt.expectedCode)
 			}
 		})
+	}
+}
+
+func TestNewRouter_FormRendersCSRFTokenAndSubmitUsesIt(t *testing.T) {
+	r := newRouterForTest(t)
+	sessionCookie := authenticatedSessionCookie(t)
+
+	getReq := httptest.NewRequest(http.MethodGet, "https://service.example.com/", nil)
+	getReq.AddCookie(sessionCookie)
+	getW := httptest.NewRecorder()
+	r.ServeHTTP(getW, getReq)
+
+	if getW.Code != http.StatusOK {
+		t.Fatalf("GET / unexpected status: got %d want %d", getW.Code, http.StatusOK)
+	}
+
+	tokenMatch := regexp.MustCompile(`name="csrf_token" value="([^"]+)"`).FindStringSubmatch(getW.Body.String())
+	if len(tokenMatch) != 2 {
+		t.Fatalf("csrf token was not rendered in form: %s", getW.Body.String())
+	}
+	csrfToken := tokenMatch[1]
+
+	for _, cookie := range getW.Result().Cookies() {
+		if cookie.Name == sessionCookie.Name {
+			sessionCookie = cookie
+			break
+		}
+	}
+
+	form := url.Values{}
+	form.Set("csrf_token", csrfToken)
+	postReq := httptest.NewRequest(http.MethodPost, "https://service.example.com/submit_review", strings.NewReader(form.Encode()))
+	postReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	postReq.Header.Set("Origin", "https://service.example.com")
+	postReq.AddCookie(sessionCookie)
+	postW := httptest.NewRecorder()
+	r.ServeHTTP(postW, postReq)
+
+	if postW.Code != http.StatusBadRequest {
+		t.Fatalf("POST with rendered csrf token should reach form validation: got %d want %d", postW.Code, http.StatusBadRequest)
 	}
 }
