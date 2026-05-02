@@ -59,8 +59,24 @@ func setupRoutes(r chi.Router, h *builder.AppHandlers) {
 
 	// B. 認証が必要なルート (Web UI)
 	r.Group(func(r chi.Router) {
-		r.Use(h.Auth.Middleware)             // 先にユーザー認証
-		r.Use(crossOriginProtection.Handler) // 次に同一オリジン保護を適用
+		r.Use(h.Auth.Middleware)
+		// GETリクエスト時にCSRFトークンがなければ自動生成してセッションに保存するミドルウェア
+		r.Use(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Method == http.MethodGet {
+					// セッションにトークンがない場合のみ生成
+					if h.Auth.GetCSRFTokenFromSession(r) == "" {
+						if _, err := h.Auth.GenerateAndSaveCSRFToken(w, r); err != nil {
+							slog.Error("Failed to auto-generate CSRF token", "error", err)
+							http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+							return
+						}
+					}
+				}
+				next.ServeHTTP(w, r)
+			})
+		})
+		r.Use(crossOriginProtection.Handler)
 
 		r.Get("/", h.Web.HandleReviewForm)
 		r.Post("/submit_review", h.Web.HandleReviewSubmit)
