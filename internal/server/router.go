@@ -16,7 +16,7 @@ import (
 
 const (
 	layoutTemplatePath           = "templates/layout.html"
-	crossOriginErrorTemplatePath = "templates/csrf_error.html"
+	crossOriginErrorTemplatePath = "templates/cross_origin_error.html"
 )
 
 // NewRouter は、ミドルウェアとルーティングを統合した http.Handler を構築します。
@@ -110,6 +110,7 @@ func setupRoutes(r chi.Router, h *builder.AppHandlers) {
 	})
 }
 
+// crossOriginErrorHandler returns a handler for requests blocked by cross-origin protection.
 func crossOriginErrorHandler() http.Handler {
 	tmpl := template.Must(template.ParseFS(
 		assets.Templates,
@@ -122,6 +123,7 @@ func crossOriginErrorHandler() http.Handler {
 	})
 }
 
+// writeCrossOriginErrorResponse renders a forbidden response for blocked cross-origin requests.
 func writeCrossOriginErrorResponse(w http.ResponseWriter, r *http.Request, tmpl *template.Template) {
 	slog.WarnContext(r.Context(), "cross-origin request blocked", "method", r.Method, "path", r.URL.Path)
 
