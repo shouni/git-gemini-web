@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -18,13 +17,6 @@ const (
 	branchPattern  = `^[a-zA-Z0-9_.-]+(/[a-zA-Z0-9_.-]+)*$`
 	csrfTokenField = "csrf_token"
 )
-
-type csrfTokenContextKey struct{}
-
-// WithCSRFToken stores a CSRF token for form rendering.
-func WithCSRFToken(ctx context.Context, token string) context.Context {
-	return context.WithValue(ctx, csrfTokenContextKey{}, token)
-}
 
 var (
 	// gitURLRegexp は、GitリポジトリURLの形式をチェックします。
@@ -54,14 +46,6 @@ func (h *Handler) renderForm(w http.ResponseWriter, r *http.Request, status int,
 	if _, err := buf.WriteTo(w); err != nil {
 		slog.ErrorContext(r.Context(), "レスポンス書き込みエラー", "error", err)
 	}
-}
-
-func csrfTokenFromContext(ctx context.Context) string {
-	token, ok := ctx.Value(csrfTokenContextKey{}).(string)
-	if !ok {
-		return ""
-	}
-	return token
 }
 
 // validateReviewRequest は入力内容が正しいかまとめてチェックする。
