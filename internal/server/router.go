@@ -2,7 +2,6 @@ package server
 
 import (
 	"bytes"
-	"git-gemini-web/internal/server/handlers"
 	"html/template"
 	"log/slog"
 	"net/http"
@@ -12,6 +11,7 @@ import (
 
 	"git-gemini-web/assets"
 	"git-gemini-web/internal/builder"
+	"git-gemini-web/internal/server/handlers"
 )
 
 const (
