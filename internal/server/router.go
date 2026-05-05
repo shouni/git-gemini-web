@@ -60,29 +60,33 @@ func setupRoutes(r chi.Router, h *builder.AppHandlers) {
 
 	// B. 認証が必要なルート (Web UI)
 	r.Group(func(r chi.Router) {
+		if h.Auth == nil {
+			if h.Web != nil {
+				slog.Error("Auth handler is nil, skipping protected web routes")
+			}
+			return
+		}
+
 		r.Use(h.Auth.Middleware)
-		// GETリクエスト時にCSRFトークンがなければ自動生成してセッションに保存するミドルウェア
+
+		// CSRFトークンがなければ自動生成してセッションに保存するミドルウェア
 		r.Use(func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				csrfToken := h.Auth.GetCSRFTokenFromSession(r)
-				if r.Method == http.MethodGet {
-					// セッションにトークンがない場合のみ生成
-					if csrfToken == "" {
-						var err error
-						csrfToken, err = h.Auth.GenerateAndSaveCSRFToken(w, r)
-						if err != nil {
-							slog.Error("Failed to auto-generate CSRF token", "error", err)
-							http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-							return
-						}
+				if csrfToken == "" && r.Method == http.MethodGet {
+					token, err := h.Auth.GenerateAndSaveCSRFToken(w, r)
+					if err != nil {
+						slog.Error("Failed to auto-generate CSRF token", "error", err)
+						http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+						return
 					}
+					csrfToken = token
 				}
-				if csrfToken != "" {
-					r = r.WithContext(handlers.WithCSRFToken(r.Context(), csrfToken))
-				}
+				r = r.WithContext(handlers.WithCSRFToken(r.Context(), csrfToken))
 				next.ServeHTTP(w, r)
 			})
 		})
+
 		r.Use(crossOriginProtection.Handler)
 
 		r.Get("/", h.Web.HandleReviewForm)
@@ -91,8 +95,18 @@ func setupRoutes(r chi.Router, h *builder.AppHandlers) {
 
 	// C. ワーカー専用ルート (OIDC認証)
 	r.Group(func(r chi.Router) {
+		if h.Auth == nil {
+			if h.Worker != nil {
+				slog.Error("Auth handler is nil, skipping worker routes")
+			}
+			return
+		}
+
 		r.Use(h.Auth.TaskOIDCVerificationMiddleware)
-		r.Post("/tasks/execute_review", h.Worker.ProcessTask)
+
+		if h.Worker != nil {
+			r.Post("/tasks/execute_review", h.Worker.ProcessTask)
+		}
 	})
 }
 
