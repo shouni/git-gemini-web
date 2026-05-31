@@ -74,8 +74,6 @@ func AvailableModes() ([]ReviewMode, error) {
 	}
 
 	mu.RLock()
-	defer mu.RUnlock()
-
 	modes := make([]ReviewMode, 0, len(cachedPrompts))
 	for mode, prompt := range cachedPrompts {
 		modes = append(modes, ReviewMode{
@@ -83,6 +81,8 @@ func AvailableModes() ([]ReviewMode, error) {
 			Description: prompt.description,
 		})
 	}
+	mu.RUnlock()
+
 	sort.Slice(modes, func(i, j int) bool {
 		return modes[i].Name < modes[j].Name
 	})
@@ -135,17 +135,17 @@ func ensurePromptCache() error {
 func parsePromptMetadata(mode, body string) (string, string) {
 	trimmed := strings.TrimLeft(body, "\ufeff \t\r\n")
 	if !strings.HasPrefix(trimmed, modeDescriptionPrefix) {
-		return mode, body
+		return mode, trimmed
 	}
 
 	end := strings.Index(trimmed, metadataSuffix)
-	if end < 0 {
-		return mode, body
+	if end < len(modeDescriptionPrefix) {
+		return mode, trimmed
 	}
 
 	description := strings.TrimSpace(trimmed[len(modeDescriptionPrefix):end])
 	if description == "" {
-		return mode, body
+		return mode, trimmed
 	}
 
 	promptBody := strings.TrimLeft(trimmed[end+len(metadataSuffix):], "\r\n")

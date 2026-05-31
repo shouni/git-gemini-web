@@ -78,3 +78,14 @@ func TestLoadPromptsReturnsCopy(t *testing.T) {
 		t.Fatal("LoadPrompts should not expose the cached map to callers")
 	}
 }
+
+func TestParsePromptMetadataTrimsLeadingNoiseWithoutMetadata(t *testing.T) {
+	description, body := parsePromptMetadata("custom", "\ufeff\n\n# Custom Prompt")
+
+	if description != "custom" {
+		t.Fatalf("unexpected description: got %q want %q", description, "custom")
+	}
+	if body != "# Custom Prompt" {
+		t.Fatalf("unexpected body: got %q", body)
+	}
+}
