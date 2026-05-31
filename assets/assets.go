@@ -4,15 +4,18 @@ import (
 	"embed"
 	"log/slog"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/shouni/go-prompt-kit/resource"
 )
 
 const (
-	promptDir    = "prompts"
-	promptPrefix = "prompt_"
-	reportPrefix = "report_"
+	promptDir             = "prompts"
+	promptPrefix          = "prompt_"
+	reportPrefix          = "report_"
+	modeDescriptionPrefix = "<!-- mode-description:"
+	metadataSuffix        = "-->"
 )
 
 var (
@@ -28,13 +31,35 @@ var (
 	//go:embed templates/*.html
 	Templates embed.FS
 
-	cachedPrompts map[string]string
+	cachedPrompts map[string]promptTemplate
 	mu            sync.RWMutex
 )
 
+type promptTemplate struct {
+	body        string
+	description string
+}
+
+// ReviewMode は、フォームに表示するレビューモードのメタデータです。
+type ReviewMode struct {
+	Name        string
+	Description string
+}
+
 // LoadPrompts は埋め込まれたプロンプトファイルを読み込みます。
 func LoadPrompts() (map[string]string, error) {
-	return resource.Load(promptFiles, promptDir, promptPrefix)
+	if err := ensurePromptCache(); err != nil {
+		return nil, err
+	}
+
+	mu.RLock()
+	defer mu.RUnlock()
+
+	prompts := make(map[string]string, len(cachedPrompts))
+	for mode, prompt := range cachedPrompts {
+		prompts[mode] = prompt.body
+	}
+	return prompts, nil
 }
 
 // LoadReports は埋め込まれたレポートファイルを読み込みます。
@@ -43,38 +68,45 @@ func LoadReports() (map[string]string, error) {
 }
 
 // AvailableModes は、埋め込まれたレビュープロンプトから利用可能なモード名を返します。
-func AvailableModes() ([]string, error) {
-	prompts, err := loadCachedPrompts()
-	if err != nil {
+func AvailableModes() ([]ReviewMode, error) {
+	if err := ensurePromptCache(); err != nil {
 		return nil, err
 	}
 
-	modes := make([]string, 0, len(prompts))
-	for mode := range prompts {
-		modes = append(modes, mode)
+	mu.RLock()
+	defer mu.RUnlock()
+
+	modes := make([]ReviewMode, 0, len(cachedPrompts))
+	for mode, prompt := range cachedPrompts {
+		modes = append(modes, ReviewMode{
+			Name:        mode,
+			Description: prompt.description,
+		})
 	}
-	sort.Strings(modes)
+	sort.Slice(modes, func(i, j int) bool {
+		return modes[i].Name < modes[j].Name
+	})
 	return modes, nil
 }
 
 // IsValidMode は、指定されたモード名に対応するプロンプトファイルが存在するか確認します。
 func IsValidMode(mode string) bool {
-	prompts, err := loadCachedPrompts()
-	if err != nil {
+	if err := ensurePromptCache(); err != nil {
 		slog.Error("failed to load prompts for validation", "error", err)
 		return false
 	}
 
-	_, ok := prompts[mode]
+	mu.RLock()
+	defer mu.RUnlock()
+	_, ok := cachedPrompts[mode]
 	return ok
 }
 
-func loadCachedPrompts() (map[string]string, error) {
+func ensurePromptCache() error {
 	mu.RLock()
 	if cachedPrompts != nil {
-		prompts := cachedPrompts
 		mu.RUnlock()
-		return prompts, nil
+		return nil
 	}
 	mu.RUnlock()
 
@@ -82,12 +114,40 @@ func loadCachedPrompts() (map[string]string, error) {
 	defer mu.Unlock()
 	// Double-checked locking
 	if cachedPrompts == nil {
-		p, err := LoadPrompts()
+		p, err := resource.Load(promptFiles, promptDir, promptPrefix)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		cachedPrompts = p
+		parsedPrompts := make(map[string]promptTemplate, len(p))
+		for mode, body := range p {
+			description, promptBody := parsePromptMetadata(mode, body)
+			parsedPrompts[mode] = promptTemplate{
+				body:        promptBody,
+				description: description,
+			}
+		}
+		cachedPrompts = parsedPrompts
 	}
 
-	return cachedPrompts, nil
+	return nil
+}
+
+func parsePromptMetadata(mode, body string) (string, string) {
+	trimmed := strings.TrimLeft(body, "\ufeff \t\r\n")
+	if !strings.HasPrefix(trimmed, modeDescriptionPrefix) {
+		return mode, body
+	}
+
+	end := strings.Index(trimmed, metadataSuffix)
+	if end < 0 {
+		return mode, body
+	}
+
+	description := strings.TrimSpace(trimmed[len(modeDescriptionPrefix):end])
+	if description == "" {
+		return mode, body
+	}
+
+	promptBody := strings.TrimLeft(trimmed[end+len(metadataSuffix):], "\r\n")
+	return description, promptBody
 }

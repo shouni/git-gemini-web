@@ -59,7 +59,7 @@ func reviewModeOptions(ctx context.Context) []ReviewModeOption {
 		slog.ErrorContext(ctx, "レビューモード一覧の読み込みに失敗しました", "error", err)
 		return []ReviewModeOption{{
 			Value:       defaultReviewMode,
-			Description: reviewModeDescription(defaultReviewMode),
+			Description: defaultReviewMode,
 			Selected:    true,
 		}}
 	}
@@ -67,13 +67,13 @@ func reviewModeOptions(ctx context.Context) []ReviewModeOption {
 	options := make([]ReviewModeOption, 0, len(modes))
 	hasDefault := false
 	for _, mode := range modes {
-		selected := mode == defaultReviewMode
+		selected := mode.Name == defaultReviewMode
 		if selected {
 			hasDefault = true
 		}
 		options = append(options, ReviewModeOption{
-			Value:       mode,
-			Description: reviewModeDescription(mode),
+			Value:       mode.Name,
+			Description: mode.Description,
 			Selected:    selected,
 		})
 	}
@@ -81,19 +81,6 @@ func reviewModeOptions(ctx context.Context) []ReviewModeOption {
 		options[0].Selected = true
 	}
 	return options
-}
-
-func reviewModeDescription(mode string) string {
-	switch mode {
-	case "article":
-		return "技術記事・ドキュメント品質レビュー"
-	case "detail":
-		return "詳細な品質レビュー"
-	case "release":
-		return "リリース可否判定"
-	default:
-		return "カスタムレビュー"
-	}
 }
 
 // validateReviewRequest は入力内容が正しいかまとめてチェックする。
