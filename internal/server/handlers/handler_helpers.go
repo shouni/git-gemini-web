@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -13,9 +14,10 @@ import (
 )
 
 const (
-	repoURLPattern = `^((https?|git|ssh)://|git@)[a-zA-Z0-9_./:@-]+\.git$`
-	branchPattern  = `^[a-zA-Z0-9_.-]+(/[a-zA-Z0-9_.-]+)*$`
-	csrfTokenField = "csrf_token"
+	repoURLPattern    = `^((https?|git|ssh)://|git@)[a-zA-Z0-9_./:@-]+\.git$`
+	branchPattern     = `^[a-zA-Z0-9_.-]+(/[a-zA-Z0-9_.-]+)*$`
+	csrfTokenField    = "csrf_token"
+	defaultReviewMode = "detail"
 )
 
 var (
@@ -30,6 +32,9 @@ func (h *Handler) renderForm(w http.ResponseWriter, r *http.Request, status int,
 	data.RepoURLPattern = repoURLPattern
 	data.BranchPattern = branchPattern
 	data.CSRFTokenField = csrfTokenField
+	if len(data.ReviewModes) == 0 {
+		data.ReviewModes = reviewModeOptions(r.Context())
+	}
 	if data.CSRFToken == "" {
 		data.CSRFToken = csrfTokenFromContext(r.Context())
 	}
@@ -46,6 +51,36 @@ func (h *Handler) renderForm(w http.ResponseWriter, r *http.Request, status int,
 	if _, err := buf.WriteTo(w); err != nil {
 		slog.ErrorContext(r.Context(), "レスポンス書き込みエラー", "error", err)
 	}
+}
+
+func reviewModeOptions(ctx context.Context) []ReviewModeOption {
+	modes, err := assets.AvailableModes()
+	if err != nil {
+		slog.ErrorContext(ctx, "レビューモード一覧の読み込みに失敗しました", "error", err)
+		return []ReviewModeOption{{
+			Value:       defaultReviewMode,
+			Description: defaultReviewMode,
+			Selected:    true,
+		}}
+	}
+
+	options := make([]ReviewModeOption, 0, len(modes))
+	hasDefault := false
+	for _, mode := range modes {
+		selected := mode.Name == defaultReviewMode
+		if selected {
+			hasDefault = true
+		}
+		options = append(options, ReviewModeOption{
+			Value:       mode.Name,
+			Description: mode.Description,
+			Selected:    selected,
+		})
+	}
+	if len(options) > 0 && !hasDefault {
+		options[0].Selected = true
+	}
+	return options
 }
 
 // validateReviewRequest は入力内容が正しいかまとめてチェックする。

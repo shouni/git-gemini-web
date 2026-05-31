@@ -59,8 +59,9 @@
         <div class="mb-4">
             <label for="review_mode" class="form-label fw-bold text-secondary">レビューモード</label>
             <select id="review_mode" name="review_mode" class="form-select" required>
-                <option value="detail">detail (詳細な品質レビュー)</option>
-                <option value="release">release (リリース可否判定)</option>
+                {{range .ReviewModes}}
+                <option value="{{.Value}}" {{if .Selected}}selected{{end}}>{{.Value}} ({{.Description}})</option>
+                {{end}}
             </select>
         </div>
 
