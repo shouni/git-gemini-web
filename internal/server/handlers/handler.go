@@ -18,10 +18,18 @@ type ReviewFormPageData struct {
 	Message        string
 	Error          string
 	ResultURL      string
+	ReviewModes    []ReviewModeOption
 	CSRFToken      string
 	CSRFTokenField string
 	RepoURLPattern string
 	BranchPattern  string
+}
+
+// ReviewModeOption はフォームに表示するレビューモードの選択肢です。
+type ReviewModeOption struct {
+	Value       string
+	Description string
+	Selected    bool
 }
 
 type reviewTaskEnqueuer interface {

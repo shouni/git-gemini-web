@@ -3,6 +3,7 @@ package assets
 import (
 	"embed"
 	"log/slog"
+	"sort"
 	"sync"
 
 	"github.com/shouni/go-prompt-kit/resource"
@@ -41,13 +42,39 @@ func LoadReports() (map[string]string, error) {
 	return resource.Load(reportFiles, promptDir, reportPrefix)
 }
 
+// AvailableModes は、埋め込まれたレビュープロンプトから利用可能なモード名を返します。
+func AvailableModes() ([]string, error) {
+	prompts, err := loadCachedPrompts()
+	if err != nil {
+		return nil, err
+	}
+
+	modes := make([]string, 0, len(prompts))
+	for mode := range prompts {
+		modes = append(modes, mode)
+	}
+	sort.Strings(modes)
+	return modes, nil
+}
+
 // IsValidMode は、指定されたモード名に対応するプロンプトファイルが存在するか確認します。
 func IsValidMode(mode string) bool {
+	prompts, err := loadCachedPrompts()
+	if err != nil {
+		slog.Error("failed to load prompts for validation", "error", err)
+		return false
+	}
+
+	_, ok := prompts[mode]
+	return ok
+}
+
+func loadCachedPrompts() (map[string]string, error) {
 	mu.RLock()
 	if cachedPrompts != nil {
-		_, ok := cachedPrompts[mode]
+		prompts := cachedPrompts
 		mu.RUnlock()
-		return ok
+		return prompts, nil
 	}
 	mu.RUnlock()
 
@@ -57,12 +84,10 @@ func IsValidMode(mode string) bool {
 	if cachedPrompts == nil {
 		p, err := LoadPrompts()
 		if err != nil {
-			slog.Error("failed to load prompts for validation", "error", err)
-			return false
+			return nil, err
 		}
 		cachedPrompts = p
 	}
 
-	_, ok := cachedPrompts[mode]
-	return ok
+	return cachedPrompts, nil
 }

@@ -39,6 +39,34 @@ func TestHandleReviewForm_RendersValidationPatterns(t *testing.T) {
 	}
 }
 
+func TestHandleReviewForm_RendersPromptModesWithDetailDefault(t *testing.T) {
+	h, err := NewHandler(&config.Config{}, &fakeEnqueuer{}, &app.RemoteIO{})
+	if err != nil {
+		t.Fatalf("failed to create handler: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	w := httptest.NewRecorder()
+	h.HandleReviewForm(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("unexpected status: got %d want %d", w.Code, http.StatusOK)
+	}
+	body := html.UnescapeString(w.Body.String())
+	for _, want := range []string{
+		`<option value="article"`,
+		`article (技術記事・ドキュメント品質レビュー)`,
+		`<option value="detail" selected>`,
+		`detail (詳細な品質レビュー)`,
+		`<option value="release"`,
+		`release (リリース可否判定)`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("review mode option not rendered: want %q body=%s", want, body)
+		}
+	}
+}
+
 func TestHandleReviewForm_RendersCSRFTokenFromContext(t *testing.T) {
 	h, err := NewHandler(&config.Config{}, &fakeEnqueuer{}, &app.RemoteIO{})
 	if err != nil {
