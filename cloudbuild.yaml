@@ -2,10 +2,14 @@ substitutions:
   _IMAGE_BASE: 'asia-northeast1-docker.pkg.dev'
   _REPO_PATH: 'ap-repo/git-gemini'
   _ENV_PREFIX: 'develop'
+  _TAG: '${_ENV_PREFIX}-${SHORT_SHA}'
   _CACHE_TAG: 'develop-latest'
+  _SERVICE_NAME: 'git-gemini-web-runner'
+  _REGION: 'asia-northeast1'
 
 steps:
   - name: 'gcr.io/cloud-builders/docker'
+    id: 'Pull Cache Image'
     entrypoint: 'bash'
     args:
       - '-c'
@@ -13,12 +17,13 @@ steps:
         docker pull ${_IMAGE_BASE}/${PROJECT_ID}/${_REPO_PATH}:${_CACHE_TAG} || exit 0
 
   - name: 'gcr.io/cloud-builders/docker'
+    id: 'Build with BuildKit'
     env:
       - 'DOCKER_BUILDKIT=1'
     args:
       - 'build'
       - '-t'
-      - '${_IMAGE_BASE}/${PROJECT_ID}/${_REPO_PATH}:${_ENV_PREFIX}-${SHORT_SHA}'
+      - '${_IMAGE_BASE}/${PROJECT_ID}/${_REPO_PATH}:${_TAG}'
       - '-t'
       - '${_IMAGE_BASE}/${PROJECT_ID}/${_REPO_PATH}:${_CACHE_TAG}'
       - '--cache-from'
@@ -27,9 +32,31 @@ steps:
       - 'BUILDKIT_INLINE_CACHE=1'
       - '.'
 
-images:
-  - '${_IMAGE_BASE}/${PROJECT_ID}/${_REPO_PATH}:${_ENV_PREFIX}-${SHORT_SHA}'
-  - '${_IMAGE_BASE}/${PROJECT_ID}/${_REPO_PATH}:${_CACHE_TAG}'
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Push Image to Registry'
+    args:
+      - 'push'
+      - '${_IMAGE_BASE}/${PROJECT_ID}/${_REPO_PATH}:${_TAG}'
+
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'Deploy to Cloud Run'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_SERVICE_NAME}'
+      - '--image=${_IMAGE_BASE}/${PROJECT_ID}/${_REPO_PATH}:${_TAG}'
+      - '--region=${_REGION}'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--update-env-vars'
+      - 'GCP_PROJECT_ID=${PROJECT_ID},GCP_LOCATION_ID=${_REGION},GEMINI_MODEL=gemini-3.5-flash'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Push Cache Image'
+    args:
+      - 'push'
+      - '${_IMAGE_BASE}/${PROJECT_ID}/${_REPO_PATH}:${_CACHE_TAG}'
 
 options:
   machineType: 'E2_HIGHCPU_8'
