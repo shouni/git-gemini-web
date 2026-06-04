@@ -1,11 +1,11 @@
 substitutions:
+  _ENV_PREFIX: 'develop'
+  _REGION: 'asia-northeast1'
   _IMAGE_BASE: 'asia-northeast1-docker.pkg.dev'
   _REPO_PATH: 'ap-repo/git-gemini'
-  _ENV_PREFIX: 'develop'
-  _TAG: '${_ENV_PREFIX}-${SHORT_SHA}'
-  _CACHE_TAG: 'develop-latest'
   _SERVICE_NAME: 'git-gemini-web-runner'
-  _REGION: 'asia-northeast1'
+  _TAG: '${_ENV_PREFIX}-${SHORT_SHA}'
+  _CACHE_TAG: '${_ENV_PREFIX}-latest'
 
 steps:
   - name: 'gcr.io/cloud-builders/docker'
