@@ -73,13 +73,15 @@ func (s *SlackAdapter) buildSlackContent(req ports.ReviewRequest) string {
 		"*詳細URL:* <%s|%s>\n"+
 			"*リポジトリ:* `%s`\n"+
 			"*ブランチ:* `%s` ← `%s`\n"+
-			"*モード:* `%s`",
+			"*モード:* `%s`\n"+
+			"*モデル:* `%s`",
 		req.PublicURL,
 		req.StorageURI,
 		repoPath,
 		req.BaseBranch,
 		req.FeatureBranch,
 		req.Mode,
+		req.ModelName,
 	)
 	return strings.TrimSpace(content)
 }
