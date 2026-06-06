@@ -136,6 +136,43 @@ func TestHandleReviewSubmit_ValidationErrorPreservesSelectedGeminiModel(t *testi
 	}
 }
 
+func TestHandleReviewSubmit_ValidationErrorPreservesFormValues(t *testing.T) {
+	h, enq := buildTestHandler(t, nil, nil)
+	w := httptest.NewRecorder()
+
+	v := url.Values{}
+	v.Set("repo_url", "invalid-url")
+	v.Set("base_branch", "release/2026-04")
+	v.Set("feature_branch", "feature/new-ui")
+	v.Set("review_mode", "release")
+	v.Set("gemini_model", "gemini-2.5-pro")
+
+	h.HandleReviewSubmit(w, newSubmitRequest(v.Encode()))
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", w.Code)
+	}
+	if enq.called {
+		t.Fatal("enqueue should not be called on validation error")
+	}
+	body := html.UnescapeString(w.Body.String())
+	for _, want := range []string{
+		`name="repo_url" class="form-control"
+                   placeholder="例: https://github.com/user/repo.git"
+                   value="invalid-url"`,
+		`name="base_branch" class="form-control"
+                       value="release/2026-04"`,
+		`name="feature_branch" class="form-control"
+                       value="feature/new-ui"`,
+		`<option value="release" selected>release (リリース可否判定)</option>`,
+		`<option value="gemini-2.5-pro" selected>gemini-2.5-pro</option>`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("form value should be preserved: want %q body=%s", want, body)
+		}
+	}
+}
+
 func TestHandleReviewSubmit_InvalidGeminiModel(t *testing.T) {
 	h, enq := buildTestHandler(t, nil, nil)
 	w := httptest.NewRecorder()
@@ -205,6 +242,46 @@ func TestHandleReviewSubmit_Success(t *testing.T) {
 	}
 	if body := w.Body.String(); !strings.Contains(body, "https://signed.example.com/result.html") {
 		t.Fatalf("response should include result URL, body=%q", body)
+	}
+}
+
+func TestHandleReviewSubmit_SuccessPreservesFormValues(t *testing.T) {
+	h, enq := buildTestHandler(t, nil, nil)
+	w := httptest.NewRecorder()
+
+	v, err := url.ParseQuery(validFormBody())
+	if err != nil {
+		t.Fatalf("failed to parse valid form body: %v", err)
+	}
+	v.Set("repo_url", "git@github.com:org/repo.git")
+	v.Set("base_branch", "release/2026-04")
+	v.Set("feature_branch", "feature/completion-form")
+	v.Set("review_mode", "article")
+	v.Set("gemini_model", "gemini-2.5-pro")
+
+	h.HandleReviewSubmit(w, newSubmitRequest(v.Encode()))
+
+	if w.Code != http.StatusAccepted {
+		t.Fatalf("expected status 202, got %d", w.Code)
+	}
+	if !enq.called {
+		t.Fatal("enqueue should be called on success")
+	}
+	body := html.UnescapeString(w.Body.String())
+	for _, want := range []string{
+		`name="repo_url" class="form-control"
+                   placeholder="例: https://github.com/user/repo.git"
+                   value="git@github.com:org/repo.git"`,
+		`name="base_branch" class="form-control"
+                       value="release/2026-04"`,
+		`name="feature_branch" class="form-control"
+                       value="feature/completion-form"`,
+		`<option value="article" selected>article (技術記事・ドキュメント品質レビュー)</option>`,
+		`<option value="gemini-2.5-pro" selected>gemini-2.5-pro</option>`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("form value should be preserved: want %q body=%s", want, body)
+		}
 	}
 }
 

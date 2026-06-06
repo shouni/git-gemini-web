@@ -36,6 +36,7 @@
             <label for="repo_url" class="form-label fw-bold text-secondary">リポジトリURL (SSH/HTTPS)</label>
             <input type="text" id="repo_url" name="repo_url" class="form-control"
                    placeholder="例: https://github.com/user/repo.git"
+                   value="{{.RepoURL}}"
                    pattern="{{.RepoURLPattern}}"
                    title="有効なGitリポジトリURL (https://, ssh://, git@) を入力してください。"
                    required>
@@ -45,13 +46,13 @@
             <div class="col-md-6">
                 <label for="base_branch" class="form-label fw-bold text-secondary">ベースブランチ (比較元)</label>
                 <input type="text" id="base_branch" name="base_branch" class="form-control"
-                       value="main" pattern="{{.BranchPattern}}"
+                       value="{{.BaseBranch}}" pattern="{{.BranchPattern}}"
                        title="有効なブランチ名を入力してください。" required>
             </div>
             <div class="col-md-6">
                 <label for="feature_branch" class="form-label fw-bold text-secondary">フィーチャーブランチ (比較対象)</label>
                 <input type="text" id="feature_branch" name="feature_branch" class="form-control"
-                       value="develop" pattern="{{.BranchPattern}}"
+                       value="{{.FeatureBranch}}" pattern="{{.BranchPattern}}"
                        title="有効なブランチ名を入力してください。" required>
             </div>
         </div>

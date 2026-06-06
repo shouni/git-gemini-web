@@ -32,7 +32,9 @@ func (h *Handler) HandleReviewSubmit(w http.ResponseWriter, r *http.Request) {
 
 	// 2. 入力バリデーション
 	if err := h.validateReviewRequest(req); err != nil {
-		h.renderForm(w, r, http.StatusBadRequest, ReviewFormPageData{Error: err.Error()})
+		h.renderForm(w, r, http.StatusBadRequest, reviewFormPageData(req, ReviewFormPageData{
+			Error: err.Error(),
+		}))
 		return
 	}
 
@@ -43,9 +45,9 @@ func (h *Handler) HandleReviewSubmit(w http.ResponseWriter, r *http.Request) {
 	publicURL, err := h.generateSignedResultURL(ctx, req.StorageURI)
 	if err != nil {
 		slog.ErrorContext(ctx, "署名付きURLの生成失敗", "error", err)
-		h.renderForm(w, r, http.StatusInternalServerError, ReviewFormPageData{
+		h.renderForm(w, r, http.StatusInternalServerError, reviewFormPageData(req, ReviewFormPageData{
 			Error: "内部サーバーエラーが発生しました。",
-		})
+		}))
 		return
 	}
 	req.PublicURL = publicURL
@@ -53,18 +55,27 @@ func (h *Handler) HandleReviewSubmit(w http.ResponseWriter, r *http.Request) {
 	// 5. Cloud Tasks へのタスク投入
 	if err := h.taskEnqueuer.Enqueue(ctx, req); err != nil {
 		slog.ErrorContext(ctx, "Cloud Tasksへの投入失敗", "error", err, "repo", req.RepoURL)
-		h.renderForm(w, r, http.StatusServiceUnavailable, ReviewFormPageData{
+		h.renderForm(w, r, http.StatusServiceUnavailable, reviewFormPageData(req, ReviewFormPageData{
 			Error: "現在レビューの受け付けができません。時間をおいて再度お試しください。",
-		})
+		}))
 		return
 	}
 
 	// 6. 成功応答を返します
 	slog.InfoContext(ctx, "レビュータスク投入成功", "repo", req.RepoURL, "storage_uri", req.StorageURI)
-	h.renderForm(w, r, http.StatusAccepted, ReviewFormPageData{
+	h.renderForm(w, r, http.StatusAccepted, reviewFormPageData(req, ReviewFormPageData{
 		Message:   fmt.Sprintf("✅ レビュータスクを受け付けました。生成完了後、以下のURLから確認できます（%s有効）。", config.SignedURLExpiration.String()),
 		ResultURL: req.PublicURL,
-	})
+	}))
+}
+
+func reviewFormPageData(req domain.ReviewRequest, data ReviewFormPageData) ReviewFormPageData {
+	data.RepoURL = req.RepoURL
+	data.BaseBranch = req.BaseBranch
+	data.FeatureBranch = req.FeatureBranch
+	data.ReviewMode = req.Mode
+	data.GeminiModel = req.ModelName
+	return data
 }
 
 // generateSignedResultURL は StorageURI から署名付きURLを作るヘルパーです。

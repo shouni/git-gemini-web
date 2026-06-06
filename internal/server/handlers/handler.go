@@ -18,6 +18,11 @@ type ReviewFormPageData struct {
 	Message        string
 	Error          string
 	ResultURL      string
+	RepoURL        string
+	BaseBranch     string
+	FeatureBranch  string
+	ReviewMode     string
+	GeminiModel    string
 	ReviewModes    []ReviewModeOption
 	GeminiModels   []GeminiModelOption
 	CSRFToken      string

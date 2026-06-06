@@ -20,6 +20,8 @@ const (
 	branchPattern     = `^[a-zA-Z0-9_.-]+(/[a-zA-Z0-9_.-]+)*$`
 	csrfTokenField    = "csrf_token"
 	defaultReviewMode = "detail"
+	defaultBaseBranch = "main"
+	defaultHeadBranch = "develop"
 )
 
 var (
@@ -31,14 +33,16 @@ var (
 
 // renderForm はテンプレートの表示を一括管理するヘルパーメソッドです。
 func (h *Handler) renderForm(w http.ResponseWriter, r *http.Request, status int, data ReviewFormPageData) {
+	applyFormValueDefaults(r, &data)
+
 	data.RepoURLPattern = repoURLPattern
 	data.BranchPattern = branchPattern
 	data.CSRFTokenField = csrfTokenField
 	if len(data.ReviewModes) == 0 {
-		data.ReviewModes = reviewModeOptions(r.Context())
+		data.ReviewModes = reviewModeOptions(r.Context(), data.ReviewMode)
 	}
 	if len(data.GeminiModels) == 0 {
-		data.GeminiModels = h.geminiModelOptions(r.PostFormValue("gemini_model"))
+		data.GeminiModels = h.geminiModelOptions(data.GeminiModel)
 	}
 	if data.CSRFToken == "" {
 		data.CSRFToken = csrfTokenFromContext(r.Context())
@@ -58,23 +62,56 @@ func (h *Handler) renderForm(w http.ResponseWriter, r *http.Request, status int,
 	}
 }
 
-func reviewModeOptions(ctx context.Context) []ReviewModeOption {
+func applyFormValueDefaults(r *http.Request, data *ReviewFormPageData) {
+	if data.RepoURL == "" {
+		data.RepoURL = strings.TrimSpace(r.PostFormValue("repo_url"))
+	}
+	if data.BaseBranch == "" {
+		data.BaseBranch = strings.TrimSpace(r.PostFormValue("base_branch"))
+	}
+	if data.FeatureBranch == "" {
+		data.FeatureBranch = strings.TrimSpace(r.PostFormValue("feature_branch"))
+	}
+	if data.ReviewMode == "" {
+		data.ReviewMode = r.PostFormValue("review_mode")
+	}
+	if data.GeminiModel == "" {
+		data.GeminiModel = r.PostFormValue("gemini_model")
+	}
+
+	if r.Method == http.MethodGet {
+		if data.BaseBranch == "" {
+			data.BaseBranch = defaultBaseBranch
+		}
+		if data.FeatureBranch == "" {
+			data.FeatureBranch = defaultHeadBranch
+		}
+	}
+}
+
+func reviewModeOptions(ctx context.Context, selectedMode string) []ReviewModeOption {
 	modes, err := assets.AvailableModes()
 	if err != nil {
 		slog.ErrorContext(ctx, "レビューモード一覧の読み込みに失敗しました", "error", err)
+		if selectedMode == "" {
+			selectedMode = defaultReviewMode
+		}
 		return []ReviewModeOption{{
-			Value:       defaultReviewMode,
-			Description: defaultReviewMode,
+			Value:       selectedMode,
+			Description: selectedMode,
 			Selected:    true,
 		}}
 	}
+	if selectedMode == "" {
+		selectedMode = defaultReviewMode
+	}
 
 	options := make([]ReviewModeOption, 0, len(modes))
-	hasDefault := false
+	hasSelected := false
 	for _, mode := range modes {
-		selected := mode.Name == defaultReviewMode
+		selected := mode.Name == selectedMode
 		if selected {
-			hasDefault = true
+			hasSelected = true
 		}
 		options = append(options, ReviewModeOption{
 			Value:       mode.Name,
@@ -82,7 +119,7 @@ func reviewModeOptions(ctx context.Context) []ReviewModeOption {
 			Selected:    selected,
 		})
 	}
-	if len(options) > 0 && !hasDefault {
+	if len(options) > 0 && !hasSelected {
 		options[0].Selected = true
 	}
 	return options
