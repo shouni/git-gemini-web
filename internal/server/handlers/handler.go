@@ -79,5 +79,5 @@ func NewHandler(
 
 // HandleReviewForm は GET リクエストに対してフォームを表示します。
 func (h *Handler) HandleReviewForm(w http.ResponseWriter, r *http.Request) {
-	h.renderForm(w, r, http.StatusOK, ReviewFormPageData{})
+	h.renderForm(w, r, http.StatusOK, defaultReviewFormPageData())
 }

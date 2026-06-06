@@ -16,7 +16,9 @@ func (h *Handler) HandleReviewSubmit(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	if err := r.ParseForm(); err != nil {
-		h.renderForm(w, r, http.StatusBadRequest, ReviewFormPageData{Error: "リクエストのパースに失敗しました。"})
+		data := defaultReviewFormPageData()
+		data.Error = "リクエストのパースに失敗しました。"
+		h.renderForm(w, r, http.StatusBadRequest, data)
 		return
 	}
 
@@ -67,6 +69,14 @@ func (h *Handler) HandleReviewSubmit(w http.ResponseWriter, r *http.Request) {
 		Message:   fmt.Sprintf("✅ レビュータスクを受け付けました。生成完了後、以下のURLから確認できます（%s有効）。", config.SignedURLExpiration.String()),
 		ResultURL: req.PublicURL,
 	}))
+}
+
+func defaultReviewFormPageData() ReviewFormPageData {
+	return ReviewFormPageData{
+		BaseBranch:    defaultBaseBranch,
+		FeatureBranch: defaultFeatureBranch,
+		ReviewMode:    defaultReviewMode,
+	}
 }
 
 func reviewFormPageData(req domain.ReviewRequest, data ReviewFormPageData) ReviewFormPageData {

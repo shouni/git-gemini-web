@@ -16,12 +16,12 @@ import (
 )
 
 const (
-	repoURLPattern    = `^((https?|git|ssh)://|git@)[a-zA-Z0-9_./:@-]+\.git$`
-	branchPattern     = `^[a-zA-Z0-9_.-]+(/[a-zA-Z0-9_.-]+)*$`
-	csrfTokenField    = "csrf_token"
-	defaultReviewMode = "detail"
-	defaultBaseBranch = "main"
-	defaultHeadBranch = "develop"
+	repoURLPattern       = `^((https?|git|ssh)://|git@)[a-zA-Z0-9_./:@-]+\.git$`
+	branchPattern        = `^[a-zA-Z0-9_.-]+(/[a-zA-Z0-9_.-]+)*$`
+	csrfTokenField       = "csrf_token"
+	defaultReviewMode    = "detail"
+	defaultBaseBranch    = "main"
+	defaultFeatureBranch = "develop"
 )
 
 var (
@@ -33,8 +33,6 @@ var (
 
 // renderForm はテンプレートの表示を一括管理するヘルパーメソッドです。
 func (h *Handler) renderForm(w http.ResponseWriter, r *http.Request, status int, data ReviewFormPageData) {
-	applyFormValueDefaults(r, &data)
-
 	data.RepoURLPattern = repoURLPattern
 	data.BranchPattern = branchPattern
 	data.CSRFTokenField = csrfTokenField
@@ -59,33 +57,6 @@ func (h *Handler) renderForm(w http.ResponseWriter, r *http.Request, status int,
 	w.WriteHeader(status)
 	if _, err := buf.WriteTo(w); err != nil {
 		slog.ErrorContext(r.Context(), "レスポンス書き込みエラー", "error", err)
-	}
-}
-
-func applyFormValueDefaults(r *http.Request, data *ReviewFormPageData) {
-	if data.RepoURL == "" {
-		data.RepoURL = strings.TrimSpace(r.PostFormValue("repo_url"))
-	}
-	if data.BaseBranch == "" {
-		data.BaseBranch = strings.TrimSpace(r.PostFormValue("base_branch"))
-	}
-	if data.FeatureBranch == "" {
-		data.FeatureBranch = strings.TrimSpace(r.PostFormValue("feature_branch"))
-	}
-	if data.ReviewMode == "" {
-		data.ReviewMode = r.PostFormValue("review_mode")
-	}
-	if data.GeminiModel == "" {
-		data.GeminiModel = r.PostFormValue("gemini_model")
-	}
-
-	if r.Method == http.MethodGet {
-		if data.BaseBranch == "" {
-			data.BaseBranch = defaultBaseBranch
-		}
-		if data.FeatureBranch == "" {
-			data.FeatureBranch = defaultHeadBranch
-		}
 	}
 }
 
