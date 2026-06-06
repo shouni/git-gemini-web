@@ -65,6 +65,15 @@
             </select>
         </div>
 
+        <div class="mb-4">
+            <label for="gemini_model" class="form-label fw-bold text-secondary">Geminiモデル</label>
+            <select id="gemini_model" name="gemini_model" class="form-select" required>
+                {{range .GeminiModels}}
+                <option value="{{.Value}}" {{if .Selected}}selected{{end}}>{{.Value}}</option>
+                {{end}}
+            </select>
+        </div>
+
         <button type="submit" id="submitBtn" class="btn btn-primary w-100 py-2 fw-bold shadow-sm">
             <i id="btnIcon" class="bi bi-cpu-fill me-2"></i>
             <span id="btnSpinner" class="spinner-border spinner-border-sm me-2 d-none" aria-hidden="true"></span>

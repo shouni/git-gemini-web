@@ -102,7 +102,7 @@ git-gemini-web/
 | `SERVICE_ACCOUNT_EMAIL` | タスク発行に使用するサービスアカウント | - |
 | `GCS_REVIEW_BUCKET` | レビュー結果（HTML）を保存するGCSバケット名 | `your-review-archive-bucket` |
 | `GEMINI_API_KEY` | Google Gemini APIキー | - |
-| `GEMINI_MODEL` | 使用するGeminiモデル名 | `gemini-2.5-flash` |
+| `GEMINI_MODEL` | 使用するGeminiモデル名。カンマ区切りで複数指定した場合はフォームで選択可能（先頭がデフォルト） | `gemini-2.5-flash` |
 | `SSH_KEY_PATH` | Git操作用のSSH秘密鍵パス（Secret Managerマウント推奨） | `/secrets/ssh/id_rsa` |
 | `SLACK_WEBHOOK_URL` | レビュー結果のURLを通知するためのSlack Webhook URL。未設定の場合は通知をスキップします。 | `https://hooks.slack.com/services/T...` |
 

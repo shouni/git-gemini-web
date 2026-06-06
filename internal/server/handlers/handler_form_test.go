@@ -67,6 +67,34 @@ func TestHandleReviewForm_RendersPromptModesWithDetailDefault(t *testing.T) {
 	}
 }
 
+func TestHandleReviewForm_RendersGeminiModelsWithFirstDefault(t *testing.T) {
+	h, err := NewHandler(&config.Config{
+		GeminiModel:  "gemini-3.5-flash",
+		GeminiModels: []string{"gemini-3.5-flash", "gemini-3.1-pro-preview"},
+	}, &fakeEnqueuer{}, &app.RemoteIO{})
+	if err != nil {
+		t.Fatalf("failed to create handler: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	w := httptest.NewRecorder()
+	h.HandleReviewForm(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("unexpected status: got %d want %d", w.Code, http.StatusOK)
+	}
+	body := html.UnescapeString(w.Body.String())
+	for _, want := range []string{
+		`<select id="gemini_model" name="gemini_model"`,
+		`<option value="gemini-3.5-flash" selected>gemini-3.5-flash</option>`,
+		`<option value="gemini-3.1-pro-preview" >gemini-3.1-pro-preview</option>`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("gemini model option not rendered: want %q body=%s", want, body)
+		}
+	}
+}
+
 func TestHandleReviewForm_RendersCSRFTokenFromContext(t *testing.T) {
 	h, err := NewHandler(&config.Config{}, &fakeEnqueuer{}, &app.RemoteIO{})
 	if err != nil {

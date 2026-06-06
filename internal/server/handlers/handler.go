@@ -19,6 +19,7 @@ type ReviewFormPageData struct {
 	Error          string
 	ResultURL      string
 	ReviewModes    []ReviewModeOption
+	GeminiModels   []GeminiModelOption
 	CSRFToken      string
 	CSRFTokenField string
 	RepoURLPattern string
@@ -30,6 +31,12 @@ type ReviewModeOption struct {
 	Value       string
 	Description string
 	Selected    bool
+}
+
+// GeminiModelOption はフォームに表示するGeminiモデルの選択肢です。
+type GeminiModelOption struct {
+	Value    string
+	Selected bool
 }
 
 type reviewTaskEnqueuer interface {

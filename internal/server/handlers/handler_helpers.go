@@ -7,9 +7,11 @@ import (
 	"log/slog"
 	"net/http"
 	"regexp"
+	"slices"
 	"strings"
 
 	"git-gemini-web/assets"
+	"git-gemini-web/internal/config"
 	"git-gemini-web/internal/domain"
 )
 
@@ -34,6 +36,9 @@ func (h *Handler) renderForm(w http.ResponseWriter, r *http.Request, status int,
 	data.CSRFTokenField = csrfTokenField
 	if len(data.ReviewModes) == 0 {
 		data.ReviewModes = reviewModeOptions(r.Context())
+	}
+	if len(data.GeminiModels) == 0 {
+		data.GeminiModels = h.geminiModelOptions(r.PostFormValue("gemini_model"))
 	}
 	if data.CSRFToken == "" {
 		data.CSRFToken = csrfTokenFromContext(r.Context())
@@ -83,15 +88,48 @@ func reviewModeOptions(ctx context.Context) []ReviewModeOption {
 	return options
 }
 
+func (h *Handler) geminiModelOptions(selectedModel string) []GeminiModelOption {
+	models := h.configuredGeminiModels()
+	if selectedModel == "" || !slices.Contains(models, selectedModel) {
+		selectedModel = models[0]
+	}
+
+	options := make([]GeminiModelOption, 0, len(models))
+	for _, model := range models {
+		options = append(options, GeminiModelOption{
+			Value:    model,
+			Selected: model == selectedModel,
+		})
+	}
+	return options
+}
+
+func (h *Handler) configuredGeminiModels() []string {
+	if h.cfg == nil {
+		return []string{config.DefaultGeminiModel}
+	}
+	if len(h.cfg.GeminiModels) > 0 {
+		return h.cfg.GeminiModels
+	}
+	if h.cfg.GeminiModel != "" {
+		return []string{h.cfg.GeminiModel}
+	}
+	return []string{config.DefaultGeminiModel}
+}
+
 // validateReviewRequest は入力内容が正しいかまとめてチェックする。
 func (h *Handler) validateReviewRequest(req domain.ReviewRequest) error {
-	if req.RepoURL == "" || req.BaseBranch == "" || req.FeatureBranch == "" || req.Mode == "" {
+	if req.RepoURL == "" || req.BaseBranch == "" || req.FeatureBranch == "" || req.Mode == "" || req.ModelName == "" {
 		return fmt.Errorf("すべてのフィールドを入力してください。")
 	}
 
 	// レビューモードの動的バリデーション
 	if !assets.IsValidMode(req.Mode) {
 		return fmt.Errorf("不正なレビューモードです: %s", req.Mode)
+	}
+
+	if !slices.Contains(h.configuredGeminiModels(), req.ModelName) {
+		return fmt.Errorf("不正なGeminiモデルです: %s", req.ModelName)
 	}
 
 	if !gitURLRegexp.MatchString(req.RepoURL) {
