@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"git-gemini-web/internal/config"
 	"git-gemini-web/internal/domain"
 )
 
@@ -42,6 +43,7 @@ func TestValidateReviewRequest(t *testing.T) {
 		BaseBranch:    "main",
 		FeatureBranch: "feature/new-ui",
 		Mode:          "detail",
+		ModelName:     config.DefaultGeminiModel,
 	}
 
 	tests := []struct {
@@ -62,6 +64,11 @@ func TestValidateReviewRequest(t *testing.T) {
 			name:    "invalid mode",
 			mutate:  func(r *domain.ReviewRequest) { r.Mode = "invalid-mode" },
 			wantErr: "不正なレビューモード",
+		},
+		{
+			name:    "invalid gemini model",
+			mutate:  func(r *domain.ReviewRequest) { r.ModelName = "invalid-model" },
+			wantErr: "不正なGeminiモデル",
 		},
 		{
 			name:    "invalid repo url format",

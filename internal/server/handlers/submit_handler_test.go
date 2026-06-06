@@ -43,7 +43,11 @@ func buildTestHandler(t *testing.T, signerErr, enqueueErr error) (*Handler, *fak
 	t.Helper()
 	enq := &fakeEnqueuer{err: enqueueErr}
 	h, err := NewHandler(
-		&config.Config{GeminiModel: "gemini-2.5-flash", GCSBucket: "bucket-a"},
+		&config.Config{
+			GeminiModel:  "gemini-2.5-flash",
+			GeminiModels: []string{"gemini-2.5-flash", "gemini-2.5-pro"},
+			GCSBucket:    "bucket-a",
+		},
 		enq,
 		&app.RemoteIO{Signer: &fakeSigner{url: "https://signed.example.com/result.html", err: signerErr}},
 	)
@@ -68,6 +72,7 @@ func validFormBody() string {
 	v.Set("base_branch", "main")
 	v.Set("feature_branch", "feature/new-ui")
 	v.Set("review_mode", "detail")
+	v.Set("gemini_model", "gemini-2.5-flash")
 	return v.Encode()
 }
 
@@ -93,6 +98,7 @@ func TestHandleReviewSubmit_ValidationError(t *testing.T) {
 	v.Set("base_branch", "main")
 	v.Set("feature_branch", "feature/new-ui")
 	v.Set("review_mode", "invalid-mode")
+	v.Set("gemini_model", "gemini-2.5-flash")
 
 	h.HandleReviewSubmit(w, newSubmitRequest(v.Encode()))
 
@@ -101,6 +107,27 @@ func TestHandleReviewSubmit_ValidationError(t *testing.T) {
 	}
 	if enq.called {
 		t.Fatal("enqueue should not be called on validation error")
+	}
+}
+
+func TestHandleReviewSubmit_InvalidGeminiModel(t *testing.T) {
+	h, enq := buildTestHandler(t, nil, nil)
+	w := httptest.NewRecorder()
+
+	v := url.Values{}
+	v.Set("repo_url", "https://github.com/org/repo.git")
+	v.Set("base_branch", "main")
+	v.Set("feature_branch", "feature/new-ui")
+	v.Set("review_mode", "detail")
+	v.Set("gemini_model", "gemini-invalid")
+
+	h.HandleReviewSubmit(w, newSubmitRequest(v.Encode()))
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", w.Code)
+	}
+	if enq.called {
+		t.Fatal("enqueue should not be called on invalid gemini model")
 	}
 }
 
@@ -152,5 +179,25 @@ func TestHandleReviewSubmit_Success(t *testing.T) {
 	}
 	if body := w.Body.String(); !strings.Contains(body, "https://signed.example.com/result.html") {
 		t.Fatalf("response should include result URL, body=%q", body)
+	}
+}
+
+func TestHandleReviewSubmit_UsesSelectedGeminiModel(t *testing.T) {
+	h, enq := buildTestHandler(t, nil, nil)
+	w := httptest.NewRecorder()
+
+	v, err := url.ParseQuery(validFormBody())
+	if err != nil {
+		t.Fatalf("failed to parse valid form body: %v", err)
+	}
+	v.Set("gemini_model", "gemini-2.5-pro")
+
+	h.HandleReviewSubmit(w, newSubmitRequest(v.Encode()))
+
+	if w.Code != http.StatusAccepted {
+		t.Fatalf("expected status 202, got %d", w.Code)
+	}
+	if enq.received.ModelName != "gemini-2.5-pro" {
+		t.Fatalf("unexpected model name: %s", enq.received.ModelName)
 	}
 }

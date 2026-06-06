@@ -32,7 +32,7 @@ func TestLoadConfig_FromEnvironment(t *testing.T) {
 	t.Setenv("GCS_REVIEW_BUCKET", "bucket-a")
 	t.Setenv("SLACK_WEBHOOK_URL", "https://hooks.slack.test")
 	t.Setenv("GEMINI_API_KEY", "api-key")
-	t.Setenv("GEMINI_MODEL", "gemini-2.5-pro")
+	t.Setenv("GEMINI_MODEL", "gemini-2.5-pro, gemini-2.5-flash")
 	t.Setenv("SSH_KEY_PATH", "/tmp/id_rsa")
 	t.Setenv("SKIP_HOST_KEY_CHECK", "true")
 	t.Setenv("GOOGLE_CLIENT_ID", "google-client")
@@ -55,6 +55,10 @@ func TestLoadConfig_FromEnvironment(t *testing.T) {
 	}
 	if cfg.GeminiModel != "gemini-2.5-pro" {
 		t.Fatalf("unexpected model: %s", cfg.GeminiModel)
+	}
+	wantModels := []string{"gemini-2.5-pro", "gemini-2.5-flash"}
+	if !reflect.DeepEqual(cfg.GeminiModels, wantModels) {
+		t.Fatalf("gemini models mismatch: got=%v want=%v", cfg.GeminiModels, wantModels)
 	}
 
 	wantEmails := []string{"alice@example.com", "bob@example.com"}

@@ -7,6 +7,7 @@ import (
 const (
 	DefaultHTTPTimeout  = 30 * time.Second
 	SignedURLExpiration = 30 * time.Minute
+	DefaultGeminiModel  = "gemini-2.5-flash"
 )
 
 // Config は環境変数からアプリケーション設定を読み込む構造体です。
@@ -22,6 +23,7 @@ type Config struct {
 	SlackWebhookURL     string
 	GeminiAPIKey        string
 	GeminiModel         string
+	GeminiModels        []string
 	SSHKeyPath          string
 	SkipHostKeyCheck    bool
 
@@ -43,6 +45,10 @@ func LoadConfig() *Config {
 	serviceURL := getEnv("SERVICE_URL", "http://localhost:8080")
 	allowedEmails := getEnv("ALLOWED_EMAILS", "")
 	allowedDomains := getEnv("ALLOWED_DOMAINS", "")
+	geminiModels := parseCommaSeparatedList(getEnv("GEMINI_MODEL", DefaultGeminiModel))
+	if len(geminiModels) == 0 {
+		geminiModels = []string{DefaultGeminiModel}
+	}
 
 	return &Config{
 		ServiceURL:          serviceURL,
@@ -55,7 +61,8 @@ func LoadConfig() *Config {
 		GCSBucket:           getEnv("GCS_REVIEW_BUCKET", "your-review-archive-bucket"),
 		SlackWebhookURL:     getEnv("SLACK_WEBHOOK_URL", ""),
 		GeminiAPIKey:        getEnv("GEMINI_API_KEY", ""),
-		GeminiModel:         getEnv("GEMINI_MODEL", "gemini-2.5-flash"),
+		GeminiModel:         geminiModels[0],
+		GeminiModels:        geminiModels,
 		SSHKeyPath:          getEnv("SSH_KEY_PATH", "~/.ssh/id_rsa"),
 		SkipHostKeyCheck:    getEnvAsBool("SKIP_HOST_KEY_CHECK", false),
 
