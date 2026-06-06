@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"errors"
+	"html"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -107,6 +108,31 @@ func TestHandleReviewSubmit_ValidationError(t *testing.T) {
 	}
 	if enq.called {
 		t.Fatal("enqueue should not be called on validation error")
+	}
+}
+
+func TestHandleReviewSubmit_ValidationErrorPreservesSelectedGeminiModel(t *testing.T) {
+	h, enq := buildTestHandler(t, nil, nil)
+	w := httptest.NewRecorder()
+
+	v := url.Values{}
+	v.Set("repo_url", "invalid-url")
+	v.Set("base_branch", "main")
+	v.Set("feature_branch", "feature/new-ui")
+	v.Set("review_mode", "detail")
+	v.Set("gemini_model", "gemini-2.5-pro")
+
+	h.HandleReviewSubmit(w, newSubmitRequest(v.Encode()))
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", w.Code)
+	}
+	if enq.called {
+		t.Fatal("enqueue should not be called on validation error")
+	}
+	body := html.UnescapeString(w.Body.String())
+	if !strings.Contains(body, `<option value="gemini-2.5-pro" selected>gemini-2.5-pro</option>`) {
+		t.Fatalf("selected gemini model should be preserved, body=%s", body)
 	}
 }
 
