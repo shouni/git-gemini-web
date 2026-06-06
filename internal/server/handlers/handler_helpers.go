@@ -16,10 +16,12 @@ import (
 )
 
 const (
-	repoURLPattern    = `^((https?|git|ssh)://|git@)[a-zA-Z0-9_./:@-]+\.git$`
-	branchPattern     = `^[a-zA-Z0-9_.-]+(/[a-zA-Z0-9_.-]+)*$`
-	csrfTokenField    = "csrf_token"
-	defaultReviewMode = "detail"
+	repoURLPattern       = `^((https?|git|ssh)://|git@)[a-zA-Z0-9_./:@-]+\.git$`
+	branchPattern        = `^[a-zA-Z0-9_.-]+(/[a-zA-Z0-9_.-]+)*$`
+	csrfTokenField       = "csrf_token"
+	defaultReviewMode    = "detail"
+	defaultBaseBranch    = "main"
+	defaultFeatureBranch = "develop"
 )
 
 var (
@@ -35,10 +37,10 @@ func (h *Handler) renderForm(w http.ResponseWriter, r *http.Request, status int,
 	data.BranchPattern = branchPattern
 	data.CSRFTokenField = csrfTokenField
 	if len(data.ReviewModes) == 0 {
-		data.ReviewModes = reviewModeOptions(r.Context())
+		data.ReviewModes = reviewModeOptions(r.Context(), data.ReviewMode)
 	}
 	if len(data.GeminiModels) == 0 {
-		data.GeminiModels = h.geminiModelOptions(r.PostFormValue("gemini_model"))
+		data.GeminiModels = h.geminiModelOptions(data.GeminiModel)
 	}
 	if data.CSRFToken == "" {
 		data.CSRFToken = csrfTokenFromContext(r.Context())
@@ -58,23 +60,29 @@ func (h *Handler) renderForm(w http.ResponseWriter, r *http.Request, status int,
 	}
 }
 
-func reviewModeOptions(ctx context.Context) []ReviewModeOption {
+func reviewModeOptions(ctx context.Context, selectedMode string) []ReviewModeOption {
 	modes, err := assets.AvailableModes()
 	if err != nil {
 		slog.ErrorContext(ctx, "レビューモード一覧の読み込みに失敗しました", "error", err)
+		if selectedMode == "" {
+			selectedMode = defaultReviewMode
+		}
 		return []ReviewModeOption{{
-			Value:       defaultReviewMode,
-			Description: defaultReviewMode,
+			Value:       selectedMode,
+			Description: selectedMode,
 			Selected:    true,
 		}}
 	}
+	if selectedMode == "" {
+		selectedMode = defaultReviewMode
+	}
 
 	options := make([]ReviewModeOption, 0, len(modes))
-	hasDefault := false
+	hasSelected := false
 	for _, mode := range modes {
-		selected := mode.Name == defaultReviewMode
+		selected := mode.Name == selectedMode
 		if selected {
-			hasDefault = true
+			hasSelected = true
 		}
 		options = append(options, ReviewModeOption{
 			Value:       mode.Name,
@@ -82,7 +90,7 @@ func reviewModeOptions(ctx context.Context) []ReviewModeOption {
 			Selected:    selected,
 		})
 	}
-	if len(options) > 0 && !hasDefault {
+	if len(options) > 0 && !hasSelected {
 		options[0].Selected = true
 	}
 	return options
