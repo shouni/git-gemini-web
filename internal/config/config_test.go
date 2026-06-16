@@ -75,7 +75,7 @@ func TestStorageURI(t *testing.T) {
 	cfg := &Config{GCSBucket: "review-bucket"}
 	now := time.Date(2026, 4, 15, 12, 34, 56, 0, time.UTC)
 
-	got := cfg.StorageURI("https://github.com/org/repo.git", "feature/new-ui", now)
+	got := cfg.StorageURI("git@github.com:org/repo.git", "feature/new-ui", now)
 
 	if !strings.HasPrefix(got, "gs://review-bucket/reviews/") {
 		t.Fatalf("unexpected prefix: %s", got)

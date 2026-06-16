@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	repoURLPattern       = `^((https?|git|ssh)://|git@)[a-zA-Z0-9_./:@-]+\.git$`
+	repoURLPattern       = `^git@github\.com:[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\.git$`
 	branchPattern        = `^[a-zA-Z0-9_.-]+(/[a-zA-Z0-9_.-]+)*$`
 	csrfTokenField       = "csrf_token"
 	defaultReviewMode    = "detail"
@@ -141,7 +141,7 @@ func (h *Handler) validateReviewRequest(req domain.ReviewRequest) error {
 	}
 
 	if !gitURLRegexp.MatchString(req.RepoURL) {
-		return fmt.Errorf("リポジトリURLの形式が不正です。")
+		return fmt.Errorf("リポジトリURLの形式が不正です。git@github.com:owner/repo.git の形式のみ使用できます。")
 	}
 
 	if err := validateBranchName(req.BaseBranch); err != nil {

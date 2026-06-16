@@ -103,7 +103,7 @@ git-gemini-web/
 | `GCS_REVIEW_BUCKET` | レビュー結果（HTML）を保存するGCSバケット名 | `your-review-archive-bucket` |
 | `GEMINI_API_KEY` | Google Gemini APIキー | - |
 | `GEMINI_MODEL` | 使用するGeminiモデル名。カンマ区切りで複数指定した場合はフォームで選択可能（先頭がデフォルト） | `gemini-2.5-flash` |
-| `SSH_KEY_PATH` | Git操作用のSSH秘密鍵パス（Secret Managerマウント推奨） | `/secrets/ssh/id_rsa` |
+| `SSH_KEY_PATH` | GitHub SSH URL (`git@github.com:owner/repo.git`) のクローンに使うSSH秘密鍵パス（Secret Managerマウント推奨） | `/secrets/ssh/id_rsa` |
 | `SLACK_WEBHOOK_URL` | レビュー結果のURLを通知するためのSlack Webhook URL。未設定の場合は通知をスキップします。 | `https://hooks.slack.com/services/T...` |
 
 **認証設定 (OAuth):**
