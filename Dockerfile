@@ -13,13 +13,10 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 
 WORKDIR /app
-COPY --chown=65532:65532 --from=builder /app/main /app/main
+COPY --from=builder /app/main /app/main
 
 ENV TZ=Asia/Tokyo
 
 EXPOSE 8080
 
-USER 65532:65532
-
 CMD ["/app/main"]
-
