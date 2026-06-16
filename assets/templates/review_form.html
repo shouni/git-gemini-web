@@ -33,12 +33,12 @@
         {{end}}
 
         <div class="mb-3">
-            <label for="repo_url" class="form-label fw-bold text-secondary">リポジトリURL (SSH/HTTPS)</label>
+            <label for="repo_url" class="form-label fw-bold text-secondary">GitHub SSH リポジトリURL</label>
             <input type="text" id="repo_url" name="repo_url" class="form-control"
-                   placeholder="例: https://github.com/user/repo.git"
+                   placeholder="例: git@github.com:user/repo.git"
                    value="{{.RepoURL}}"
                    pattern="{{.RepoURLPattern}}"
-                   title="有効なGitリポジトリURL (https://, ssh://, git@) を入力してください。"
+                   title="git@github.com:owner/repo.git の形式で入力してください。"
                    required>
         </div>
 

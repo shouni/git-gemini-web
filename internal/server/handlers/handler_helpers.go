@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -16,7 +17,7 @@ import (
 )
 
 const (
-	repoURLPattern       = `^((https?|git|ssh)://|git@)[a-zA-Z0-9_./:@-]+\.git$`
+	repoURLPattern       = `^git@github\.com:[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\.git$`
 	branchPattern        = `^[a-zA-Z0-9_.-]+(/[a-zA-Z0-9_.-]+)*$`
 	csrfTokenField       = "csrf_token"
 	defaultReviewMode    = "detail"
@@ -128,7 +129,7 @@ func (h *Handler) configuredGeminiModels() []string {
 // validateReviewRequest は入力内容が正しいかまとめてチェックする。
 func (h *Handler) validateReviewRequest(req domain.ReviewRequest) error {
 	if req.RepoURL == "" || req.BaseBranch == "" || req.FeatureBranch == "" || req.Mode == "" || req.ModelName == "" {
-		return fmt.Errorf("すべてのフィールドを入力してください。")
+		return errors.New("すべてのフィールドを入力してください。")
 	}
 
 	// レビューモードの動的バリデーション
@@ -141,7 +142,7 @@ func (h *Handler) validateReviewRequest(req domain.ReviewRequest) error {
 	}
 
 	if !gitURLRegexp.MatchString(req.RepoURL) {
-		return fmt.Errorf("リポジトリURLの形式が不正です。")
+		return errors.New("リポジトリURLの形式が不正です。git@github.com:owner/repo.git の形式のみ使用できます。")
 	}
 
 	if err := validateBranchName(req.BaseBranch); err != nil {
@@ -158,13 +159,13 @@ func (h *Handler) validateReviewRequest(req domain.ReviewRequest) error {
 // validateBranchName は Git のブランチ名として正当かどうかを判定する。
 func validateBranchName(branchName string) error {
 	if !gitBranchRegexp.MatchString(branchName) {
-		return fmt.Errorf("形式が不正です。英数字、ハイフン、ドット、スラッシュのみ使用可能です。")
+		return errors.New("形式が不正です。英数字、ハイフン、ドット、スラッシュのみ使用可能です。")
 	}
 	if strings.Contains(branchName, "..") || strings.Contains(branchName, "//") {
-		return fmt.Errorf("'..' または '//' は使用できません。")
+		return errors.New("'..' または '//' は使用できません。")
 	}
 	if strings.HasSuffix(branchName, "/") || strings.HasSuffix(branchName, ".") {
-		return fmt.Errorf("末尾に '/' や '.' は使用できません。")
+		return errors.New("末尾に '/' や '.' は使用できません。")
 	}
 	return nil
 }

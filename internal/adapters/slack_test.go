@@ -10,7 +10,7 @@ import (
 func TestBuildSlackContentIncludesModelName(t *testing.T) {
 	adapter := &SlackAdapter{}
 	req := ports.ReviewRequest{
-		RepoURL:       "https://github.com/org/repo.git",
+		RepoURL:       "git@github.com:org/repo.git",
 		BaseBranch:    "main",
 		FeatureBranch: "feature/new-ui",
 		Mode:          "detail",

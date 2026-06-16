@@ -39,7 +39,7 @@ func TestValidateReviewRequest(t *testing.T) {
 	h := &Handler{}
 
 	validRequest := domain.ReviewRequest{
-		RepoURL:       "https://github.com/org/repo.git",
+		RepoURL:       "git@github.com:org/repo.git",
 		BaseBranch:    "main",
 		FeatureBranch: "feature/new-ui",
 		Mode:          "detail",
@@ -74,6 +74,21 @@ func TestValidateReviewRequest(t *testing.T) {
 			name:    "invalid repo url format",
 			mutate:  func(r *domain.ReviewRequest) { r.RepoURL = "invalid-url" },
 			wantErr: "URLの形式",
+		},
+		{
+			name:    "reject https github url",
+			mutate:  func(r *domain.ReviewRequest) { r.RepoURL = "https://github.com/org/repo.git" },
+			wantErr: "git@github.com:owner/repo.git",
+		},
+		{
+			name:    "reject non github ssh host",
+			mutate:  func(r *domain.ReviewRequest) { r.RepoURL = "git@example.com:org/repo.git" },
+			wantErr: "git@github.com:owner/repo.git",
+		},
+		{
+			name:    "reject ssh scheme",
+			mutate:  func(r *domain.ReviewRequest) { r.RepoURL = "ssh://git@github.com/org/repo.git" },
+			wantErr: "git@github.com:owner/repo.git",
 		},
 		{
 			name:    "invalid base branch name",

@@ -69,7 +69,7 @@ func newSubmitRequest(body string) *http.Request {
 
 func validFormBody() string {
 	v := url.Values{}
-	v.Set("repo_url", "https://github.com/org/repo.git")
+	v.Set("repo_url", "git@github.com:org/repo.git")
 	v.Set("base_branch", "main")
 	v.Set("feature_branch", "feature/new-ui")
 	v.Set("review_mode", "detail")
@@ -95,7 +95,7 @@ func TestHandleReviewSubmit_ValidationError(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	v := url.Values{}
-	v.Set("repo_url", "https://github.com/org/repo.git")
+	v.Set("repo_url", "git@github.com:org/repo.git")
 	v.Set("base_branch", "main")
 	v.Set("feature_branch", "feature/new-ui")
 	v.Set("review_mode", "invalid-mode")
@@ -158,7 +158,7 @@ func TestHandleReviewSubmit_ValidationErrorPreservesFormValues(t *testing.T) {
 	body := html.UnescapeString(w.Body.String())
 	for _, want := range []string{
 		`name="repo_url" class="form-control"
-                   placeholder="例: https://github.com/user/repo.git"
+                   placeholder="例: git@github.com:user/repo.git"
                    value="invalid-url"`,
 		`name="base_branch" class="form-control"
                        value="release/2026-04"`,
@@ -178,7 +178,7 @@ func TestHandleReviewSubmit_InvalidGeminiModel(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	v := url.Values{}
-	v.Set("repo_url", "https://github.com/org/repo.git")
+	v.Set("repo_url", "git@github.com:org/repo.git")
 	v.Set("base_branch", "main")
 	v.Set("feature_branch", "feature/new-ui")
 	v.Set("review_mode", "detail")
@@ -270,7 +270,7 @@ func TestHandleReviewSubmit_SuccessPreservesFormValues(t *testing.T) {
 	body := html.UnescapeString(w.Body.String())
 	for _, want := range []string{
 		`name="repo_url" class="form-control"
-                   placeholder="例: https://github.com/user/repo.git"
+                   placeholder="例: git@github.com:user/repo.git"
                    value="git@github.com:org/repo.git"`,
 		`name="base_branch" class="form-control"
                        value="release/2026-04"`,
