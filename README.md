@@ -72,14 +72,6 @@ git-gemini-web/
 
 ---
 
-## 🎨 概要イメージ
-
-![Page 1](./docs/manga_page_1.png)
-![Page 2](./docs/manga_page_2.png)
-![Page 3](./docs/manga_page_3.png)
-
----
-
 ## 🚀 使い方 (Usage) / セットアップ
 
 ### 1\. GCPコンソールでの事前準備 (OAuth) 🔐
@@ -151,7 +143,5 @@ git-gemini-web/
 
 ## 📜 ライセンス (License)
 
-* デフォルトキャラクター: VOICEVOX:ずんだもん、VOICEVOX:四国めたん
 * このプロジェクトは [MIT License](https://opensource.org/licenses/MIT) の下で公開されています。
 
----
