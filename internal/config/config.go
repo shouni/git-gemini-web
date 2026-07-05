@@ -1,3 +1,4 @@
+// Package config は、環境変数からアプリケーション設定を読み込み・検証します。
 package config
 
 import (
@@ -5,9 +6,12 @@ import (
 )
 
 const (
-	DefaultHTTPTimeout  = 30 * time.Second
+	// DefaultHTTPTimeout は外部HTTP通信のデフォルトタイムアウトです。
+	DefaultHTTPTimeout = 30 * time.Second
+	// SignedURLExpiration は生成物の署名付きURLの有効期限です。
 	SignedURLExpiration = 30 * time.Minute
-	DefaultGeminiModel  = "gemini-2.5-flash"
+	// DefaultGeminiModel はレビュー生成に使用するデフォルトのGeminiモデルです。
+	DefaultGeminiModel = "gemini-2.5-flash"
 )
 
 // Config は環境変数からアプリケーション設定を読み込む構造体です。

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"git-gemini-web/internal/domain"
+	"github.com/shouni/git-gemini-web/internal/domain"
 	"github.com/shouni/go-remote-io/remoteio"
 )
 
@@ -85,7 +85,7 @@ func TestContainerClose_AlwaysClosesTaskEnqueuer(t *testing.T) {
 	}
 }
 
-func TestContainerClose_NilSafe(t *testing.T) {
+func TestContainerClose_NilSafe(_ *testing.T) {
 	// アサーションは不要。パニックなく終了すること（nil-safe）を検証する。
 	c := &Container{}
 	c.Close()

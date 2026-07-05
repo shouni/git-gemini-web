@@ -1,3 +1,5 @@
+// Package builder は、設定値から各サービスクライアント・パイプラインの
+// 依存関係を組み立てるファクトリ関数を提供します。
 package builder
 
 import (
@@ -8,9 +10,9 @@ import (
 	"github.com/shouni/go-http-kit/httpkit"
 	"github.com/shouni/go-remote-io/remoteio/gcs"
 
-	"git-gemini-web/internal/adapters"
-	"git-gemini-web/internal/app"
-	"git-gemini-web/internal/config"
+	"github.com/shouni/git-gemini-web/internal/adapters"
+	"github.com/shouni/git-gemini-web/internal/app"
+	"github.com/shouni/git-gemini-web/internal/config"
 )
 
 // BuildContainer は外部サービスとの接続を確立し、依存関係を組み立てた app.Container を返します。

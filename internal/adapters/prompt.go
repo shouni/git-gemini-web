@@ -8,7 +8,7 @@ import (
 	"github.com/shouni/gemini-reviewer-core/ports"
 	"github.com/shouni/go-prompt-kit/prompts"
 
-	"git-gemini-web/assets"
+	"github.com/shouni/git-gemini-web/assets"
 )
 
 const (

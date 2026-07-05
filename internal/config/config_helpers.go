@@ -7,8 +7,8 @@ import (
 
 	"github.com/shouni/go-remote-io/remoteio"
 	"github.com/shouni/go-utils/envutil"
+	"github.com/shouni/go-utils/giturl"
 	"github.com/shouni/go-utils/text"
-	"github.com/shouni/go-utils/urlpath"
 	"github.com/shouni/netarmor/securenet"
 )
 
@@ -24,7 +24,7 @@ func (c *Config) ValidateEssentialConfig() error {
 	}
 
 	if c.GoogleClientID == "" || c.GoogleClientSecret == "" || c.SessionSecret == "" {
-		return fmt.Errorf("Google OAuth 関連の設定（ClientID, ClientSecret, SessionSecret）が不足しています")
+		return fmt.Errorf("google OAuth 関連の設定（ClientID, ClientSecret, SessionSecret）が不足しています")
 	}
 
 	if len(c.AllowedEmails) == 0 && len(c.AllowedDomains) == 0 {
@@ -47,7 +47,7 @@ func (c *Config) ValidateEssentialConfig() error {
 // StorageURI は、保存先 URI (gs://bucket/path 形式) を生成します。
 func (c *Config) StorageURI(repoURL, featureBranch string, t time.Time) string {
 	now := t.Format("20060102_150405")
-	repoID := urlpath.GenerateGCSKeyName(repoURL)
+	repoID := giturl.GenerateGCSKeyName(repoURL)
 	safeBranchName := strings.ReplaceAll(featureBranch, "/", "-")
 	path := fmt.Sprintf("reviews/%s/%s_%s.html", repoID, now, safeBranchName)
 	return remoteio.BuildGCSURI(c.GCSBucket, path)

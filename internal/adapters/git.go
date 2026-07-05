@@ -6,9 +6,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/shouni/gemini-reviewer-core/git"
 	"github.com/shouni/gemini-reviewer-core/ports"
-	"github.com/shouni/go-utils/urlpath"
+	"github.com/shouni/go-utils/giturl"
 
-	"git-gemini-web/internal/config"
+	"github.com/shouni/git-gemini-web/internal/config"
 )
 
 // GitFactory は、ports.GitFactory インターフェースを満たす具象型です。
@@ -31,7 +31,7 @@ func NewGitFactory(cfg *config.Config) *GitFactory {
 // Create は ports.GitFactory インターフェースを満たします。
 func (g *GitFactory) Create(repoURL, baseBranch string) ports.GitService {
 	localPath := g.generateLocalPath(repoURL)
-	return git.NewGitAdapter(
+	return git.NewAdapter(
 		localPath,
 		g.sshKeyPath,
 		git.WithInsecureSkipHostKeyCheck(g.skipHostKeyCheck),
@@ -42,7 +42,7 @@ func (g *GitFactory) Create(repoURL, baseBranch string) ports.GitService {
 // generateLocalPath はリポジトリURLから実行ごとにユニークなローカルパスを生成します。
 func (g *GitFactory) generateLocalPath(repoURL string) string {
 	const baseRepoDirName = "reviewer-repos"
-	basePath := urlpath.SanitizeURLToUniquePath(repoURL, baseRepoDirName)
+	basePath := giturl.SanitizeURLToUniquePath(repoURL, baseRepoDirName)
 	uniqueID := uuid.New().String()
 
 	return fmt.Sprintf("%s-%s", basePath, uniqueID)

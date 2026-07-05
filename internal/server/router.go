@@ -1,3 +1,4 @@
+// Package server は、HTTPルーティングとミドルウェアを構成します。
 package server
 
 import (
@@ -9,9 +10,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
-	"git-gemini-web/assets"
-	"git-gemini-web/internal/builder"
-	"git-gemini-web/internal/server/handlers"
+	"github.com/shouni/git-gemini-web/assets"
+	"github.com/shouni/git-gemini-web/internal/builder"
+	"github.com/shouni/git-gemini-web/internal/server/handlers"
 )
 
 const (

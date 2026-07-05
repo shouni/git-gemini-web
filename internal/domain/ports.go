@@ -1,3 +1,5 @@
+// Package domain は、レビューワークフローが扱う中心的なドメインモデルと
+// インターフェース（ポート）を定義します。
 package domain
 
 import (

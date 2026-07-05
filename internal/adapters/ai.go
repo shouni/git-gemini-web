@@ -1,3 +1,5 @@
+// Package adapters は、Gemini/Slack クライアントの初期化と、
+// gemini-reviewer-core のポート実装を提供します。
 package adapters
 
 import (
@@ -7,7 +9,7 @@ import (
 	"github.com/shouni/gemini-reviewer-core/ai"
 	"github.com/shouni/gemini-reviewer-core/ports"
 
-	"git-gemini-web/internal/config"
+	"github.com/shouni/git-gemini-web/internal/config"
 )
 
 // NewCodeReviewAI は ports.CodeReviewAI のインスタンスを構築します。

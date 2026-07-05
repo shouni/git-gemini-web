@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	"git-gemini-web/internal/config"
-	"git-gemini-web/internal/domain"
+	"github.com/shouni/git-gemini-web/internal/config"
+	"github.com/shouni/git-gemini-web/internal/domain"
 )
 
 // HandleReviewSubmit は POST リクエストを処理します。

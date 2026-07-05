@@ -10,10 +10,10 @@ import (
 	"github.com/shouni/gemini-reviewer-core/workflow"
 	"github.com/shouni/go-remote-io/remoteio"
 
-	"git-gemini-web/internal/adapters"
-	"git-gemini-web/internal/app"
-	"git-gemini-web/internal/config"
-	"git-gemini-web/internal/domain"
+	"github.com/shouni/git-gemini-web/internal/adapters"
+	"github.com/shouni/git-gemini-web/internal/app"
+	"github.com/shouni/git-gemini-web/internal/config"
+	"github.com/shouni/git-gemini-web/internal/domain"
 )
 
 // buildPipeline は、実行可能な domain.Pipeline を返します。
@@ -68,7 +68,7 @@ func buildPublishRunner(
 	}
 	publishService, err := publisher.New(writer, converter)
 	if err != nil {
-		return nil, fmt.Errorf("Publisherの初期化に失敗しました: %w", err)
+		return nil, fmt.Errorf("publisherの初期化に失敗しました: %w", err)
 	}
 
 	publishRunner := runner.NewPublishRunner(

@@ -13,11 +13,11 @@ import (
 	"github.com/shouni/gcp-kit/auth"
 	"github.com/shouni/gcp-kit/worker"
 
-	"git-gemini-web/internal/app"
-	"git-gemini-web/internal/builder"
-	"git-gemini-web/internal/config"
-	"git-gemini-web/internal/domain"
-	"git-gemini-web/internal/server/handlers"
+	"github.com/shouni/git-gemini-web/internal/app"
+	"github.com/shouni/git-gemini-web/internal/builder"
+	"github.com/shouni/git-gemini-web/internal/config"
+	"github.com/shouni/git-gemini-web/internal/domain"
+	"github.com/shouni/git-gemini-web/internal/server/handlers"
 )
 
 type noopTaskEnqueuer struct{}
