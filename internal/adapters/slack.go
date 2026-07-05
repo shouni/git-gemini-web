@@ -10,7 +10,7 @@ import (
 	"github.com/shouni/gemini-reviewer-core/ports"
 	"github.com/shouni/go-http-kit/httpkit"
 	"github.com/shouni/go-notifier/pkg/slack"
-	"github.com/shouni/go-utils/urlpath"
+	"github.com/shouni/go-utils/giturl"
 )
 
 // SlackAdapter は ports.Notifier インターフェースを満たす具象型です。
@@ -68,7 +68,7 @@ func (s *SlackAdapter) Notify(ctx context.Context, outcome ports.ReviewProcessOu
 // buildSlackContent は投稿メッセージの本文を組み立てます。
 // publicURLをメッセージ内のリンク先URL、storageURIをそのリンクの表示テキストとして使用します。
 func (s *SlackAdapter) buildSlackContent(req ports.ReviewRequest) string {
-	repoPath := urlpath.GetRepositoryPath(req.RepoURL)
+	repoPath := giturl.GetRepositoryPath(req.RepoURL)
 	content := fmt.Sprintf(
 		"*詳細URL:* <%s|%s>\n"+
 			"*リポジトリ:* `%s`\n"+
