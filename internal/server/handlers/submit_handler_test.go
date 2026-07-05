@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"git-gemini-web/internal/app"
-	"git-gemini-web/internal/config"
-	"git-gemini-web/internal/domain"
+	"github.com/shouni/git-gemini-web/internal/app"
+	"github.com/shouni/git-gemini-web/internal/config"
+	"github.com/shouni/git-gemini-web/internal/domain"
 )
 
 type fakeSigner struct {

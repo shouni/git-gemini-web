@@ -11,9 +11,9 @@ import (
 	"slices"
 	"strings"
 
-	"git-gemini-web/assets"
-	"git-gemini-web/internal/config"
-	"git-gemini-web/internal/domain"
+	"github.com/shouni/git-gemini-web/assets"
+	"github.com/shouni/git-gemini-web/internal/config"
+	"github.com/shouni/git-gemini-web/internal/domain"
 )
 
 const (

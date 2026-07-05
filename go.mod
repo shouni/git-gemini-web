@@ -1,4 +1,4 @@
-module git-gemini-web
+module github.com/shouni/git-gemini-web
 
 go 1.26
 

@@ -3,7 +3,7 @@ package builder
 import (
 	"fmt"
 
-	"git-gemini-web/internal/app"
+	"github.com/shouni/git-gemini-web/internal/app"
 
 	"github.com/shouni/go-remote-io/remoteio"
 )

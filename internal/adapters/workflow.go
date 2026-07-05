@@ -6,7 +6,7 @@ import (
 	coreports "github.com/shouni/gemini-reviewer-core/ports"
 	"github.com/shouni/gemini-reviewer-core/workflow"
 
-	"git-gemini-web/internal/domain"
+	"github.com/shouni/git-gemini-web/internal/domain"
 )
 
 // CoreWorkflowAdapter は core workflow を domain.Pipeline として公開する ACL です。

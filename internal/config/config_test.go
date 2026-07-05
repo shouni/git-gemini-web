@@ -23,7 +23,7 @@ func TestValidateEssentialConfig(t *testing.T) {
 	}{
 		{
 			name:   "valid config",
-			mutate: func(c *Config) {},
+			mutate: func(_ *Config) {},
 		},
 		{
 			name:    "insecure service url",
@@ -33,7 +33,7 @@ func TestValidateEssentialConfig(t *testing.T) {
 		{
 			name:    "missing oauth setting",
 			mutate:  func(c *Config) { c.GoogleClientID = "" },
-			wantErr: "Google OAuth",
+			wantErr: "google OAuth",
 		},
 		{
 			name: "missing allow list",

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"git-gemini-web/internal/app"
-	"git-gemini-web/internal/config"
+	"github.com/shouni/git-gemini-web/internal/app"
+	"github.com/shouni/git-gemini-web/internal/config"
 )
 
 func TestHandleReviewForm_RendersValidationPatterns(t *testing.T) {

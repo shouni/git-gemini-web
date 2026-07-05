@@ -1,3 +1,4 @@
+// Package app は、アプリケーションの依存関係を組み立てて保持する DI コンテナを提供します。
 package app
 
 import (
@@ -8,8 +9,8 @@ import (
 	"github.com/shouni/go-http-kit/httpkit"
 	"github.com/shouni/go-remote-io/remoteio"
 
-	"git-gemini-web/internal/config"
-	"git-gemini-web/internal/domain"
+	"github.com/shouni/git-gemini-web/internal/config"
+	"github.com/shouni/git-gemini-web/internal/domain"
 )
 
 // Container はアプリケーションの依存関係（DIコンテナ）を保持します。
@@ -27,6 +28,7 @@ type Container struct {
 	PromptGen  coreports.PromptGenerator
 }
 
+// TaskEnqueuer は、レビュー要求を非同期タスクとしてキューへ投入する役割です。
 type TaskEnqueuer interface {
 	Enqueue(ctx context.Context, payload domain.ReviewRequest) error
 	Close() error

@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"git-gemini-web/internal/config"
-	"git-gemini-web/internal/domain"
+	"github.com/shouni/git-gemini-web/internal/config"
+	"github.com/shouni/git-gemini-web/internal/domain"
 )
 
 func TestValidateBranchName(t *testing.T) {
@@ -53,7 +53,7 @@ func TestValidateReviewRequest(t *testing.T) {
 	}{
 		{
 			name:   "valid request",
-			mutate: func(r *domain.ReviewRequest) {},
+			mutate: func(_ *domain.ReviewRequest) {},
 		},
 		{
 			name:    "missing repo url",

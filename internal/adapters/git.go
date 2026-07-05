@@ -8,7 +8,7 @@ import (
 	"github.com/shouni/gemini-reviewer-core/ports"
 	"github.com/shouni/go-utils/giturl"
 
-	"git-gemini-web/internal/config"
+	"github.com/shouni/git-gemini-web/internal/config"
 )
 
 // GitFactory は、ports.GitFactory インターフェースを満たす具象型です。

@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"git-gemini-web/internal/builder"
-	"git-gemini-web/internal/config"
+	"github.com/shouni/git-gemini-web/internal/builder"
+	"github.com/shouni/git-gemini-web/internal/config"
 )
 
 // シャットダウンのデフォルト猶予時間
