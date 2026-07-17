@@ -39,7 +39,9 @@ func setupCommonMiddleware(r *chi.Mux) {
 // setupRoutes は、各コンポーネントのハンドラーをルーティングに登録します。
 func setupRoutes(r chi.Router, h *builder.AppHandlers) {
 	// --- 1. 公開ルート (ヘルスチェック) ---
-	r.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+	// "/healthz" は Cloud Run のデフォルトドメイン (*.run.app) 側で予約パス的に扱われ、
+	// コンテナまでリクエストが届かず GFE の汎用 404 に置き換えられるため使わない。
+	r.Get("/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
 	})
