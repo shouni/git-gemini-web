@@ -8,11 +8,13 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Status](https://img.shields.io/badge/Status-Completed-brightgreen)](#)
 
-## 🚀 概要 (About) - WebベースのAIレビュー・オーケストレーター
+## 🚀 概要 (About)
 
-**Git Gemini Web** は、AIコードレビューエンジン **[Gemini Reviewer Core](https://github.com/shouni/gemini-reviewer-core)** を Google Cloud 上でスケールさせるための **Webフロントエンド兼オーケストレーター** です。
+**Git Gemini Web** は、AIレビューエンジン **[Gemini Reviewer Core](https://github.com/shouni/gemini-reviewer-core)** をベースにした、Webベースのレビュー・オーケストレーターです。
 
-本プロジェクトは、Webフォーム経由の依頼受付、OAuth認証によるアクセス制御、および非同期ジョブ実行の管理に特化した「実行基盤」を提供します。レビューの核となるロジックは Core エンジンに完全に委譲されており、常に最新の解析アルゴリズムを安全かつスケーラブルなサーバーレス環境で実行可能です。
+元々はAIコードレビューツールとして作りましたが、今はコードレビューより、Gitリポジトリで管理している記事や小説の原稿をレビューする用途で使っています。`assets/prompts/` のプロンプトを差し替えれば、レビュー対象はコード以外にも切り替えられます。
+
+Webフォーム経由の依頼受付、OAuth認証によるアクセス制御、非同期ジョブ実行の管理を担う「実行基盤」としての役割は変わっておらず、レビューの核となるロジックは Core エンジンに完全に委譲されています。
 
 ---
 
@@ -96,7 +98,7 @@ git-gemini-web/
 | `GEMINI_API_KEY` | Google Gemini APIキー | - |
 | `GEMINI_MODEL` | 使用するGeminiモデル名。カンマ区切りで複数指定した場合はフォームで選択可能（先頭がデフォルト） | `gemini-2.5-flash` |
 | `SSH_KEY_PATH` | GitHub SSH URL (`git@github.com:owner/repo.git`) のクローンに使うSSH秘密鍵パス（Secret Managerマウント推奨） | `/secrets/ssh/id_rsa` |
-| `SLACK_WEBHOOK_URL` | レビュー結果のURLを通知するためのSlack Webhook URL。未設定の場合は通知をスキップします。 | `https://hooks.slack.com/services/T...` |
+| `SLACK_WEBHOOK_URL` | レビュー結果(成功時のURL、スキップ・失敗時はその内容)を通知するためのSlack Webhook URL。未設定の場合は通知をスキップします。 | `https://hooks.slack.com/services/T...` |
 
 **認証設定 (OAuth):**
 
@@ -130,14 +132,6 @@ git-gemini-web/
 | 権限（IAMロール） | 目的 |
 | :--- | :--- |
 | **Cloud Run 起動元**<br>(`roles/run.invoker`) | Cloud Tasks が、ワーカーエンドポイント (`/tasks/execute_review`) を認証付きで呼び出すために必要です。 |
-
-#### C. デプロイ担当者 / CI/CD
-
-*インフラ構築やデプロイを行うユーザーまたはサービスアカウントです。*
-
-| 権限（IAMロール） | 目的 |
-| :--- | :--- |
-| **サービス アカウント トークン作成者**<br>(`roles/iam.serviceAccountTokenCreator`) | ローカルテストやデプロイ時に、一時的な認証トークンを生成するために必要になる場合があります。 |
 
 ---
 

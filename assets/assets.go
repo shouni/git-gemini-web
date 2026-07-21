@@ -3,6 +3,7 @@ package assets
 
 import (
 	"embed"
+	"fmt"
 	"log/slog"
 	"sort"
 	"strings"
@@ -13,20 +14,20 @@ import (
 
 const (
 	promptDir             = "prompts"
-	promptPrefix          = "prompt_"
-	reportPrefix          = "report_"
 	modeDescriptionPrefix = "<!-- mode-description:"
 	metadataSuffix        = "-->"
 )
 
 var (
-	// promptFiles はプロンプトテンプレートです。
-	//go:embed prompts/prompt_*.md
+	// promptFiles はプロンプトテンプレートです。ディレクトリ内は現在プロンプトのみのため、
+	// ファイル名のprefixは不要です（ファイル名がそのままモード名になります）。
+	//go:embed prompts/*.md
 	promptFiles embed.FS
 
-	// reportFiles はレポートテンプレートです。
-	//go:embed prompts/report_*.md
-	reportFiles embed.FS
+	// partialFiles は、複数のプロンプトモードで共有するテキスト断片です。
+	// prompts/ とは別ディレクトリに置き、レビューモードの一覧には含めません。
+	//go:embed partials/*.md
+	partialFiles embed.FS
 
 	// Templates は、HTMLテンプレートです。
 	//go:embed templates/*.html
@@ -63,9 +64,25 @@ func LoadPrompts() (map[string]string, error) {
 	return prompts, nil
 }
 
-// LoadReports は埋め込まれたレポートファイルを読み込みます。
-func LoadReports() (map[string]string, error) {
-	return resource.Load(reportFiles, promptDir, reportPrefix)
+// LoadFindingsFormat は、レビュー指摘のJSONフォーマットを説明する共通テキストを読み込みます。
+// 全レビューモードのプロンプトで共有され、AIの構造化出力(findings配列)のスキーマに
+// 対応する項目を説明します。
+func LoadFindingsFormat() (string, error) {
+	return loadPartial("findings_format.md")
+}
+
+// LoadVerdictFormat は、判定結果のJSONフォーマット(verdictオブジェクト)を説明する
+// 共通テキストを読み込みます。
+func LoadVerdictFormat() (string, error) {
+	return loadPartial("verdict_format.md")
+}
+
+func loadPartial(name string) (string, error) {
+	b, err := partialFiles.ReadFile("partials/" + name)
+	if err != nil {
+		return "", fmt.Errorf("共有テンプレート '%s' の読み込みに失敗: %w", name, err)
+	}
+	return string(b), nil
 }
 
 // AvailableModes は、埋め込まれたレビュープロンプトから利用可能なモード名を返します。
@@ -115,7 +132,7 @@ func ensurePromptCache() error {
 	defer mu.Unlock()
 	// Double-checked locking
 	if cachedPrompts == nil {
-		p, err := resource.Load(promptFiles, promptDir, promptPrefix)
+		p, err := resource.Load(promptFiles, promptDir, "")
 		if err != nil {
 			return err
 		}

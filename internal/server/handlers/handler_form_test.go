@@ -47,7 +47,7 @@ func TestHandleReviewForm_RendersValidationPatterns(t *testing.T) {
 	}
 }
 
-func TestHandleReviewForm_RendersPromptModesWithDetailDefault(t *testing.T) {
+func TestHandleReviewForm_RendersPromptModesWithCodeDefault(t *testing.T) {
 	h, err := NewHandler(&config.Config{}, &fakeEnqueuer{}, &app.RemoteIO{})
 	if err != nil {
 		t.Fatalf("failed to create handler: %v", err)
@@ -64,10 +64,10 @@ func TestHandleReviewForm_RendersPromptModesWithDetailDefault(t *testing.T) {
 	for _, want := range []string{
 		`<option value="article"`,
 		`article (技術記事・ドキュメント品質レビュー)`,
-		`<option value="detail" selected>`,
-		`detail (詳細な品質レビュー)`,
-		`<option value="release"`,
-		`release (リリース可否判定)`,
+		`<option value="code" selected>`,
+		`code (詳細なコード品質レビュー)`,
+		`<option value="novel"`,
+		`novel (小説原稿の詳細レビュー)`,
 	} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("review mode option not rendered: want %q body=%s", want, body)
