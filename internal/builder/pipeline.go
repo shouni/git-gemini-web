@@ -26,7 +26,7 @@ func buildPipeline(
 		return nil, fmt.Errorf("ReviewRunnerの構築に失敗: %w", err)
 	}
 
-	publishRunner, err := buildPublishRunner(appCtx.PromptGen, appCtx.RemoteIO.Writer, appCtx.Notifier)
+	publishRunner, err := buildPublishRunner(appCtx.RemoteIO.Writer, appCtx.Notifier)
 	if err != nil {
 		return nil, fmt.Errorf("PublishRunnerの構築に失敗: %w", err)
 	}
@@ -58,13 +58,12 @@ func buildReviewRunner(
 
 // buildPublishRunner は、実行可能な ports.PublishRunner のインターフェースを返します。
 func buildPublishRunner(
-	promptGen coreports.PromptGenerator,
 	writer remoteio.Writer,
 	notifier coreports.Notifier,
 ) (*runner.PublishRunner, error) {
 	converter, err := publisher.NewConverterAdapter()
 	if err != nil {
-		return nil, fmt.Errorf("MarkdownToHtmlRunnerの初期化に失敗しました: %w", err)
+		return nil, fmt.Errorf("Converterの初期化に失敗しました: %w", err)
 	}
 	publishService, err := publisher.New(writer, converter)
 	if err != nil {
@@ -72,7 +71,6 @@ func buildPublishRunner(
 	}
 
 	publishRunner := runner.NewPublishRunner(
-		promptGen,
 		publishService,
 		notifier,
 	)

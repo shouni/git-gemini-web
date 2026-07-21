@@ -13,20 +13,15 @@ import (
 
 const (
 	promptDir             = "prompts"
-	promptPrefix          = "prompt_"
-	reportPrefix          = "report_"
 	modeDescriptionPrefix = "<!-- mode-description:"
 	metadataSuffix        = "-->"
 )
 
 var (
-	// promptFiles はプロンプトテンプレートです。
-	//go:embed prompts/prompt_*.md
+	// promptFiles はプロンプトテンプレートです。ディレクトリ内は現在プロンプトのみのため、
+	// ファイル名のprefixは不要です（ファイル名がそのままモード名になります）。
+	//go:embed prompts/*.md
 	promptFiles embed.FS
-
-	// reportFiles はレポートテンプレートです。
-	//go:embed prompts/report_*.md
-	reportFiles embed.FS
 
 	// Templates は、HTMLテンプレートです。
 	//go:embed templates/*.html
@@ -61,11 +56,6 @@ func LoadPrompts() (map[string]string, error) {
 		prompts[mode] = prompt.body
 	}
 	return prompts, nil
-}
-
-// LoadReports は埋め込まれたレポートファイルを読み込みます。
-func LoadReports() (map[string]string, error) {
-	return resource.Load(reportFiles, promptDir, reportPrefix)
 }
 
 // AvailableModes は、埋め込まれたレビュープロンプトから利用可能なモード名を返します。
@@ -115,7 +105,7 @@ func ensurePromptCache() error {
 	defer mu.Unlock()
 	// Double-checked locking
 	if cachedPrompts == nil {
-		p, err := resource.Load(promptFiles, promptDir, promptPrefix)
+		p, err := resource.Load(promptFiles, promptDir, "")
 		if err != nil {
 			return err
 		}
