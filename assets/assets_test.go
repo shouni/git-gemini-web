@@ -34,8 +34,8 @@ func TestAvailableModesReadsPromptMetadata(t *testing.T) {
 
 	want := map[string]string{
 		"article": "技術記事・ドキュメント品質レビュー",
-		"detail":  "詳細な品質レビュー",
-		"release": "リリース可否判定",
+		"code":    "詳細なコード品質レビュー",
+		"novel":   "小説原稿の詳細レビュー",
 	}
 	for mode, description := range want {
 		if got[mode] != description {
@@ -52,12 +52,12 @@ func TestLoadPromptsStripsModeDescriptionMetadata(t *testing.T) {
 		t.Fatalf("LoadPrompts failed: %v", err)
 	}
 
-	detail := prompts["detail"]
-	if strings.Contains(detail, "mode-description:") {
-		t.Fatalf("metadata should be stripped from prompt body: %q", detail[:80])
+	code := prompts["code"]
+	if strings.Contains(code, "mode-description:") {
+		t.Fatalf("metadata should be stripped from prompt body: %q", code[:80])
 	}
-	if !strings.HasPrefix(detail, "# ") {
-		t.Fatalf("prompt body should start with markdown heading: %q", detail[:80])
+	if !strings.HasPrefix(code, "# ") {
+		t.Fatalf("prompt body should start with markdown heading: %q", code[:80])
 	}
 }
 
@@ -68,14 +68,38 @@ func TestLoadPromptsReturnsCopy(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoadPrompts failed: %v", err)
 	}
-	prompts["detail"] = "mutated"
+	prompts["code"] = "mutated"
 
 	reloaded, err := LoadPrompts()
 	if err != nil {
 		t.Fatalf("LoadPrompts reload failed: %v", err)
 	}
-	if reloaded["detail"] == "mutated" {
+	if reloaded["code"] == "mutated" {
 		t.Fatal("LoadPrompts should not expose the cached map to callers")
+	}
+}
+
+func TestLoadFindingsFormat(t *testing.T) {
+	got, err := LoadFindingsFormat()
+	if err != nil {
+		t.Fatalf("LoadFindingsFormat failed: %v", err)
+	}
+	for _, want := range []string{"severity", "file", "excerpt", "message", "suggestion"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("LoadFindingsFormat() missing %q:\n%s", want, got)
+		}
+	}
+}
+
+func TestLoadVerdictFormat(t *testing.T) {
+	got, err := LoadVerdictFormat()
+	if err != nil {
+		t.Fatalf("LoadVerdictFormat failed: %v", err)
+	}
+	for _, want := range []string{"decision", "reason"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("LoadVerdictFormat() missing %q:\n%s", want, got)
+		}
 	}
 }
 

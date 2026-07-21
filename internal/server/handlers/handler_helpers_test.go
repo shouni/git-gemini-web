@@ -42,7 +42,7 @@ func TestValidateReviewRequest(t *testing.T) {
 		RepoURL:       "git@github.com:org/repo.git",
 		BaseBranch:    "main",
 		FeatureBranch: "feature/new-ui",
-		Mode:          "detail",
+		Mode:          "code",
 		ModelName:     config.DefaultGeminiModel,
 	}
 

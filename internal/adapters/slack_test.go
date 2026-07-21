@@ -13,7 +13,7 @@ func TestBuildSlackContentIncludesModelName(t *testing.T) {
 		RepoURL:       "git@github.com:org/repo.git",
 		BaseBranch:    "main",
 		FeatureBranch: "feature/new-ui",
-		Mode:          "detail",
+		Mode:          "code",
 		ModelName:     "gemini-2.5-pro",
 		StorageURI:    "gs://bucket/reviews/repo.html",
 		PublicURL:     "https://signed.example.com/repo.html",
@@ -25,7 +25,7 @@ func TestBuildSlackContentIncludesModelName(t *testing.T) {
 		"*詳細URL:* <https://signed.example.com/repo.html|gs://bucket/reviews/repo.html>",
 		"*リポジトリ:* `org/repo`",
 		"*ブランチ:* `main` ← `feature/new-ui`",
-		"*モード:* `detail`",
+		"*モード:* `code`",
 		"*モデル:* `gemini-2.5-pro`",
 	} {
 		if !strings.Contains(content, want) {

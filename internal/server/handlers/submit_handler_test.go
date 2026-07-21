@@ -72,7 +72,7 @@ func validFormBody() string {
 	v.Set("repo_url", "git@github.com:org/repo.git")
 	v.Set("base_branch", "main")
 	v.Set("feature_branch", "feature/new-ui")
-	v.Set("review_mode", "detail")
+	v.Set("review_mode", "code")
 	v.Set("gemini_model", "gemini-2.5-flash")
 	return v.Encode()
 }
@@ -119,7 +119,7 @@ func TestHandleReviewSubmit_ValidationErrorPreservesSelectedGeminiModel(t *testi
 	v.Set("repo_url", "invalid-url")
 	v.Set("base_branch", "main")
 	v.Set("feature_branch", "feature/new-ui")
-	v.Set("review_mode", "detail")
+	v.Set("review_mode", "code")
 	v.Set("gemini_model", "gemini-2.5-pro")
 
 	h.HandleReviewSubmit(w, newSubmitRequest(v.Encode()))
@@ -144,7 +144,7 @@ func TestHandleReviewSubmit_ValidationErrorPreservesFormValues(t *testing.T) {
 	v.Set("repo_url", "invalid-url")
 	v.Set("base_branch", "release/2026-04")
 	v.Set("feature_branch", "feature/new-ui")
-	v.Set("review_mode", "release")
+	v.Set("review_mode", "novel")
 	v.Set("gemini_model", "gemini-2.5-pro")
 
 	h.HandleReviewSubmit(w, newSubmitRequest(v.Encode()))
@@ -164,7 +164,7 @@ func TestHandleReviewSubmit_ValidationErrorPreservesFormValues(t *testing.T) {
                        value="release/2026-04"`,
 		`name="feature_branch" class="form-control"
                        value="feature/new-ui"`,
-		`<option value="release" selected>release (リリース可否判定)</option>`,
+		`<option value="novel" selected>novel (小説原稿の詳細レビュー)</option>`,
 		`<option value="gemini-2.5-pro" selected>gemini-2.5-pro</option>`,
 	} {
 		if !strings.Contains(body, want) {
@@ -181,7 +181,7 @@ func TestHandleReviewSubmit_InvalidGeminiModel(t *testing.T) {
 	v.Set("repo_url", "git@github.com:org/repo.git")
 	v.Set("base_branch", "main")
 	v.Set("feature_branch", "feature/new-ui")
-	v.Set("review_mode", "detail")
+	v.Set("review_mode", "code")
 	v.Set("gemini_model", "gemini-invalid")
 
 	h.HandleReviewSubmit(w, newSubmitRequest(v.Encode()))

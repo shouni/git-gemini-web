@@ -170,8 +170,8 @@ github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 h1:n661drycOFuPLCN
 github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3/go.mod h1:A0bzQcvG0E7Rwjx0REVgAGH58e96+X0MeOfepqsbeW4=
 github.com/shouni/gcp-kit v1.3.0 h1:K4QWvCTNlGdf/IXDJDwX4FFthoklt98AW1eIaxClzQM=
 github.com/shouni/gcp-kit v1.3.0/go.mod h1:s38Hg4cQ6H/B2/3XQfsXc7LFr16VScWDWfF1Xoezihw=
-github.com/shouni/gemini-reviewer-core v1.10.1 h1:qD5IEydC+npq/jtYbmto0mVBw5ezhg1FSyCTO1to7To=
-github.com/shouni/gemini-reviewer-core v1.10.1/go.mod h1:CDZvmrr8Oe+LQeLZZK01ck6HQHAvKvFAAdw2WcUcgaM=
+github.com/shouni/gemini-reviewer-core v1.10.2 h1:TXsTyr2KTo/LLULovi8jrEuoOdCt5JKn4wVgLpPv+OI=
+github.com/shouni/gemini-reviewer-core v1.10.2/go.mod h1:CDZvmrr8Oe+LQeLZZK01ck6HQHAvKvFAAdw2WcUcgaM=
 github.com/shouni/go-gemini-client v1.13.0 h1:HfQyTza7sP50rSm6fr6lz/L+BGcSFJJvkn0pVkOzmYI=
 github.com/shouni/go-gemini-client v1.13.0/go.mod h1:i6w7TiRKM0RKwb/jmPspy0bNQi3jFuWbsDQjLWxUP/I=
 github.com/shouni/go-http-kit v1.6.0 h1:ZE5X6cnoakIwKeXZj+Rr0fvN+GyuFGvUKwPGB4LsHNQ=
