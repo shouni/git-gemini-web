@@ -54,7 +54,7 @@ func (s *SlackAdapter) Notify(ctx context.Context, outcome ports.ReviewProcessOu
 	title, content := s.buildMessage(outcome)
 
 	if err := s.slackClient.SendTextWithHeader(ctx, title, content); err != nil {
-		return fmt.Errorf("Slackへの結果投稿に失敗しました: %w", err)
+		return fmt.Errorf("slackへの結果投稿に失敗しました: %w", err)
 	}
 
 	slog.Info("レビュー結果を Slack に投稿しました。", "public_url", outcome.Req.PublicURL)

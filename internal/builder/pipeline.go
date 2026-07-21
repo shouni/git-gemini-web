@@ -63,7 +63,7 @@ func buildPublishRunner(
 ) (*runner.PublishRunner, error) {
 	converter, err := publisher.NewConverterAdapter()
 	if err != nil {
-		return nil, fmt.Errorf("Converterの初期化に失敗しました: %w", err)
+		return nil, fmt.Errorf("converterの初期化に失敗しました: %w", err)
 	}
 	publishService, err := publisher.New(writer, converter)
 	if err != nil {
