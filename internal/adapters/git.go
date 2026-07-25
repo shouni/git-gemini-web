@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/shouni/gemini-reviewer-core/git"
 	"github.com/shouni/gemini-reviewer-core/ports"
-	"github.com/shouni/go-utils/giturl"
+	"github.com/shouni/git-gemini-web/internal/giturl"
 
 	"github.com/shouni/git-gemini-web/internal/config"
 )

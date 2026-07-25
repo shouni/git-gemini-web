@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/shouni/gemini-reviewer-core/ports"
+	"github.com/shouni/git-gemini-web/internal/giturl"
 	"github.com/shouni/go-http-kit/httpkit"
 	"github.com/shouni/go-notifier/pkg/slack"
-	"github.com/shouni/go-utils/giturl"
 )
 
 // SlackAdapter は ports.Notifier インターフェースを満たす具象型です。
