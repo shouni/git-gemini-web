@@ -8,6 +8,8 @@ cloud.google.com/go/auth/oauth2adapt v0.2.8 h1:keo8NaayQZ6wimpNSmW5OPc283g65QNIi
 cloud.google.com/go/auth/oauth2adapt v0.2.8/go.mod h1:XQ9y31RkqZCcwJWNSx2Xvric3RrU88hAYYbjDWYDL+c=
 cloud.google.com/go/cloudtasks v1.18.0 h1:KzT7hfix/9/xAf20tNPIxwX59XGpRF0Lun2t8LHOj9E=
 cloud.google.com/go/cloudtasks v1.18.0/go.mod h1:3KeCxwtGEyaySL7CR3lMmEa2I4mq1ynXdgmfNiO4RYE=
+cloud.google.com/go/cloudtasks v1.19.0 h1:+RK0lPIB6TlcBP7JyqmmhCNihp1Iw4QQ8uxcvlKhBVQ=
+cloud.google.com/go/cloudtasks v1.19.0/go.mod h1:8q8wNubq0jFvXW5Pz8P3O7QWJBXOmfrY918FqTgIqHA=
 cloud.google.com/go/compute/metadata v0.9.0 h1:pDUj4QMoPejqq20dK0Pg2N4yG9zIkYGdBtwLoEkH9Zs=
 cloud.google.com/go/compute/metadata v0.9.0/go.mod h1:E0bWwX5wTnLPedCKqk3pJmVgCBSM6qQI1yTBdEb3C10=
 cloud.google.com/go/iam v1.11.0 h1:KieQ9Pb+LLPak1O3Rv3GgCxhnmkYf7Xyh0P5HfF1jFM=
@@ -170,6 +172,8 @@ github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 h1:n661drycOFuPLCN
 github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3/go.mod h1:A0bzQcvG0E7Rwjx0REVgAGH58e96+X0MeOfepqsbeW4=
 github.com/shouni/gcp-kit v1.3.3 h1:HH9rWI3EHBDRRbVE8HT5FCZxU78ghn8WR8Oz0XX0eF0=
 github.com/shouni/gcp-kit v1.3.3/go.mod h1:ggJhobchDFUDhxcn+9i9+q18Y3l9n8bEsyqIbiUw1aY=
+github.com/shouni/gcp-kit v1.4.0 h1:0BP3W1h3LVWsc6pVFWf6XWn78jLDMQC/xLMrBNqb7Ik=
+github.com/shouni/gcp-kit v1.4.0/go.mod h1:ap5DOKGGS+Eid0huiFFCX8A8hRchgrlfctwt0jNGHk8=
 github.com/shouni/gemini-reviewer-core v1.10.5 h1:bxP5loAwj1oUDVQI+rxWskL9M+RXVwkkWvc5DtS7+4c=
 github.com/shouni/gemini-reviewer-core v1.10.5/go.mod h1:5QIkuLxnmtQtYz922nbpSNZPjywEQjRxY5WoFQftOps=
 github.com/shouni/go-gemini-client v1.13.8 h1:CxaPW6J10T3rs4DLR0JAAMUdJCRfhPJhA6Bfm85cVxQ=
