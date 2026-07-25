@@ -6,6 +6,9 @@ substitutions:
   _SERVICE_NAME: 'git-gemini-web-runner'
   _TAG: '${_ENV_PREFIX}-${SHORT_SHA}'
   _CACHE_TAG: '${_ENV_PREFIX}-latest'
+  # GEMINI_MODEL はカンマ区切りのリストとして parseCommaSeparatedList で解釈されます。
+  # 先頭が既定の選択モデルになります（値にカンマを含むため env は ^|^ 区切り）。
+  _GEMINI_MODEL: 'gemini-3.6-flash,gemini-3.1-pro-preview'
 
 steps:
   - name: 'gcr.io/cloud-builders/docker'
@@ -40,7 +43,7 @@ steps:
       - '--platform=managed'
       - '--allow-unauthenticated'
       - '--update-env-vars'
-      - '^|^GCP_PROJECT_ID=${PROJECT_ID}|GCP_LOCATION_ID=${_REGION}|GEMINI_MODEL=gemini-3.5-flash,gemini-3.1-pro-preview'
+      - '^|^GCP_PROJECT_ID=${PROJECT_ID}|GCP_LOCATION_ID=${_REGION}|GEMINI_MODEL=${_GEMINI_MODEL}'
 
 options:
   machineType: 'E2_HIGHCPU_8'
