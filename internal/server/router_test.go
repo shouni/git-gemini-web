@@ -62,13 +62,14 @@ func newRouterForTest(t *testing.T) http.Handler {
 	t.Helper()
 
 	cfg := &config.Config{
-		ServiceURL:         "https://service.example.com",
-		TaskAudienceURL:    "https://service.example.com",
-		GoogleClientID:     "client-id",
-		GoogleClientSecret: "client-secret",
-		SessionSecret:      "1234567890abcdef",
-		SessionEncryptKey:  "1234567890123456",
-		AllowedEmails:      []string{"tester@example.com"},
+		ServiceURL:          "https://service.example.com",
+		TaskAudienceURL:     "https://service.example.com",
+		ServiceAccountEmail: "tasks@example.iam.gserviceaccount.com",
+		GoogleClientID:      "client-id",
+		GoogleClientSecret:  "client-secret",
+		SessionSecret:       "1234567890abcdef",
+		SessionEncryptKey:   "1234567890123456",
+		AllowedEmails:       []string{"tester@example.com"},
 	}
 
 	authHandler, err := auth.NewHandler(auth.Config{
@@ -81,6 +82,8 @@ func newRouterForTest(t *testing.T) http.Handler {
 		IsSecureCookie:    true,
 		AllowedEmails:     cfg.AllowedEmails,
 		TaskAudienceURL:   cfg.TaskAudienceURL,
+		// TaskAudienceURL を設定する場合、許可サービスアカウントの指定は必須。
+		AllowedTaskServiceAccounts: []string{cfg.ServiceAccountEmail},
 	})
 	if err != nil {
 		t.Fatalf("failed to create auth handler: %v", err)

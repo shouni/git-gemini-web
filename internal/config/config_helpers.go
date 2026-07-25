@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/shouni/git-gemini-web/internal/giturl"
 	"github.com/shouni/go-remote-io/remoteio"
 	"github.com/shouni/go-utils/envutil"
-	"github.com/shouni/go-utils/giturl"
 	"github.com/shouni/go-utils/text"
 	"github.com/shouni/netarmor/securenet"
 )
