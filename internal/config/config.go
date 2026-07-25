@@ -11,7 +11,7 @@ const (
 	// SignedURLExpiration は生成物の署名付きURLの有効期限です。
 	SignedURLExpiration = 30 * time.Minute
 	// DefaultGeminiModel はレビュー生成に使用するデフォルトのGeminiモデルです。
-	DefaultGeminiModel = "gemini-2.5-flash"
+	DefaultGeminiModel = "gemini-3.6-flash"
 )
 
 // Config は環境変数からアプリケーション設定を読み込む構造体です。
