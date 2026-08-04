@@ -95,5 +95,5 @@ func writeRepositoryFields(body *notify.Body, req ports.ReviewRequest) {
 	if req.BaseBranch == "" && req.FeatureBranch == "" {
 		return
 	}
-	body.Field("ブランチ", fmt.Sprintf("`%s` ← `%s`", req.BaseBranch, req.FeatureBranch))
+	body.Field("ブランチ", notify.CodeSpan(req.BaseBranch)+" ← "+notify.CodeSpan(req.FeatureBranch))
 }
