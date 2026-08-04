@@ -56,7 +56,7 @@ func BuildContainer(ctx context.Context, cfg *config.Config) (container *app.Con
 	}
 
 	// 4. Slack Adapter
-	slack, err := adapters.NewSlackAdapter(httpClient, cfg.SlackWebhookURL)
+	slack, err := adapters.NewSlackAdapter(httpClient.WithoutRetry(), cfg.SlackWebhookURL)
 	if err != nil {
 		return nil, fmt.Errorf("SlackAdapter の構築に失敗しました: %w", err)
 	}
