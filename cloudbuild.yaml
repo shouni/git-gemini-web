@@ -3,11 +3,9 @@ substitutions:
   _REGION: 'asia-northeast1'
   _IMAGE_BASE: 'asia-northeast1-docker.pkg.dev'
   _REPO_PATH: 'ap-repo/git-gemini'
-  _SERVICE_NAME: 'git-gemini-web-runner'
+  _SERVICE_NAME: 'git-gemini'
   _TAG: '${_ENV_PREFIX}-${SHORT_SHA}'
   _CACHE_TAG: '${_ENV_PREFIX}-latest'
-  # GEMINI_MODEL はカンマ区切りのリストとして parseCommaSeparatedList で解釈されます。
-  # 先頭が既定の選択モデルになります（値にカンマを含むため env は ^|^ 区切り）。
   _GEMINI_MODEL: 'gemini-3.6-flash,gemini-3.1-pro-preview'
 
 steps:
