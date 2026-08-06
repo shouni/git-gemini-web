@@ -98,14 +98,14 @@ func setupRoutes(r chi.Router, h *builder.AppHandlers) {
 
 	// C. ワーカー専用ルート (OIDC認証)
 	r.Group(func(r chi.Router) {
-		if h.Auth == nil {
+		if h.TaskAuth == nil {
 			if h.Worker != nil {
-				slog.Error("Auth handler is nil, skipping worker routes")
+				slog.Error("Task verifier is nil, skipping worker routes")
 			}
 			return
 		}
 
-		r.Use(h.Auth.TaskOIDCVerificationMiddleware)
+		r.Use(h.TaskAuth.Middleware)
 
 		if h.Worker != nil {
 			r.Post("/tasks/execute_review", h.Worker.ProcessTask)
