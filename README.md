@@ -112,26 +112,29 @@ git-gemini-web/
 
 ### 3\. 必要なIAMロールの設定
 
-本アプリケーションをGoogle Cloud RunとCloud Tasksで安全に運用するためには、各サービスアカウント（SA）に対し、**正確な権限付与**が必要です。設定が不足していると `403 Forbidden` エラーが発生します。
+本アプリケーションを Cloud Run と Cloud Tasks で動かすには、実行サービスアカウントに
+いくつかの権限が要ります。設定が不足していると `403 Forbidden` になります。
 
-#### A. Cloud Run サービスアカウント (アプリケーション実行用)
+**SA は 1 つだけです。** 1 バイナリが Web と Worker を兼ね、**自分自身へ self-invoke します**
+（`SERVICE_URL` が自分の URL）。Cloud Tasks 用に別の SA を用意する必要はありません。
+`SERVICE_ACCOUNT_EMAIL` は OIDC トークンの**発行者**であると同時に受信側の**許可リスト**
+（`AllowedTaskServiceAccounts`）も兼ねるため、SA を変えるときは env も同時に変えてください。
 
-*Webフロントエンドおよびワーカーとして動作するサービスアカウントです。*
+実行 SA には、次のことができる権限が要ります。
 
-| 権限（IAMロール） | 目的 |
-| :--- | :--- |
-| **Cloud Tasks エンキューア**<br>(`roles/cloudtasks.enqueuer`) | Webフォーム受付時に、タスクを Cloud Tasks キューに**追加**するために必要です。 |
-| **サービス アカウント ユーザー**<br>(`roles/iam.serviceAccountUser`) | **重要:** タスク投入時、そのタスクを実行するID（Cloud Tasks SA）として振る舞う（ActAs）ために必要です。これがないとOIDCトークン付きのタスクを作成できません。 |
-| **Storage オブジェクト管理者**<br>(`roles/storage.objectAdmin`) | AIレビュー結果のHTMLファイルを **GCS** バケットに書き込むために必要です。 |
-| **Secret Manager のシークレット アクセサー**<br>(`roles/secretmanager.secretAccessor`) | `GEMINI_API_KEY` を Secret Manager から安全に取得する場合に推奨されます。 |
+- レビュー結果を置く GCS バケットの読み書き
+- Cloud Tasks キューへのタスク投入と、自分自身を指定した OIDC トークンの発行（ActAs）
+- 署名付き URL の生成（秘密鍵を持たないため IAM の SignBlob 経由）
+- 自分自身の Cloud Run サービスの呼び出し
+- Vertex AI の呼び出し
+- 使用するシークレットの読み取り
 
-#### B. Cloud Tasks サービスアカウント (タスク実行ID)
+**ロール名を列挙していないのは、粒度が環境によって変わるためです。** 決め方だけ挙げておきます。
 
-*Cloud Tasks がワーカー（Cloud Run）を呼び出す際に使用するIDです。アプリケーションSAと同じものを使うことも可能ですが、セキュリティ上分けることを推奨します。*
-
-| 権限（IAMロール） | 目的 |
-| :--- | :--- |
-| **Cloud Run 起動元**<br>(`roles/run.invoker`) | Cloud Tasks が、ワーカーエンドポイント (`/tasks/execute_review`) を認証付きで呼び出すために必要です。 |
+- **GCS はバケット単位で、`objectUser` を使ってください。** `objectAdmin` はオブジェクト ACL の
+  操作まで許します。プロジェクトレベルで付けると、無関係なバケットにも到達します
+- **シークレットはシークレット単位で付けてください。** プロジェクトレベルだと全シークレットに
+  到達します
 
 ---
 
