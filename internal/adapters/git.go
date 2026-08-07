@@ -13,8 +13,7 @@ import (
 
 // GitFactory は、ports.GitFactory インターフェースを満たす具象型です。
 type GitFactory struct {
-	sshKeyPath       string
-	skipHostKeyCheck bool
+	sshKeyPath string
 }
 
 // コンパイル時に ports.GitFactory インターフェースの実装を保証します
@@ -23,8 +22,7 @@ var _ ports.GitFactory = (*GitFactory)(nil)
 // NewGitFactory は、ports.GitFactory インターフェースを満たす GitFactory を生成します。
 func NewGitFactory(cfg *config.Config) *GitFactory {
 	return &GitFactory{
-		sshKeyPath:       cfg.SSHKeyPath,
-		skipHostKeyCheck: cfg.SkipHostKeyCheck,
+		sshKeyPath: cfg.SSHKeyPath,
 	}
 }
 
@@ -34,7 +32,6 @@ func (g *GitFactory) Create(repoURL, baseBranch string) ports.GitService {
 	return git.NewAdapter(
 		localPath,
 		g.sshKeyPath,
-		git.WithInsecureSkipHostKeyCheck(g.skipHostKeyCheck),
 		git.WithBaseBranch(baseBranch),
 	)
 }

@@ -58,11 +58,6 @@ func getEnv(key string, defaultValue string) string {
 	return envutil.GetEnv(key, defaultValue)
 }
 
-// getEnvAsBool は環境変数からbool値を読み込みます。
-func getEnvAsBool(key string, defaultValue bool) bool {
-	return envutil.GetEnvAsBool(key, defaultValue)
-}
-
 // parseCommaSeparatedList はカンマ区切りの文字列をパースしてスライスを返します。
 func parseCommaSeparatedList(value string) []string {
 	return text.ParseCommaSeparatedList(value)
