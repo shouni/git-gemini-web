@@ -81,9 +81,6 @@ func newRouterForTest(t *testing.T) http.Handler {
 		SessionName:       "test-session",
 		IsSecureCookie:    true,
 		AllowedEmails:     cfg.AllowedEmails,
-		TaskAudienceURL:   cfg.TaskAudienceURL,
-		// TaskAudienceURL を設定する場合、許可サービスアカウントの指定は必須。
-		AllowedTaskServiceAccounts: []string{cfg.ServiceAccountEmail},
 	})
 	if err != nil {
 		t.Fatalf("failed to create auth handler: %v", err)
@@ -96,10 +93,12 @@ func newRouterForTest(t *testing.T) http.Handler {
 
 	workerHandler := worker.NewHandler[domain.ReviewRequest](noopPipeline{})
 
+	// audience と許可サービスアカウントの両方が揃わないと検証は常に失敗します。
 	appHandlers := &builder.AppHandlers{
-		Auth:   authHandler,
-		Web:    webHandler,
-		Worker: workerHandler,
+		Auth:     authHandler,
+		Web:      webHandler,
+		Worker:   workerHandler,
+		TaskAuth: auth.NewTaskVerifier(cfg.TaskAudienceURL, []string{cfg.ServiceAccountEmail}),
 	}
 	return NewRouter(appHandlers)
 }

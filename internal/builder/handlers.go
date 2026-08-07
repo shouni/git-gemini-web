@@ -20,6 +20,9 @@ type AppHandlers struct {
 	Auth   *auth.Handler
 	Web    *handlers.Handler
 	Worker *worker.Handler[domain.ReviewRequest]
+	// TaskAuth は Cloud Tasks からの OIDC を検証します。Auth と違い OAuth 設定を
+	// 必要としないため、検証だけを担う独立した部品として持ちます。
+	TaskAuth *auth.TaskVerifier
 }
 
 // BuildHandlers は依存関係を注入し、各エンドポイント用のハンドラーを生成します。
@@ -38,13 +41,20 @@ func BuildHandlers(
 		return nil, fmt.Errorf("WebHandlerの初期化失敗: %w", err)
 	}
 
-	// Worker ハンドラーの生成
+	// Worker ハンドラーと、その入口を守る Cloud Tasks OIDC 検証器の生成。
+	// audience と発行元サービスアカウントの両方が揃わないと検証は常に失敗する
+	// （fail-closed）ため、起動時に構成を確かめておきます。
 	workerHandler := worker.NewHandler[domain.ReviewRequest](appCtx.Pipeline)
+	taskAuth := auth.NewTaskVerifier(appCtx.Config.TaskAudienceURL, []string{appCtx.Config.ServiceAccountEmail})
+	if !taskAuth.Configured() {
+		return nil, fmt.Errorf("cloud Tasks の OIDC 検証を構成できません: TASK_AUDIENCE_URL と SERVICE_ACCOUNT_EMAIL の両方が必要です")
+	}
 
 	return &AppHandlers{
-		Auth:   authHandler,
-		Web:    webHandler,
-		Worker: workerHandler,
+		Auth:     authHandler,
+		Web:      webHandler,
+		Worker:   workerHandler,
+		TaskAuth: taskAuth,
 	}, nil
 }
 
@@ -65,10 +75,5 @@ func createAuthHandler(cfg *config.Config) (*auth.Handler, error) {
 		IsSecureCookie:    cfg.IsSecureServiceURL(),
 		AllowedEmails:     cfg.AllowedEmails,
 		AllowedDomains:    cfg.AllowedDomains,
-		TaskAudienceURL:   cfg.TaskAudienceURL,
-		// Cloud Tasks の OIDC トークンに署名するサービスアカウント。audience は
-		// 誰でも指定できる文字列に過ぎず、それだけでは呼び出し元を認証できないため、
-		// 発行元サービスアカウントの照合まで行わせる（未設定だと起動時に失敗する）。
-		AllowedTaskServiceAccounts: []string{cfg.ServiceAccountEmail},
 	})
 }
