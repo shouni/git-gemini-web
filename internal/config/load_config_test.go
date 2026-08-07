@@ -34,7 +34,6 @@ func TestLoadConfig_FromEnvironment(t *testing.T) {
 	t.Setenv("GEMINI_API_KEY", "api-key")
 	t.Setenv("GEMINI_MODEL", "gemini-2.5-pro, gemini-2.5-flash")
 	t.Setenv("SSH_KEY_PATH", "/tmp/id_rsa")
-	t.Setenv("SKIP_HOST_KEY_CHECK", "true")
 	t.Setenv("GOOGLE_CLIENT_ID", "google-client")
 	t.Setenv("GOOGLE_CLIENT_SECRET", "google-secret")
 	t.Setenv("SESSION_SECRET", "session-secret")
@@ -49,9 +48,6 @@ func TestLoadConfig_FromEnvironment(t *testing.T) {
 	}
 	if cfg.TaskAudienceURL != "https://aud.example.com" {
 		t.Fatalf("unexpected task audience: %s", cfg.TaskAudienceURL)
-	}
-	if !cfg.SkipHostKeyCheck {
-		t.Fatal("expected SkipHostKeyCheck to be true")
 	}
 	if cfg.GeminiModel != "gemini-2.5-pro" {
 		t.Fatalf("unexpected model: %s", cfg.GeminiModel)

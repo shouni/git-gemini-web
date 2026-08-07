@@ -29,7 +29,6 @@ type Config struct {
 	GeminiModel         string
 	GeminiModels        []string
 	SSHKeyPath          string
-	SkipHostKeyCheck    bool
 
 	// OAuth & Session Settings
 	GoogleClientID     string
@@ -68,7 +67,6 @@ func LoadConfig() *Config {
 		GeminiModel:         geminiModels[0],
 		GeminiModels:        geminiModels,
 		SSHKeyPath:          getEnv("SSH_KEY_PATH", "~/.ssh/id_rsa"),
-		SkipHostKeyCheck:    getEnvAsBool("SKIP_HOST_KEY_CHECK", false),
 
 		// OAuth & Session
 		GoogleClientID:     getEnv("GOOGLE_CLIENT_ID", ""),

@@ -100,6 +100,13 @@ git-gemini-web/
 | `SSH_KEY_PATH` | GitHub SSH URL (`git@github.com:owner/repo.git`) のクローンに使うSSH秘密鍵パス（Secret Managerマウント推奨） | `/secrets/ssh/id_rsa` |
 | `SLACK_WEBHOOK_URL` | レビュー結果(成功時のURL、スキップ・失敗時はその内容)を通知するためのSlack Webhook URL。未設定の場合は通知をスキップします。 | `https://hooks.slack.com/services/T...` |
 
+> **SSH ホストキー検証について:** SSH URL でのクローンでは、接続先のホストキーが known_hosts に
+> 登録されている必要があります。検証を無効化するスイッチはありません（`SKIP_HOST_KEY_CHECK`
+> 環境変数は `gemini-reviewer-core` v1.11.x での削除に伴い廃止されました）。
+> 本リポジトリの `Dockerfile` は GitHub の `https://api.github.com/meta` から `ssh_keys` を取得して
+> `/etc/ssh/ssh_known_hosts` に焼き込むため、通常の運用で追加設定は不要です。GitHub 以外のホストを
+> 対象にする場合は、同ファイルに該当ホストのホストキーを追記してください。
+
 **認証設定 (OAuth):**
 
 | 環境変数 | 説明 | 設定例 |
