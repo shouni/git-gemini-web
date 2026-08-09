@@ -13,31 +13,23 @@ const (
 	// DefaultGeminiModel はレビュー生成に使用するデフォルトのGeminiモデルです。
 	DefaultGeminiModel = "gemini-3.6-flash"
 
-	// TaskDispatchDeadline は Cloud Tasks がワーカーの応答を待つ上限です。
-	//
-	// 「待つ時間」ではなく **ワーカーの実行時間の実効上限** で、これを超えると
-	// 処理中でも Cloud Tasks は待受を打ち切ります。未指定だと既定の 10 分が効き、
-	// Cloud Run の timeout をいくら伸ばしても 10 分で切られます。
-	// HTTP ターゲットの上限である 30 分を取り、Cloud Run の timeout と揃えます。
-	//
-	// タイムアウトの三段（下記）の**真ん中**。builder/task.go が Cloud Tasks へ渡します。
-	TaskDispatchDeadline = 30 * time.Minute
-
-	// DefaultPipelineTimeout はレビュー 1 件の実行時間の上限の既定値です。
-	//
-	// ★ タイムアウトは 3 つあり、この大小関係を守ります。
+	// タイムアウトは 3 つあり、この大小関係を守ります。
 	//
 	//     PIPELINE_TIMEOUT  <  dispatch deadline  <=  Cloud Run の timeout
-	//        (このアプリ)         (Cloud Tasks)          (ap-infra)
+	//          5m                   10m                    600s
 	//
-	//   実効上限を決めるのは**いちばん小さい値**で、他は飾りになります。
-	//   PIPELINE_TIMEOUT をいちばん短く取るのが要点で、**アプリが自分で先に諦める**ことで
-	//   失敗レポートを GCS へ書き、Slack へ通知してから終われます。逆順にすると先に
-	//   Cloud Tasks が打ち切り、プロセスごと SIGTERM になるため通知が一切残りません
-	//   （review-queue は max_attempts = 1 なので再試行も来ず、タスクは黙って失われます）。
-	//
-	//   フリートの他アプリ（ap-comp / ap-mv / ap-story / lyric-video）と同じ 25m です。
-	DefaultPipelineTimeout = 25 * time.Minute
+	// 実効上限を決めるのはいちばん小さい値です。PIPELINE_TIMEOUT を最短に取ることで
+	// **アプリが自分で先に諦め**、失敗レポートと Slack 通知を残してから終われます。
+	// 逆順だと Cloud Tasks が先に打ち切り、SIGTERM で何も残りません
+	// （review-queue は max_attempts = 1 なので再試行も来ません）。
+
+	// TaskDispatchDeadline は Cloud Tasks がワーカーの応答を待つ上限です。
+	// 未指定だと既定 10 分が効き、Cloud Run の timeout を伸ばしても効きません。
+	TaskDispatchDeadline = 10 * time.Minute
+
+	// DefaultPipelineTimeout はレビュー 1 件の実行時間の上限の既定値です。
+	// 実測 3.9〜9.2 秒に対する余裕として 5m。他アプリの 25m より短いのは意図的です。
+	DefaultPipelineTimeout = 5 * time.Minute
 )
 
 // Config は環境変数からアプリケーション設定を読み込む構造体です。
