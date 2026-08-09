@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/sessions v1.4.0
 	github.com/shouni/gcp-kit v1.8.0
-	github.com/shouni/gemini-reviewer-core v1.11.1
+	github.com/shouni/gemini-reviewer-core v1.11.2
 	github.com/shouni/go-http-kit v1.8.0
 	github.com/shouni/go-notify v1.2.2
 	github.com/shouni/go-prompt-kit v1.4.1

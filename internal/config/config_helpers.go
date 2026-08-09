@@ -41,6 +41,36 @@ func (c *Config) ValidateEssentialConfig() error {
 		return fmt.Errorf("SESSION_ENCRYPT_KEY の長さが不正です (%d バイト)。16, 24, 32 バイトのいずれかにしてください", keyLen)
 	}
 
+	if err := c.validatePipelineTimeout(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// validatePipelineTimeout は、タイムアウトの三段の大小関係を起動時に確かめます。
+//
+// ★ PIPELINE_TIMEOUT と dispatch deadline が同時に見えるのはこの package だけなので、
+// 不変条件の番人はここに置きます。逆転していると「Cloud Tasks が先に打ち切る →
+// 失敗レポートも Slack 通知も残らない」という、いちばん気付きにくい壊れ方をします。
+func (c *Config) validatePipelineTimeout() error {
+	if c.pipelineTimeoutErr != nil {
+		return fmt.Errorf("PIPELINE_TIMEOUT の解析に失敗しました: %w（例: '25m', '1500s'）", c.pipelineTimeoutErr)
+	}
+
+	// 0 以下は無制限。ローカルでの長時間デバッグ用の逃げ道で、本番では既定値が入ります。
+	if c.PipelineTimeout <= 0 {
+		return nil
+	}
+
+	if c.PipelineTimeout >= TaskDispatchDeadline {
+		return fmt.Errorf(
+			"PIPELINE_TIMEOUT (%s) は dispatch deadline (%s) より短くしてください。"+
+				"長いと Cloud Tasks が先にリクエストを打ち切り、失敗レポートも Slack 通知も残らず、"+
+				"review-queue は max_attempts = 1 なので再試行もされません",
+			c.PipelineTimeout, TaskDispatchDeadline)
+	}
+
 	return nil
 }
 
@@ -61,4 +91,20 @@ func getEnv(key string, defaultValue string) string {
 // parseCommaSeparatedList はカンマ区切りの文字列をパースしてスライスを返します。
 func parseCommaSeparatedList(value string) []string {
 	return text.ParseCommaSeparatedList(value)
+}
+
+// parseDurationEnv は Duration 形式の環境変数を読みます（例: "25m", "1500s"）。
+// 未設定なら既定値を返し、書式が不正なら既定値とエラーの両方を返します。
+// 不正値を黙って既定値へ落とすと、設定したつもりの値が効かないまま動き続けるため、
+// 呼び出し側（ValidateEssentialConfig）が起動時に落とせるようにエラーを持ち帰ります。
+func parseDurationEnv(key string, defaultValue time.Duration) (time.Duration, error) {
+	raw := strings.TrimSpace(getEnv(key, ""))
+	if raw == "" {
+		return defaultValue, nil
+	}
+	d, err := time.ParseDuration(raw)
+	if err != nil {
+		return defaultValue, fmt.Errorf("%s=%q: %w", key, raw, err)
+	}
+	return d, nil
 }
