@@ -12,24 +12,23 @@
 
 **Git Gemini Web** は、AIレビューエンジン **[Gemini Reviewer Core](https://github.com/shouni/gemini-reviewer-core)** をベースにした、Webベースのレビュー・オーケストレーターです。
 
-元々はAIコードレビューツールとして作りましたが、今はコードレビューより、Gitリポジトリで管理している記事や小説の原稿をレビューする用途で使っています。`assets/prompts/` のプロンプトを差し替えれば、レビュー対象はコード以外にも切り替えられます。
+レビューの核となるロジックは Core に委譲し、本プロジェクトは依頼の受付・認証・非同期実行を担う**実行基盤**に徹しています。
 
-Webフォーム経由の依頼受付、OAuth認証によるアクセス制御、非同期ジョブ実行の管理を担う「実行基盤」としての役割は変わっておらず、レビューの核となるロジックは Core エンジンに完全に委譲されています。
+元々はAIコードレビューツールとして作りましたが、今はコードレビューより、Gitリポジトリで管理している記事や小説の原稿をレビューする用途で使っています。`assets/prompts/` のプロンプトを差し替えれば、レビュー対象はコード以外にも切り替えられます。
 
 ---
 
 ## 🏗 アーキテクチャ設計 (Architecture)
 
-本プロジェクトは、ビジネスロジックをライブラリ化（Core）し、外部インターフェースや通知機能を独立した「アダプター」として実装する **ヘキサゴナルアーキテクチャ（Ports and Adapters）** を採用しています。また、Google Cloud のマネージドサービスを組み合わせた **サーバーレス・オーケストレーション** により、高いスケーラビリティと耐障害性を実現しています。
+**ヘキサゴナルアーキテクチャ（Ports and Adapters）** を採用し、外部との接続はすべてアダプターとして分離しています。
 
-* **Core Logic Delegation**:
-  レビューのメインワークフロー（Git Fetch → AI Analysis → Publish）は、コアライブラリである `gemini-reviewer-core` が一括管理します。本プロジェクト（Web/Worker）は、実行に必要なコンテキスト（環境変数・認証情報・イベントデータ）を整えて Core を呼び出す「実行基盤」の役割に特化しています。
-* **Serverless Orchestration**:
-  **Cloud Run** と **Cloud Tasks** を組み合わせた非同期実行モデルを採用しています。
-    * **非同期処理**: 重い解析処理をキューイングすることで、Webフロントエンドのタイムアウトを回避します。
-    * **リトライ＆流量制御**: Cloud Tasks による自動リトライや並列度の制御により、AI API のレートリミット回避や一時的なネットワークエラーへの耐性を高めています。
-* **Dependency Injection & Adaptability**:
-  `internal/builder` にて全てのコンポーネントを紐付け、実行環境（Local/Cloud）や用途に応じたアダプター（Slack / GCS / Local FS）を動的に注入します。これにより、ビジネスロジックを汚染することなく、通知先や保存先の柔軟な切り替えが可能です。
+```
+Web フォーム / OAuth → Cloud Tasks → Worker → Core（Git → AI → 公開）→ GCS / Slack
+```
+
+* **非同期実行**: 重い解析を Cloud Tasks へ逃がし、Web 側のタイムアウトを回避します。リトライと並列度の制御で、AI API のレートリミットや一時的なエラーにも耐えます。
+* **依存性注入**: `internal/builder` が全コンポーネントを組み立て、実行環境（Local/Cloud）に応じたアダプター（Slack / GCS / Local FS）を注入します。通知先や保存先をロジックに触れずに差し替えられます。
+* **1 バイナリ 2 役**: Web と Worker を同じバイナリが兼ね、自分自身へ self-invoke します（「必要なIAMロールの設定」参照）。
 
 ---
 
@@ -52,37 +51,31 @@ git-gemini-web/
 └── main.go            # 【起点】アプリの起動、シグナルハンドリング
 ```
 
+---
+
 ## ✨ 技術スタック (Technology Stack)
 
-| 要素 | 技術 / ライブラリ | 役割 |
-| --- | --- | --- |
-| **言語** | **Go (Golang)** | 全体の開発言語。 |
-| **AIバックエンド** | **Hybrid Gemini Adapter** | **Google AI Studio** または **Vertex AI** を自動切替可能。 |
-| **レビューエンジン** | **[`gemini-reviewer-core`](https://github.com/shouni/gemini-reviewer-core)** | レビューの全工程を制御。 |
-| **非同期実行** | **Google Cloud Tasks** | 重いレビュー処理を非同期キューで管理。 |
-| **認証・セッション** | **OAuth 2.0 / Gorilla Sessions** | Googleアカウントによるアクセス制限。 |
-| **I/O抽象化** | **[`github.com/shouni/go-remote-io`](https://github.com/shouni/go-remote-io)**| GCS操作と署名付きURL生成の抽象化。 |
+| 要素 | 技術 / ライブラリ |
+| --- | --- |
+| 言語 | Go |
+| レビューエンジン | [`gemini-reviewer-core`](https://github.com/shouni/gemini-reviewer-core) |
+| 実行基盤 | Cloud Run / Cloud Tasks |
+| 認証・セッション | OAuth 2.0 / Gorilla Sessions |
+| I/O抽象化 | [`go-remote-io`](https://github.com/shouni/go-remote-io)（GCS操作と署名付きURL生成） |
+
+**AI は Vertex AI 経由で呼びます。** Core の `ai.GeminiAdapter` は API キー方式にも対応
+していますが、本アプリは `ProjectID` のみを渡す配線なので（`internal/adapters/ai.go`）、
+API キー経路は使いません。切り替えたい場合は `GeminiOptions.APIKey` を渡すよう変更が要ります。
 
 ---
 
-## 🤖 ハイブリッドなAIバックエンド対応
+## ⚙️ セットアップ
 
-本アプリは、環境変数に応じて2つのAPIバックエンドを透過的に切り替え可能です。これにより、特定のAPIのサービス停止（503 Unavailable等）時にも柔軟に対応できます。
+### 1\. 必要な環境変数
 
-1. **Google AI Studio (API Key方式)**: 低遅延でプロトタイプ開発や個人利用に最適。
-2. **Vertex AI (GCP方式)**: エンタープライズレベルのSLA、高いクォータ制限、組織的な予算管理に対応。
-
----
-
-## 🚀 使い方 (Usage) / セットアップ
-
-### 1\. GCPコンソールでの事前準備 (OAuth) 🔐
-
-アプリケーションを実行する前に、Google Cloud ConsoleでOAuth認証情報を設定する必要があります。
-
-### 2\. 必要な環境変数
-
-実行環境には以下の環境変数を設定する必要があります。
+**未設定だと起動時に落ちる**のは `SERVICE_URL`（本番は HTTPS 必須）・`GOOGLE_CLIENT_ID` ・
+`GOOGLE_CLIENT_SECRET`・`SESSION_SECRET`・`SESSION_ENCRYPT_KEY`・`ALLOWED_EMAILS` または
+`ALLOWED_DOMAINS` の 6 つです。残りは空でも起動します（機能しないだけです）。
 
 **基本設定:**
 
@@ -95,29 +88,29 @@ git-gemini-web/
 | `CLOUD_TASKS_QUEUE_ID` | 使用するCloud Tasksのキュー名 | `review-queue` |
 | `SERVICE_ACCOUNT_EMAIL` | タスク発行に使用するサービスアカウント | - |
 | `GCS_REVIEW_BUCKET` | レビュー結果（HTML）を保存するGCSバケット名 | `your-review-archive-bucket` |
-| `GEMINI_API_KEY` | Google Gemini APIキー | - |
-| `GEMINI_MODEL` | 使用するGeminiモデル名。カンマ区切りで複数指定した場合はフォームで選択可能（先頭がデフォルト） | `gemini-2.5-flash` |
+| `GEMINI_API_KEY` | 読み込むが**現在は未使用**（AI は Vertex AI 経由。「技術スタック」参照） | - |
+| `GEMINI_MODEL` | 使用するGeminiモデル名。カンマ区切りで複数指定した場合はフォームで選択可能（先頭がデフォルト） | `gemini-3.6-flash` |
+| `TASK_AUDIENCE_URL` | Cloud Tasks の OIDC トークン検証に使う audience。未設定なら `SERVICE_URL` を使う | `https://myapp.run.app` |
+| `PIPELINE_TIMEOUT` | レビュー1件の実行時間の上限（`5m` 形式）。Cloud Tasks の dispatch deadline (10分) より短いこと。超えると起動時エラー | `5m` |
 | `SSH_KEY_PATH` | GitHub SSH URL (`git@github.com:owner/repo.git`) のクローンに使うSSH秘密鍵パス（Secret Managerマウント推奨） | `/secrets/ssh/id_rsa` |
 | `SLACK_WEBHOOK_URL` | レビュー結果(成功時のURL、スキップ・失敗時はその内容)を通知するためのSlack Webhook URL。未設定の場合は通知をスキップします。 | `https://hooks.slack.com/services/T...` |
 
-> **SSH ホストキー検証について:** SSH URL でのクローンでは、接続先のホストキーが known_hosts に
-> 登録されている必要があります。検証を無効化するスイッチはありません（`SKIP_HOST_KEY_CHECK`
-> 環境変数は `gemini-reviewer-core` v1.11.x での削除に伴い廃止されました）。
-> 本リポジトリの `Dockerfile` は GitHub の `https://api.github.com/meta` から `ssh_keys` を取得して
-> `/etc/ssh/ssh_known_hosts` に焼き込むため、通常の運用で追加設定は不要です。GitHub 以外のホストを
-> 対象にする場合は、同ファイルに該当ホストのホストキーを追記してください。
+> **SSH ホストキー検証を無効化するスイッチはありません**（`SKIP_HOST_KEY_CHECK` は
+> `gemini-reviewer-core` v1.11.x で廃止）。`Dockerfile` が GitHub のホストキーを
+> `/etc/ssh/ssh_known_hosts` へ焼き込むため通常は設定不要で、GitHub 以外を対象にする
+> 場合のみ同ファイルへ追記します。
 
 **認証設定 (OAuth):**
 
 | 環境変数 | 説明 | 設定例 |
 | :--- | :--- | :--- |
-| `GOOGLE_CLIENT_ID` | GCPで作成したOAuthクライアントID | `xxxx.apps.googleusercontent.com` |
+| `GOOGLE_CLIENT_ID` | GCPで作成したOAuthクライアントID（リダイレクトURIは `<SERVICE_URL>/auth/callback`） | `xxxx.apps.googleusercontent.com` |
 | `GOOGLE_CLIENT_SECRET` | GCPで作成したOAuthシークレット | `GOCSPX-xxxx...` |
 | `SESSION_SECRET` | セッションデータのHMAC署名用シークレット | `openssl rand -base64 32` 等で生成 |
 | `SESSION_ENCRYPT_KEY` | セッションデータのAES暗号化用シークレット | `openssl rand -base64 32` 等で生成 |
-| `ALLOWED_EMAILS` / `ALLOWED_DOMAINS` | **必須:** アクセスを許可するメールアドレスまたはドメイン (例: `user@example.com,user2@example.com` / `example.com`)。**どちらか一方は設定が必要です。** | `,`で区切る |
+| `ALLOWED_EMAILS` / `ALLOWED_DOMAINS` | アクセスを許可するメールアドレスまたはドメイン。**どちらか一方は必要**（両方空だと誰もログインできません） | `user@example.com,user2@example.com` / `example.com` |
 
-### 3\. 必要なIAMロールの設定
+### 2\. 必要なIAMロールの設定
 
 本アプリケーションを Cloud Run と Cloud Tasks で動かすには、実行サービスアカウントに
 いくつかの権限が要ります。設定が不足していると `403 Forbidden` になります。
