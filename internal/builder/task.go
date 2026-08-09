@@ -25,10 +25,7 @@ func buildTaskEnqueuer(ctx context.Context, cfg *config.Config) (*tasks.Enqueuer
 		WorkerURL:           workerURL,
 		ServiceAccountEmail: cfg.ServiceAccountEmail,
 		Audience:            cfg.TaskAudienceURL,
-		// ★ 未指定だと Cloud Tasks の既定 10 分が実効上限になり、Cloud Run の timeout を
-		//   いくら伸ばしても 10 分で打ち切られます。2026-08-10 まで指定が無く、
-		//   Cloud Run 側の 600s と偶然一致しているだけの状態でした。
-		//   PIPELINE_TIMEOUT をこれより短く取り、アプリが自分で先に諦めます。
+		// 未指定だと既定 10 分に落ちる。2026-08-10 まで指定が無かった。
 		DispatchDeadline: config.TaskDispatchDeadline,
 	}
 	return tasks.NewEnqueuer[domain.ReviewRequest](ctx, taskCfg)
