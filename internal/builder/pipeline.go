@@ -32,7 +32,7 @@ func buildPipeline(
 	}
 
 	coreWorkflow := workflow.New(reviewRunner, publishRunner)
-	return adapters.NewCoreWorkflowAdapter(coreWorkflow), nil
+	return adapters.NewCoreWorkflowAdapter(coreWorkflow, appCtx.Config.PipelineTimeout), nil
 }
 
 // buildReviewRunner は、実行可能な ports.ReviewRunner のインターフェースを返します。
