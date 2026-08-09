@@ -6,8 +6,8 @@ require (
 	github.com/go-chi/chi/v5 v5.3.1
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/sessions v1.4.0
-	github.com/shouni/gcp-kit v1.7.0
-	github.com/shouni/gemini-reviewer-core v1.11.0
+	github.com/shouni/gcp-kit v1.8.0
+	github.com/shouni/gemini-reviewer-core v1.11.1
 	github.com/shouni/go-http-kit v1.8.0
 	github.com/shouni/go-notify v1.2.2
 	github.com/shouni/go-prompt-kit v1.4.1
@@ -62,7 +62,7 @@ require (
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sergi/go-diff v1.4.0 // indirect
-	github.com/shouni/go-gemini-client v1.16.5 // indirect
+	github.com/shouni/go-gemini-client v1.17.0 // indirect
 	github.com/skeema/knownhosts v1.3.2 // indirect
 	github.com/slack-go/slack v0.27.0 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.8.1 // indirect
