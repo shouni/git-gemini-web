@@ -40,7 +40,7 @@ func (c *Config) ValidateEssentialConfig() error {
 	}
 
 	if len(c.GeminiModels) == 0 {
-		return fmt.Errorf("GEMINI_MODEL が設定されていません（カンマ区切りで複数指定すると、先頭が既定でフォームの選択肢になります）")
+		return fmt.Errorf("GEMINI_MODELS が設定されていません（カンマ区切りで複数指定すると、先頭が既定でフォームの選択肢になります）")
 	}
 
 	if err := c.validatePipelineTimeout(); err != nil {

@@ -103,7 +103,7 @@ func (h *Handler) geminiModelOptions(selectedModel string) []GeminiModelOption {
 	return options
 }
 
-// configuredGeminiModels は GEMINI_MODEL で設定されたモデル一覧を返します。
+// configuredGeminiModels は GEMINI_MODELS で設定されたモデル一覧を返します。
 func (h *Handler) configuredGeminiModels() []string {
 	if h.cfg == nil {
 		return nil

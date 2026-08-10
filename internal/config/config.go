@@ -31,7 +31,7 @@ type Config struct {
 	SlackWebhookURL     string
 	GeminiAPIKey        string
 
-	// GeminiModels は GEMINI_MODEL（カンマ区切り）で指定するモデル名の一覧です。
+	// GeminiModels は GEMINI_MODELS（カンマ区切り）で指定するモデル名の一覧です。
 	GeminiModels []string
 
 	SSHKeyPath string
@@ -75,7 +75,7 @@ func LoadConfig() *Config {
 		GCSBucket:           getEnv("GCS_REVIEW_BUCKET", "your-review-archive-bucket"),
 		SlackWebhookURL:     getEnv("SLACK_WEBHOOK_URL", ""),
 		GeminiAPIKey:        getEnv("GEMINI_API_KEY", ""),
-		GeminiModels:        parseCommaSeparatedList(getEnv("GEMINI_MODEL", "")),
+		GeminiModels:        parseCommaSeparatedList(getEnv("GEMINI_MODELS", "")),
 		SSHKeyPath:          getEnv("SSH_KEY_PATH", "~/.ssh/id_rsa"),
 		PipelineTimeout:     pipelineTimeout,
 		pipelineTimeoutErr:  pipelineTimeoutErr,

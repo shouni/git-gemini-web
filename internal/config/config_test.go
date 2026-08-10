@@ -53,7 +53,7 @@ func TestValidateEssentialConfig(t *testing.T) {
 			// 既定値へ黙って落ちると、古いモデルを指したまま動き続けます。
 			name:    "missing gemini model",
 			mutate:  func(c *Config) { c.GeminiModels = nil },
-			wantErr: "GEMINI_MODEL",
+			wantErr: "GEMINI_MODELS",
 		},
 	}
 

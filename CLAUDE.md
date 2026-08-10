@@ -13,7 +13,7 @@ go test ./internal/config -run TestLoadConfig   # 単一テスト
 golangci-lint run                # CI は v2.12.2 / 設定は .golangci.yml
 ```
 
-`main.go` は起動時に `ValidateEssentialConfig()` を通すため、環境変数が揃っていないとローカル実行は即失敗します（HTTPS でない `SERVICE_URL`、OAuth 設定欠落、`ALLOWED_EMAILS`/`ALLOWED_DOMAINS` が両方空、`SESSION_ENCRYPT_KEY` が 16/24/32 バイト以外、`GEMINI_MODEL` 未設定はすべてエラー。`http://localhost:8080` は安全なURLとして許容されます）。さらに `builder.BuildContainer` が GCS クライアントと Cloud Tasks クライアントを起動時に生成するため、実際にサーバを立ち上げるには GCP 認証情報が必要です。ロジック変更の検証は基本的に `go test` で行ってください。
+`main.go` は起動時に `ValidateEssentialConfig()` を通すため、環境変数が揃っていないとローカル実行は即失敗します（HTTPS でない `SERVICE_URL`、OAuth 設定欠落、`ALLOWED_EMAILS`/`ALLOWED_DOMAINS` が両方空、`SESSION_ENCRYPT_KEY` が 16/24/32 バイト以外、`GEMINI_MODELS` 未設定はすべてエラー。`http://localhost:8080` は安全なURLとして許容されます）。さらに `builder.BuildContainer` が GCS クライアントと Cloud Tasks クライアントを起動時に生成するため、実際にサーバを立ち上げるには GCP 認証情報が必要です。ロジック変更の検証は基本的に `go test` で行ってください。
 
 必須環境変数の一覧・IAM ロールの要件は README.md にまとまっています。
 
@@ -79,8 +79,8 @@ golangci-lint run                # CI は v2.12.2 / 設定は .golangci.yml
 
 ### 設定まわりの注意
 
-- `GEMINI_MODEL` はカンマ区切りリストで、**先頭がデフォルト**、残りはフォームの選択肢になります。cloudbuild.yaml では値にカンマを含むため `^|^` 区切りで渡しています
-- **`GEMINI_MODEL` にコード側の既定値を置かないでください。** モデル ID が古くなるのは Google のリリース周期であってこのリポジトリの都合ではなく、既定値があると設定漏れが「古いモデルで動き続ける」形で隠れます。空なら `ValidateEssentialConfig` が起動時に落とします（ハンドラー側も既定値で埋めません）
+- `GEMINI_MODELS` はカンマ区切りリストで、**先頭がデフォルト**、残りはフォームの選択肢になります。cloudbuild.yaml は env を渡さないため、値は Cloud Run サービス側に設定します（カンマを含むので `gcloud run services update --update-env-vars "^|^GEMINI_MODELS=..."` のように区切り文字を変えて渡します）
+- **`GEMINI_MODELS` にコード側の既定値を置かないでください。** モデル ID が古くなるのは Google のリリース周期であってこのリポジトリの都合ではなく、既定値があると設定漏れが「古いモデルで動き続ける」形で隠れます。空なら `ValidateEssentialConfig` が起動時に落とします（ハンドラー側も既定値で埋めません）
 - 受け付けるリポジトリ URL は `git@github.com:owner/repo.git` の SSH 形式のみ（`internal/server/handlers/handler_helpers.go` の `repoURLPattern`）
 - `internal/giturl` は go-utils から取り込んだローカルパッケージ。「どこへクローンするか」「GCS のどのキーへ置くか」という本プロジェクト固有の決定に紐づくため internal に置いています
 

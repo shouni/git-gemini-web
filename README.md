@@ -110,10 +110,10 @@ API キー経路は使いません。切り替えるには `gemini.Options.APIKe
 ### 1. 必要な環境変数
 
 **未設定だと起動時に落ちる**のは `SERVICE_URL`（本番は HTTPS 必須）・`GOOGLE_CLIENT_ID`・
-`GOOGLE_CLIENT_SECRET`・`SESSION_SECRET`・`SESSION_ENCRYPT_KEY`・`GEMINI_MODEL`・
+`GOOGLE_CLIENT_SECRET`・`SESSION_SECRET`・`SESSION_ENCRYPT_KEY`・`GEMINI_MODELS`・
 `ALLOWED_EMAILS` または `ALLOWED_DOMAINS` です。残りは空でも起動します（機能しないだけです）。
 
-`GEMINI_MODEL` にアプリ側の既定値を置かないのは意図的です。モデル ID が古くなるのは
+`GEMINI_MODELS` にアプリ側の既定値を置かないのは意図的です。モデル ID が古くなるのは
 Google のリリース周期であってこのリポジトリの都合ではないため、既定値があると
 「デプロイ設定を変えていないのに古いモデルを指し続ける」状態に誰も気付けません。
 
@@ -129,7 +129,7 @@ Google のリリース周期であってこのリポジトリの都合ではな�
 | `SERVICE_ACCOUNT_EMAIL` | タスク発行に使用するサービスアカウント | - |
 | `GCS_REVIEW_BUCKET` | レビュー結果と進行状況を保存する GCS バケット名 | `your-review-archive-bucket` |
 | `GEMINI_API_KEY` | 読み込むが**現在は未使用**（AI は Vertex AI 経由。「技術スタック」参照） | - |
-| `GEMINI_MODEL` | 使用する Gemini モデル名。カンマ区切りで複数指定するとフォームで選択可能（先頭がデフォルト）。**アプリ側に既定値は無く、未設定だと起動時に落ちます** | **必須**（Google の最新モデル ID を確認して設定） |
+| `GEMINI_MODELS` | 使用する Gemini モデル名。カンマ区切りで複数指定するとフォームで選択可能（先頭がデフォルト）。**アプリ側に既定値は無く、未設定だと起動時に落ちます** | **必須**（Google の最新モデル ID を確認して設定） |
 | `TASK_AUDIENCE_URL` | Cloud Tasks の OIDC トークン検証に使う audience。未設定なら `SERVICE_URL` | `https://myapp.run.app` |
 | `PIPELINE_TIMEOUT` | レビュー 1 件の実行時間の上限（`5m` 形式）。Cloud Tasks の dispatch deadline より短いこと。超えると起動時エラー | `5m` |
 | `SSH_KEY_PATH` | SSH 形式のリポジトリ（`git@github.com:owner/repo.git`）のクローンに使う秘密鍵パス（Secret Manager マウント推奨） | `/secrets/ssh/id_rsa` |
