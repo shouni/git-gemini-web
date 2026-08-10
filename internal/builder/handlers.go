@@ -39,7 +39,6 @@ func BuildHandlers(
 	webHandler, err := handlers.NewHandler(handlers.Deps{
 		Config:       appCtx.Config,
 		TaskEnqueuer: appCtx.TaskEnqueuer,
-		RemoteIO:     appCtx.RemoteIO,
 		Layout:       appCtx.Layout,
 		StatusStore:  appCtx.StatusStore,
 		History:      appCtx.History,

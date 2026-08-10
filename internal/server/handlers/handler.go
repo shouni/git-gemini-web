@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/shouni/git-gemini-web/internal/app"
 	"github.com/shouni/git-gemini-web/internal/config"
 	"github.com/shouni/git-gemini-web/internal/domain"
 )
@@ -50,7 +49,6 @@ type reviewTaskEnqueuer interface {
 type Deps struct {
 	Config       *config.Config
 	TaskEnqueuer reviewTaskEnqueuer
-	RemoteIO     *app.RemoteIO
 	Layout       domain.StorageLayout
 	StatusStore  domain.StatusStore
 	History      domain.HistoryRepository
@@ -60,7 +58,6 @@ type Deps struct {
 type Handler struct {
 	cfg          *config.Config
 	taskEnqueuer reviewTaskEnqueuer
-	remoteIO     *app.RemoteIO
 	layout       domain.StorageLayout
 	statusStore  domain.StatusStore
 	history      domain.HistoryRepository
@@ -79,7 +76,6 @@ func NewHandler(deps Deps) (*Handler, error) {
 	return &Handler{
 		cfg:          deps.Config,
 		taskEnqueuer: deps.TaskEnqueuer,
-		remoteIO:     deps.RemoteIO,
 		layout:       deps.Layout,
 		statusStore:  deps.StatusStore,
 		history:      deps.History,
