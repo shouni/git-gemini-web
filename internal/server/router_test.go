@@ -86,7 +86,7 @@ func newRouterForTest(t *testing.T) http.Handler {
 		t.Fatalf("failed to create auth handler: %v", err)
 	}
 
-	webHandler, err := handlers.NewHandler(cfg, noopTaskEnqueuer{}, &app.RemoteIO{})
+	webHandler, err := handlers.NewHandler(handlers.Deps{Config: cfg, TaskEnqueuer: noopTaskEnqueuer{}, RemoteIO: &app.RemoteIO{}})
 	if err != nil {
 		t.Fatalf("failed to create web handler: %v", err)
 	}

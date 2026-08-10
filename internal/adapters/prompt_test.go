@@ -23,7 +23,7 @@ func TestPromptAdapter_GenerateReview(t *testing.T) {
 
 	for _, mode := range modes {
 		t.Run(mode.Name, func(t *testing.T) {
-			prompt, err := pa.GenerateReview(mode.Name, "--- diff ---\n+ example line\n")
+			prompt, err := pa.Generate(mode.Name, "--- diff ---\n+ example line\n")
 			if err != nil {
 				t.Fatalf("GenerateReview(%q) failed: %v", mode.Name, err)
 			}

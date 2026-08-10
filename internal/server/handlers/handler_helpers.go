@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -32,7 +31,7 @@ var (
 	gitBranchRegexp = regexp.MustCompile(branchPattern)
 )
 
-// renderForm はテンプレートの表示を一括管理するヘルパーメソッドです。
+// renderForm はレビューフォームの表示を一括管理するヘルパーメソッドです。
 func (h *Handler) renderForm(w http.ResponseWriter, r *http.Request, status int, data ReviewFormPageData) {
 	data.RepoURLPattern = repoURLPattern
 	data.BranchPattern = branchPattern
@@ -47,18 +46,7 @@ func (h *Handler) renderForm(w http.ResponseWriter, r *http.Request, status int,
 		data.CSRFToken = csrfTokenFromContext(r.Context())
 	}
 
-	var buf bytes.Buffer
-	if err := h.template.ExecuteTemplate(&buf, "layout.html", data); err != nil {
-		slog.ErrorContext(r.Context(), "テンプレート実行エラー", "error", err, "templateName", "layout.html")
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(status)
-	if _, err := buf.WriteTo(w); err != nil {
-		slog.ErrorContext(r.Context(), "レスポンス書き込みエラー", "error", err)
-	}
+	h.render(w, r, status, reviewFormTemplate, data)
 }
 
 func reviewModeOptions(ctx context.Context, selectedMode string) []ReviewModeOption {

@@ -94,6 +94,8 @@ func setupRoutes(r chi.Router, h *builder.AppHandlers) {
 
 		r.Get("/", h.Web.HandleReviewForm)
 		r.Post("/submit_review", h.Web.HandleReviewSubmit)
+		r.Get("/history", h.Web.HandleHistory)
+		r.Get("/history/{jobID}", h.Web.HandleReviewDetail)
 	})
 
 	// C. ワーカー専用ルート (OIDC認証)

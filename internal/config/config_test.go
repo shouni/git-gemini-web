@@ -71,25 +71,6 @@ func TestValidateEssentialConfig(t *testing.T) {
 	}
 }
 
-func TestStorageURI(t *testing.T) {
-	cfg := &Config{GCSBucket: "review-bucket"}
-	now := time.Date(2026, 4, 15, 12, 34, 56, 0, time.UTC)
-
-	got := cfg.StorageURI("git@github.com:org/repo.git", "feature/new-ui", now)
-
-	if !strings.HasPrefix(got, "gs://review-bucket/reviews/") {
-		t.Fatalf("unexpected prefix: %s", got)
-	}
-	if !strings.Contains(got, "20260415_123456_feature-new-ui.html") {
-		t.Fatalf("branch or timestamp format mismatch: %s", got)
-	}
-}
-
-// ★ タイムアウトの三段の不変条件を起動時に守れているか。
-//
-// PIPELINE_TIMEOUT >= dispatch deadline だと、Cloud Tasks が先にリクエストを打ち切り、
-// 失敗レポートも Slack 通知も残らないままタスクが失われる（review-queue は
-// max_attempts = 1）。起動時に落とすことでその構成を本番へ出さない。
 func TestValidatePipelineTimeout(t *testing.T) {
 	t.Parallel()
 

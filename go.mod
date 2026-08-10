@@ -7,11 +7,12 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/sessions v1.4.0
 	github.com/shouni/gcp-kit v1.8.0
-	github.com/shouni/gemini-reviewer-core v1.11.2
 	github.com/shouni/go-http-kit v1.8.0
+	github.com/shouni/go-job-kit v1.0.5
 	github.com/shouni/go-notify v1.2.2
 	github.com/shouni/go-prompt-kit v1.4.1
 	github.com/shouni/go-remote-io v1.8.0
+	github.com/shouni/go-review-kit v1.1.0
 	github.com/shouni/go-utils v1.5.0
 	github.com/shouni/netarmor v1.2.0
 )
@@ -56,6 +57,7 @@ require (
 	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
+	github.com/jellydator/ttlcache/v3 v3.4.1 // indirect
 	github.com/kevinburke/ssh_config v1.6.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.4.0 // indirect
 	github.com/pjbgf/sha1cd v0.6.0 // indirect

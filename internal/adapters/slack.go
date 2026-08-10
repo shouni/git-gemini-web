@@ -5,27 +5,27 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/shouni/gemini-reviewer-core/ports"
 	"github.com/shouni/go-http-kit/httpkit"
 	"github.com/shouni/go-notify/notify"
 	"github.com/shouni/go-notify/slack"
+	"github.com/shouni/go-review-kit/review"
 
 	"github.com/shouni/git-gemini-web/internal/giturl"
 )
 
 // slackTitles はレビュー結果ごとの見出しです。
 var slackTitles = notify.Titles{
-	Success: "✅ AIコードレビュー結果がアップロードされました。",
+	Success: "✅ AIコードレビューが完了しました。",
 	Failure: "❌ AIコードレビューの生成に失敗しました。",
 	Skipped: "⏭️ 差分がないため、レビューをスキップしました。",
 }
 
-// SlackAdapter は ports.Notifier インターフェースを満たす具象型です。
+// SlackAdapter は review.Notifier を満たす具象型です。
 type SlackAdapter struct {
 	pipeline *notify.Pipeline
 }
 
-var _ ports.Notifier = (*SlackAdapter)(nil)
+var _ review.Notifier = (*SlackAdapter)(nil)
 
 // NewSlackAdapter は新しいアダプターインスタンスを作成します。
 // webhookURL が空の場合は通知を行わないアダプターを返します。
@@ -40,60 +40,68 @@ func NewSlackAdapter(httpClient httpkit.Requester, webhookURL string) (*SlackAda
 	}, nil
 }
 
-// Notify は ports.Notifier インターフェースの実装です。
-// 成功時は publicURL をリンク先として、失敗時・スキップ時はその内容を Slack に投稿します。
-// 失敗時・スキップ時は Publisher.Publish が実行されず詳細URLが存在しないため、
-// 成功時とは異なるメッセージを組み立てます。
-func (s *SlackAdapter) Notify(ctx context.Context, outcome ports.ReviewProcessOutcome) error {
+// Notify は review.Notifier の実装です。
+//
+// リンク先は詳細画面（Request.PublicURL）です。以前は成果物 HTML の署名付き URL を
+// 直接張っていましたが、成果物を JSON で持つようになったため、表示はアプリ側に寄せます。
+// この変更で、リンクを開く人にもログインが必要になります。
+func (s *SlackAdapter) Notify(ctx context.Context, n review.Notification) error {
 	if !s.pipeline.Enabled() {
-		slog.InfoContext(ctx, "Slack通知が無効化されているためスキップします。", "storage_uri", outcome.Req.StorageURI)
+		slog.InfoContext(ctx, "Slack通知が無効化されているためスキップします。", "job_id", n.Request.JobID)
 		return nil
 	}
 
-	if err := s.send(ctx, outcome); err != nil {
+	if err := s.send(ctx, n); err != nil {
 		return fmt.Errorf("slackへの結果投稿に失敗しました: %w", err)
 	}
 
-	slog.InfoContext(ctx, "レビュー結果を Slack に投稿しました。", "public_url", outcome.Req.PublicURL)
+	slog.InfoContext(ctx, "レビュー結果を Slack に投稿しました。",
+		"job_id", n.Request.JobID, "status", n.Result.Status)
 	return nil
 }
 
-// send は outcome の状態(成功/スキップ/失敗)に応じた通知を送信します。
-func (s *SlackAdapter) send(ctx context.Context, outcome ports.ReviewProcessOutcome) error {
-	switch {
-	case outcome.Error != nil:
-		// 詳細URLは存在しない(Publishが行われない)ため含めず、代わりに発生ステップを載せます。
+// send は結果の状態に応じた通知を送信します。
+func (s *SlackAdapter) send(ctx context.Context, n review.Notification) error {
+	switch n.Result.Status {
+	case review.StatusFailed:
+		// 詳細画面には結果が無いためリンクは張らず、代わりに失敗した工程を載せます。
 		// エラー内容そのものは Pipeline が末尾に追記します。
-		body := buildRepositoryBody(outcome.Req)
-		body.Field("発生ステップ", outcome.StepName)
-		return s.pipeline.Failure(ctx, body, outcome.Error)
+		body := buildRepositoryBody(n.Request)
+		if step := review.StepOf(n.Err); step != "" {
+			body.Field("発生ステップ", step)
+		}
+		return s.pipeline.Failure(ctx, body, n.Err)
 
-	case outcome.IsSkipped:
+	case review.StatusSkipped:
 		// スキップの理由は見出しが述べているため、理由は渡しません。
-		return s.pipeline.Skipped(ctx, buildRepositoryBody(outcome.Req), nil)
+		return s.pipeline.Skipped(ctx, buildRepositoryBody(n.Request), nil)
 
 	default:
-		body := notify.NewBody().Link("詳細URL", outcome.Req.PublicURL, outcome.Req.StorageURI)
-		writeRepositoryFields(body, outcome.Req)
-		body.Code("モード", outcome.Req.Mode).
-			Code("モデル", outcome.Req.ModelName)
+		body := notify.NewBody().Link("詳細", n.Request.PublicURL, n.Request.JobID)
+		writeRepositoryFields(body, n.Request)
+		body.Code("モード", n.Request.Mode).
+			Code("モデル", n.Request.Model)
+		if n.Report != nil {
+			body.Field("判定", string(n.Report.Verdict.Decision))
+			body.Field("指摘", fmt.Sprintf("%d件", len(n.Report.Findings)))
+		}
 		return s.pipeline.Success(ctx, body)
 	}
 }
 
 // buildRepositoryBody はリポジトリとブランチだけを持つ本文を返します。
-func buildRepositoryBody(req ports.ReviewRequest) *notify.Body {
+func buildRepositoryBody(req review.Request) *notify.Body {
 	body := notify.NewBody()
 	writeRepositoryFields(body, req)
 	return body
 }
 
 // writeRepositoryFields はリポジトリと比較ブランチを本文へ追記します。
-func writeRepositoryFields(body *notify.Body, req ports.ReviewRequest) {
+func writeRepositoryFields(body *notify.Body, req review.Request) {
 	body.Code("リポジトリ", giturl.GetRepositoryPath(req.RepoURL))
 
-	if req.BaseBranch == "" && req.FeatureBranch == "" {
+	if req.Base == "" && req.Head == "" {
 		return
 	}
-	body.Field("ブランチ", notify.CodeSpan(req.BaseBranch)+" ← "+notify.CodeSpan(req.FeatureBranch))
+	body.Field("ブランチ", notify.CodeSpan(req.Base)+" ← "+notify.CodeSpan(req.Head))
 }
