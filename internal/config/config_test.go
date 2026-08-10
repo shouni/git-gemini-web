@@ -14,6 +14,7 @@ func TestValidateEssentialConfig(t *testing.T) {
 		SessionSecret:      "session-secret",
 		SessionEncryptKey:  "1234567890123456",
 		AllowedEmails:      []string{"user@example.com"},
+		GeminiModels:       []string{"gemini-test-flash"},
 	}
 
 	tests := []struct {
@@ -47,6 +48,12 @@ func TestValidateEssentialConfig(t *testing.T) {
 			name:    "invalid encrypt key length",
 			mutate:  func(c *Config) { c.SessionEncryptKey = "short" },
 			wantErr: "長さが不正",
+		},
+		{
+			// 既定値へ黙って落ちると、古いモデルを指したまま動き続けます。
+			name:    "missing gemini model",
+			mutate:  func(c *Config) { c.GeminiModels = nil },
+			wantErr: "GEMINI_MODEL",
 		},
 	}
 
@@ -82,6 +89,7 @@ func TestValidatePipelineTimeout(t *testing.T) {
 			SessionSecret:      "session-secret",
 			SessionEncryptKey:  "1234567890123456",
 			AllowedEmails:      []string{"user@example.com"},
+			GeminiModels:       []string{"gemini-test-flash"},
 			PipelineTimeout:    DefaultPipelineTimeout,
 		}
 	}
@@ -132,6 +140,7 @@ func TestPipelineTimeoutFromEnv(t *testing.T) {
 		c.GoogleClientID, c.GoogleClientSecret = "id", "secret"
 		c.SessionSecret, c.SessionEncryptKey = "s", "1234567890123456"
 		c.AllowedEmails = []string{"user@example.com"}
+		c.GeminiModels = []string{"gemini-test-flash"}
 
 		err := c.ValidateEssentialConfig()
 		if err == nil {

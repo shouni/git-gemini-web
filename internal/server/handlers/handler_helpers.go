@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/shouni/git-gemini-web/assets"
-	"github.com/shouni/git-gemini-web/internal/config"
 	"github.com/shouni/git-gemini-web/internal/domain"
 )
 
@@ -87,7 +86,10 @@ func reviewModeOptions(ctx context.Context, selectedMode string) []ReviewModeOpt
 
 func (h *Handler) geminiModelOptions(selectedModel string) []GeminiModelOption {
 	models := h.configuredGeminiModels()
-	if selectedModel == "" || !slices.Contains(models, selectedModel) {
+	if len(models) == 0 {
+		return nil
+	}
+	if !slices.Contains(models, selectedModel) {
 		selectedModel = models[0]
 	}
 
@@ -101,17 +103,12 @@ func (h *Handler) geminiModelOptions(selectedModel string) []GeminiModelOption {
 	return options
 }
 
+// configuredGeminiModels は GEMINI_MODEL で設定されたモデル一覧を返します。
 func (h *Handler) configuredGeminiModels() []string {
 	if h.cfg == nil {
-		return []string{config.DefaultGeminiModel}
+		return nil
 	}
-	if len(h.cfg.GeminiModels) > 0 {
-		return h.cfg.GeminiModels
-	}
-	if h.cfg.GeminiModel != "" {
-		return []string{h.cfg.GeminiModel}
-	}
-	return []string{config.DefaultGeminiModel}
+	return h.cfg.GeminiModels
 }
 
 // validateReviewRequest は入力内容が正しいかまとめてチェックする。

@@ -39,6 +39,10 @@ func (c *Config) ValidateEssentialConfig() error {
 		return fmt.Errorf("SESSION_ENCRYPT_KEY の長さが不正です (%d バイト)。16, 24, 32 バイトのいずれかにしてください", keyLen)
 	}
 
+	if len(c.GeminiModels) == 0 {
+		return fmt.Errorf("GEMINI_MODEL が設定されていません（カンマ区切りで複数指定すると、先頭が既定でフォームの選択肢になります）")
+	}
+
 	if err := c.validatePipelineTimeout(); err != nil {
 		return err
 	}

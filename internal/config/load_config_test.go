@@ -49,9 +49,6 @@ func TestLoadConfig_FromEnvironment(t *testing.T) {
 	if cfg.TaskAudienceURL != "https://aud.example.com" {
 		t.Fatalf("unexpected task audience: %s", cfg.TaskAudienceURL)
 	}
-	if cfg.GeminiModel != "gemini-2.5-pro" {
-		t.Fatalf("unexpected model: %s", cfg.GeminiModel)
-	}
 	wantModels := []string{"gemini-2.5-pro", "gemini-2.5-flash"}
 	if !reflect.DeepEqual(cfg.GeminiModels, wantModels) {
 		t.Fatalf("gemini models mismatch: got=%v want=%v", cfg.GeminiModels, wantModels)
