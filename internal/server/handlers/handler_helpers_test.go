@@ -35,15 +35,15 @@ func TestValidateBranchName(t *testing.T) {
 }
 
 func TestValidateReviewRequest(t *testing.T) {
-	// Handler のフィールドが空でもバリデーション自体は動作するように設計されている想定
-	h := &Handler{}
+	// モデル名の検証は設定された一覧に対して行うため、cfg だけは要ります。
+	h := &Handler{cfg: &config.Config{GeminiModels: []string{"gemini-3.6-flash"}}}
 
 	validRequest := domain.ReviewRequest{
 		RepoURL:       "git@github.com:org/repo.git",
 		BaseBranch:    "main",
 		FeatureBranch: "feature/new-ui",
 		Mode:          "code",
-		ModelName:     config.DefaultGeminiModel,
+		ModelName:     "gemini-3.6-flash",
 	}
 
 	tests := []struct {

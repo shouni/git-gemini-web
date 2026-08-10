@@ -32,7 +32,7 @@ func TestLoadConfig_FromEnvironment(t *testing.T) {
 	t.Setenv("GCS_REVIEW_BUCKET", "bucket-a")
 	t.Setenv("SLACK_WEBHOOK_URL", "https://hooks.slack.test")
 	t.Setenv("GEMINI_API_KEY", "api-key")
-	t.Setenv("GEMINI_MODEL", "gemini-2.5-pro, gemini-2.5-flash")
+	t.Setenv("GEMINI_MODELS", "gemini-2.5-pro, gemini-2.5-flash")
 	t.Setenv("SSH_KEY_PATH", "/tmp/id_rsa")
 	t.Setenv("GOOGLE_CLIENT_ID", "google-client")
 	t.Setenv("GOOGLE_CLIENT_SECRET", "google-secret")
@@ -48,9 +48,6 @@ func TestLoadConfig_FromEnvironment(t *testing.T) {
 	}
 	if cfg.TaskAudienceURL != "https://aud.example.com" {
 		t.Fatalf("unexpected task audience: %s", cfg.TaskAudienceURL)
-	}
-	if cfg.GeminiModel != "gemini-2.5-pro" {
-		t.Fatalf("unexpected model: %s", cfg.GeminiModel)
 	}
 	wantModels := []string{"gemini-2.5-pro", "gemini-2.5-flash"}
 	if !reflect.DeepEqual(cfg.GeminiModels, wantModels) {

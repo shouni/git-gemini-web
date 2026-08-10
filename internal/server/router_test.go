@@ -184,7 +184,6 @@ func TestFormRendersCSRFTokenFromMiddleware(t *testing.T) {
 
 	cfg := &config.Config{
 		ServiceURL:   "https://service.example.com",
-		GeminiModel:  "gemini-2.5-flash",
 		GeminiModels: []string{"gemini-2.5-flash"},
 	}
 	webHandler, err := handlers.NewHandler(handlers.Deps{

@@ -8,20 +8,6 @@ import (
 const (
 	// DefaultHTTPTimeout は外部HTTP通信のデフォルトタイムアウトです。
 	DefaultHTTPTimeout = 30 * time.Second
-	// SignedURLExpiration は生成物の署名付きURLの有効期限です。
-	SignedURLExpiration = 30 * time.Minute
-	// DefaultGeminiModel はレビュー生成に使用するデフォルトのGeminiモデルです。
-	DefaultGeminiModel = "gemini-3.6-flash"
-
-	// タイムアウトは 3 つあり、この大小関係を守ります。
-	//
-	//     PIPELINE_TIMEOUT  <  dispatch deadline  <=  Cloud Run の timeout
-	//          5m                   10m                    600s
-	//
-	// 実効上限を決めるのはいちばん小さい値です。PIPELINE_TIMEOUT を最短に取ることで
-	// **アプリが自分で先に諦め**、失敗レポートと Slack 通知を残してから終われます。
-	// 逆順だと Cloud Tasks が先に打ち切り、SIGTERM で何も残りません
-	// （review-queue は max_attempts = 1 なので再試行も来ません）。
 
 	// TaskDispatchDeadline は Cloud Tasks がワーカーの応答を待つ上限です。
 	// 未指定だと既定 10 分が効き、Cloud Run の timeout を伸ばしても効きません。
@@ -44,9 +30,11 @@ type Config struct {
 	GCSBucket           string
 	SlackWebhookURL     string
 	GeminiAPIKey        string
-	GeminiModel         string
-	GeminiModels        []string
-	SSHKeyPath          string
+
+	// GeminiModels は GEMINI_MODELS（カンマ区切り）で指定するモデル名の一覧です。
+	GeminiModels []string
+
+	SSHKeyPath string
 
 	// PipelineTimeout はレビュー 1 件（clone〜AI〜公開）の実行時間の上限です。
 	// 0 以下は無制限を意味します。詳細は DefaultPipelineTimeout のコメント。
@@ -74,11 +62,6 @@ func LoadConfig() *Config {
 	serviceURL := getEnv("SERVICE_URL", "http://localhost:8080")
 	allowedEmails := getEnv("ALLOWED_EMAILS", "")
 	allowedDomains := getEnv("ALLOWED_DOMAINS", "")
-	geminiModels := parseCommaSeparatedList(getEnv("GEMINI_MODEL", DefaultGeminiModel))
-	if len(geminiModels) == 0 {
-		geminiModels = []string{DefaultGeminiModel}
-	}
-
 	pipelineTimeout, pipelineTimeoutErr := parseDurationEnv("PIPELINE_TIMEOUT", DefaultPipelineTimeout)
 
 	return &Config{
@@ -92,8 +75,7 @@ func LoadConfig() *Config {
 		GCSBucket:           getEnv("GCS_REVIEW_BUCKET", "your-review-archive-bucket"),
 		SlackWebhookURL:     getEnv("SLACK_WEBHOOK_URL", ""),
 		GeminiAPIKey:        getEnv("GEMINI_API_KEY", ""),
-		GeminiModel:         geminiModels[0],
-		GeminiModels:        geminiModels,
+		GeminiModels:        parseCommaSeparatedList(getEnv("GEMINI_MODELS", "")),
 		SSHKeyPath:          getEnv("SSH_KEY_PATH", "~/.ssh/id_rsa"),
 		PipelineTimeout:     pipelineTimeout,
 		pipelineTimeoutErr:  pipelineTimeoutErr,

@@ -76,7 +76,6 @@ func TestHandleReviewForm_RendersPromptModesWithCodeDefault(t *testing.T) {
 
 func TestHandleReviewForm_RendersGeminiModelsWithFirstDefault(t *testing.T) {
 	h, err := NewHandler(Deps{Config: &config.Config{
-		GeminiModel:  "gemini-3.5-flash",
 		GeminiModels: []string{"gemini-3.5-flash", "gemini-3.1-pro-preview"},
 	}, TaskEnqueuer: &fakeEnqueuer{}})
 	if err != nil {
