@@ -49,13 +49,13 @@ func (h *Handler) HandleHistory(w http.ResponseWriter, r *http.Request) {
 	result, err := h.history.List(ctx, page, perPage)
 	if err != nil {
 		slog.ErrorContext(ctx, "レビュー履歴の取得に失敗しました", "error", err)
-		h.render(w, r, http.StatusInternalServerError, "history.html", HistoryPageData{
+		h.render(w, r, http.StatusInternalServerError, historyTemplate, HistoryPageData{
 			Error: "履歴を取得できませんでした。時間をおいて再度お試しください。",
 		})
 		return
 	}
 
-	h.render(w, r, http.StatusOK, "history.html", HistoryPageData{
+	h.render(w, r, http.StatusOK, historyTemplate, HistoryPageData{
 		Items: result.Items,
 		Meta:  result.Meta,
 	})
@@ -70,7 +70,7 @@ func (h *Handler) HandleReviewDetail(w http.ResponseWriter, r *http.Request) {
 	safeJobID, err := jobid.Sanitize(rawJobID)
 	if err != nil {
 		slog.WarnContext(ctx, "不正なジョブIDを受け取りました", "job_id", rawJobID, "error", err)
-		h.render(w, r, http.StatusBadRequest, "review_detail.html", ReviewDetailPageData{
+		h.render(w, r, http.StatusBadRequest, reviewDetailTemplate, ReviewDetailPageData{
 			Error: "ジョブIDの形式が不正です。",
 		})
 		return
@@ -82,20 +82,23 @@ func (h *Handler) HandleReviewDetail(w http.ResponseWriter, r *http.Request) {
 		// 包まれた原因をログへ残してから 404 を返します。
 		if errors.Is(err, jobstatus.ErrNotFound) {
 			slog.WarnContext(ctx, "レビュー履歴が見つかりません", "job_id", safeJobID, "error", err)
-			h.render(w, r, http.StatusNotFound, "review_detail.html", ReviewDetailPageData{
+			h.render(w, r, http.StatusNotFound, reviewDetailTemplate, ReviewDetailPageData{
 				Error: "指定されたレビューは見つかりませんでした。",
 			})
 			return
 		}
 
 		slog.ErrorContext(ctx, "レビュー履歴の取得に失敗しました", "job_id", safeJobID, "error", err)
-		h.render(w, r, http.StatusInternalServerError, "review_detail.html", ReviewDetailPageData{
+		h.render(w, r, http.StatusInternalServerError, reviewDetailTemplate, ReviewDetailPageData{
 			Error: "レビューを取得できませんでした。",
 		})
 		return
 	}
 
-	h.render(w, r, http.StatusOK, "review_detail.html", ReviewDetailPageData{Detail: detail})
+	h.render(w, r, http.StatusOK, reviewDetailTemplate, ReviewDetailPageData{
+		Detail:    detail,
+		CSRFToken: CSRFTokenFromContext(ctx),
+	})
 }
 
 // positiveIntParam はクエリから正の整数を読み取ります。

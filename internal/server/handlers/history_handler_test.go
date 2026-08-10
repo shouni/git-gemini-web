@@ -5,11 +5,13 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/shouni/gcp-kit/auth"
 	"github.com/shouni/go-job-kit/jobstatus"
 	"github.com/shouni/go-review-kit/review"
 
@@ -471,5 +473,47 @@ func TestReviewDetailShowsDeleteButtonOnlyWhenDeletable(t *testing.T) {
 				t.Errorf("削除ボタンの表示 = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+// 削除ボタンと一緒に、送信に使う CSRF トークンが実際に埋まること。
+//
+// ボタンの有無だけを見ていたため、トークンが空のまま描画される不具合を見逃していました。
+// 空だと X-CSRF-Token に空文字が載り、削除が 403 で必ず失敗します。ミドルウェアを
+// 通したうえで値の中身まで確かめます。
+func TestReviewDetailRendersCSRFTokenForDelete(t *testing.T) {
+	authHandler, err := auth.NewHandler(auth.Config{
+		ClientID:          "client-id",
+		ClientSecret:      "client-secret",
+		RedirectURL:       "https://service.example.com/auth/callback",
+		SessionAuthKey:    "1234567890abcdef",
+		SessionEncryptKey: "1234567890123456",
+		SessionName:       "test-session",
+		AllowedEmails:     []string{"tester@example.com"},
+	})
+	if err != nil {
+		t.Fatalf("auth.NewHandler() error = %v", err)
+	}
+
+	history := &recordingHistory{
+		detail: domain.ReviewDetail{Status: sampleStatus(jobstatus.StateSucceeded, review.StatusSucceeded)},
+	}
+	handler := authHandler.CSRFContextMiddleware(
+		http.HandlerFunc(buildHistoryHandler(t, history).HandleReviewDetail),
+	)
+
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, detailRequest("20260810-213000-a1b2c3d4"))
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", w.Code)
+	}
+
+	matched := regexp.MustCompile(`id="csrf_token" value="([^"]+)"`).FindStringSubmatch(w.Body.String())
+	if matched == nil {
+		t.Fatalf("CSRFトークンが空のまま描画されています: %s", w.Body.String())
+	}
+	if !strings.Contains(w.Body.String(), "delete-review-btn") {
+		t.Error("削除ボタンが描画されていません")
 	}
 }
