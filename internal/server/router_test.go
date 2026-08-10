@@ -10,7 +10,6 @@ import (
 	"github.com/shouni/gcp-kit/auth"
 	"github.com/shouni/gcp-kit/worker"
 
-	"github.com/shouni/git-gemini-web/internal/app"
 	"github.com/shouni/git-gemini-web/internal/builder"
 	"github.com/shouni/git-gemini-web/internal/config"
 	"github.com/shouni/git-gemini-web/internal/domain"
@@ -75,7 +74,7 @@ func newRouterForTest(t *testing.T) http.Handler {
 		t.Fatalf("failed to create auth handler: %v", err)
 	}
 
-	webHandler, err := handlers.NewHandler(handlers.Deps{Config: cfg, TaskEnqueuer: noopTaskEnqueuer{}, RemoteIO: &app.RemoteIO{}})
+	webHandler, err := handlers.NewHandler(handlers.Deps{Config: cfg, TaskEnqueuer: noopTaskEnqueuer{}})
 	if err != nil {
 		t.Fatalf("failed to create web handler: %v", err)
 	}
@@ -189,7 +188,7 @@ func TestFormRendersCSRFTokenFromMiddleware(t *testing.T) {
 		GeminiModels: []string{"gemini-2.5-flash"},
 	}
 	webHandler, err := handlers.NewHandler(handlers.Deps{
-		Config: cfg, TaskEnqueuer: noopTaskEnqueuer{}, RemoteIO: &app.RemoteIO{},
+		Config: cfg, TaskEnqueuer: noopTaskEnqueuer{},
 	})
 	if err != nil {
 		t.Fatalf("failed to create web handler: %v", err)

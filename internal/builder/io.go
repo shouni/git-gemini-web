@@ -20,15 +20,10 @@ func buildRemoteIO(storage remoteio.IOFactory) (*app.RemoteIO, error) {
 	if err != nil {
 		return nil, fmt.Errorf("出力ライターの生成に失敗しました: %w", err)
 	}
-	s, err := storage.URLSigner()
-	if err != nil {
-		return nil, fmt.Errorf("URL署名器の生成に失敗しました: %w", err)
-	}
 	return &app.RemoteIO{
 		Factory: storage,
 		Reader:  r,
 		Writer:  w,
-		Signer:  s,
 	}, nil
 }
 

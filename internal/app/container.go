@@ -43,7 +43,6 @@ type RemoteIO struct {
 	Factory remoteio.IOFactory
 	Reader  remoteio.InputReader
 	Writer  remoteio.OutputWriter
-	Signer  remoteio.URLSigner
 }
 
 // Close は、RemoteIO が保持する Factory などの内部リソースを解放します。

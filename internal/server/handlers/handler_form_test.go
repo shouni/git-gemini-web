@@ -7,12 +7,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/shouni/git-gemini-web/internal/app"
 	"github.com/shouni/git-gemini-web/internal/config"
 )
 
 func TestHandleReviewForm_RendersValidationPatterns(t *testing.T) {
-	h, err := NewHandler(Deps{Config: &config.Config{}, TaskEnqueuer: &fakeEnqueuer{}, RemoteIO: &app.RemoteIO{}})
+	h, err := NewHandler(Deps{Config: &config.Config{}, TaskEnqueuer: &fakeEnqueuer{}})
 	if err != nil {
 		t.Fatalf("failed to create handler: %v", err)
 	}
@@ -48,7 +47,7 @@ func TestHandleReviewForm_RendersValidationPatterns(t *testing.T) {
 }
 
 func TestHandleReviewForm_RendersPromptModesWithCodeDefault(t *testing.T) {
-	h, err := NewHandler(Deps{Config: &config.Config{}, TaskEnqueuer: &fakeEnqueuer{}, RemoteIO: &app.RemoteIO{}})
+	h, err := NewHandler(Deps{Config: &config.Config{}, TaskEnqueuer: &fakeEnqueuer{}})
 	if err != nil {
 		t.Fatalf("failed to create handler: %v", err)
 	}
@@ -79,7 +78,7 @@ func TestHandleReviewForm_RendersGeminiModelsWithFirstDefault(t *testing.T) {
 	h, err := NewHandler(Deps{Config: &config.Config{
 		GeminiModel:  "gemini-3.5-flash",
 		GeminiModels: []string{"gemini-3.5-flash", "gemini-3.1-pro-preview"},
-	}, TaskEnqueuer: &fakeEnqueuer{}, RemoteIO: &app.RemoteIO{}})
+	}, TaskEnqueuer: &fakeEnqueuer{}})
 	if err != nil {
 		t.Fatalf("failed to create handler: %v", err)
 	}
@@ -104,7 +103,7 @@ func TestHandleReviewForm_RendersGeminiModelsWithFirstDefault(t *testing.T) {
 }
 
 func TestHandleReviewForm_RendersCSRFTokenFromContext(t *testing.T) {
-	h, err := NewHandler(Deps{Config: &config.Config{}, TaskEnqueuer: &fakeEnqueuer{}, RemoteIO: &app.RemoteIO{}})
+	h, err := NewHandler(Deps{Config: &config.Config{}, TaskEnqueuer: &fakeEnqueuer{}})
 	if err != nil {
 		t.Fatalf("failed to create handler: %v", err)
 	}

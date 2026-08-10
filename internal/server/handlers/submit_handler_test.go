@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shouni/git-gemini-web/internal/app"
 	"github.com/shouni/git-gemini-web/internal/config"
 	"github.com/shouni/git-gemini-web/internal/domain"
 )
@@ -82,7 +81,6 @@ func buildTestHandler(t *testing.T, jobIDErr, enqueueErr error) (*Handler, *fake
 			GCSBucket:    "bucket-a",
 		},
 		TaskEnqueuer: enq,
-		RemoteIO:     &app.RemoteIO{},
 		Layout:       domain.NewStorageLayout("bucket-a"),
 		StatusStore:  store,
 		History:      history,

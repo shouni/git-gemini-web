@@ -15,7 +15,6 @@ import (
 	"github.com/shouni/go-job-kit/jobstatus"
 	"github.com/shouni/go-review-kit/review"
 
-	"github.com/shouni/git-gemini-web/internal/app"
 	"github.com/shouni/git-gemini-web/internal/config"
 	"github.com/shouni/git-gemini-web/internal/domain"
 )
@@ -66,7 +65,6 @@ func buildHistoryHandler(t *testing.T, history domain.HistoryRepository) *Handle
 	h, err := NewHandler(Deps{
 		Config:       &config.Config{ServiceURL: "https://service.example.com"},
 		TaskEnqueuer: &fakeEnqueuer{},
-		RemoteIO:     &app.RemoteIO{},
 		Layout:       domain.NewStorageLayout("bucket-a"),
 		StatusStore:  &fakeStatusStore{},
 		History:      history,
