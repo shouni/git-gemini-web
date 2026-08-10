@@ -24,7 +24,7 @@ golangci-lint run                # CI は v2.12.2 / 設定は .golangci.yml
 同じイメージが Cloud Run 上で「フォーム受付」と「非同期ワーカー」の両方を担い、区別は `internal/server/router.go` のミドルウェアだけです。
 
 - `/auth/*` — 認証不要（OAuth ログイン）
-- `/`, `/submit_review`, `/history`, `/history/{jobID}` — セッション認証 + CSRF + `http.NewCrossOriginProtection`
+- `/`, `/submit_review`, `/history`, `/history/{jobID}` — セッション認証 + CSRF（`auth.CSRFContextMiddleware`）+ `http.NewCrossOriginProtection`。CSRF トークンの自動生成は gcp-kit 側の実装をそのまま使います。手書きで再実装しないでください（以前そうなっており、独自の context キーへ入れていたためテストが実セッション Cookie を必要としていました）
 - `/tasks/execute_review` — Cloud Tasks からの OIDC 検証のみ（`auth.NewTaskVerifier(...).Middleware`）。audience だけでなく発行元サービスアカウントまで照合します
 - `/health` — `/healthz` は Cloud Run の `*.run.app` 側で握られてコンテナまで届かないため使わないこと
 

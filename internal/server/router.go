@@ -12,7 +12,6 @@ import (
 
 	"github.com/shouni/git-gemini-web/assets"
 	"github.com/shouni/git-gemini-web/internal/builder"
-	"github.com/shouni/git-gemini-web/internal/server/handlers"
 )
 
 const (
@@ -72,23 +71,10 @@ func setupRoutes(r chi.Router, h *builder.AppHandlers) {
 
 		r.Use(h.Auth.Middleware)
 
-		// CSRFトークンがなければ自動生成してセッションに保存するミドルウェア
-		r.Use(func(next http.Handler) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				csrfToken := h.Auth.GetCSRFTokenFromSession(r)
-				if csrfToken == "" && r.Method == http.MethodGet {
-					token, err := h.Auth.GenerateAndSaveCSRFToken(w, r)
-					if err != nil {
-						slog.Error("Failed to auto-generate CSRF token", "error", err)
-						http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-						return
-					}
-					csrfToken = token
-				}
-				r = r.WithContext(handlers.WithCSRFToken(r.Context(), csrfToken))
-				next.ServeHTTP(w, r)
-			})
-		})
+		// GET でセッションに CSRF トークンが無ければ自動生成し、context へ載せます。
+		// POST では生成しません（生成すると、トークンを持たないリクエストに正当な
+		// トークンを与えることになり、CSRF 検証が意味をなさなくなります）。
+		r.Use(h.Auth.CSRFContextMiddleware)
 
 		r.Use(crossOriginProtection.Handler)
 

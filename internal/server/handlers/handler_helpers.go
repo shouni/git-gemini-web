@@ -43,7 +43,7 @@ func (h *Handler) renderForm(w http.ResponseWriter, r *http.Request, status int,
 		data.GeminiModels = h.geminiModelOptions(data.GeminiModel)
 	}
 	if data.CSRFToken == "" {
-		data.CSRFToken = csrfTokenFromContext(r.Context())
+		data.CSRFToken = CSRFTokenFromContext(r.Context())
 	}
 
 	h.render(w, r, status, reviewFormTemplate, data)
