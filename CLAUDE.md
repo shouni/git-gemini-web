@@ -24,7 +24,8 @@ golangci-lint run                # CI は v2.12.2 / 設定は .golangci.yml
 同じイメージが Cloud Run 上で「フォーム受付」と「非同期ワーカー」の両方を担い、区別は `internal/server/router.go` のミドルウェアだけです。
 
 - `/auth/*` — 認証不要（OAuth ログイン）
-- `/`, `/submit_review`, `/history`, `/history/{jobID}` — セッション認証 + CSRF（`auth.CSRFContextMiddleware`）+ `http.NewCrossOriginProtection`。CSRF トークンの自動生成は gcp-kit 側の実装をそのまま使います。手書きで再実装しないでください（以前そうなっており、独自の context キーへ入れていたためテストが実セッション Cookie を必要としていました）
+- `/static/*` — 認証不要（埋め込んだ CSS / JS。認証の内側だとログイン画面でスタイルが当たらない）
+- `/`, `/submit_review`, `/history`, `/history/{jobID}`, `DELETE /history/{jobID}` — セッション認証 + CSRF（`auth.CSRFContextMiddleware`）+ `http.NewCrossOriginProtection`。CSRF トークンの自動生成は gcp-kit 側の実装をそのまま使います。手書きで再実装しないでください（以前そうなっており、独自の context キーへ入れていたためテストが実セッション Cookie を必要としていました）
 - `/tasks/execute_review` — Cloud Tasks からの OIDC 検証のみ（`auth.NewTaskVerifier(...).Middleware`）。audience だけでなく発行元サービスアカウントまで照合します
 - `/health` — `/healthz` は Cloud Run の `*.run.app` 側で握られてコンテナまで届かないため使わないこと
 
@@ -51,6 +52,10 @@ golangci-lint run                # CI は v2.12.2 / 設定は .golangci.yml
 **`review.Notifier` を記録に使わないでください。** `pipeline.Run` が `(Result, *Report, error)` を返すため、レビューの中身は戻り値から取れます。`Notifier` は Slack への外向きの通知だけを担います（`adapters/slack.go`）。
 
 **締切はレビューにだけ被せます。** `Execute` が `ctx` を上書きせず `runCtx` を別に作るのはそのためで、打ち切られた直後の記録まで期限切れの context で行うと、いちばん記録が要る場面で残りません。記録側も `context.WithoutCancel` で切り離しています。
+
+履歴の削除は `DELETE /history/{jobID}` で、ジョブのプレフィックスを走査して消します。`queued` / `running` は削除できません（消してもワーカーが `status.json` を書き戻して復活し、中身の無い行が残るためです）。判定は `JobStatus.Deletable` にあり、画面のボタン表示とハンドラーの両方が同じ判定を通ります。
+
+ブラウザ側の削除は `assets/static/js/app.js` の `App.deleteResource`（`confirm()` → `fetch(DELETE)` → `X-CSRF-Token` ヘッダ）です。ap-comp と同じ形なので、揃えたまま保ってください。**CSS と JS はテンプレートへ直書きせず `assets/static/` へ置きます。**
 
 「差分なしスキップ」は `state=succeeded` + `outcome=SKIPPED` で表します。ジョブとしては正常終了しているためで、`jobstatus.State` を拡張しないでください。
 

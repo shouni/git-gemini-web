@@ -34,6 +34,9 @@ type HistoryPageData struct {
 type ReviewDetailPageData struct {
 	Detail domain.ReviewDetail
 	Error  string
+	// CSRFToken は削除リクエストのヘッダへ載せる値です。フォーム送信ではないため、
+	// 隠しフィールドから JavaScript が読み出します。
+	CSRFToken string
 }
 
 // HandleHistory は履歴一覧を表示します。
@@ -113,4 +116,50 @@ func positiveIntParam(r *http.Request, name string, fallback int) int {
 
 func clamp(value, low, high int) int {
 	return min(max(value, low), high)
+}
+
+// HandleReviewDelete は、レビュー履歴を削除します。
+//
+// メソッドを DELETE にし、応答を本文なしで返すのは ap-comp と揃えるためです
+// （ブラウザ側は assets/static/js/app.js の App.deleteResource が呼びます）。
+// 失敗時の本文はそのまま画面のアラートに出るため、内部の詳細は載せません。
+func (h *Handler) HandleReviewDelete(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// ジョブ ID はストレージのパス要素になるため、受け取った時点で正規化します。
+	safeJobID, err := jobid.Sanitize(chi.URLParam(r, "jobID"))
+	if err != nil {
+		slog.WarnContext(ctx, "不正なジョブIDを受け取りました", "error", err)
+		http.Error(w, "ジョブIDの形式が不正です。", http.StatusBadRequest)
+		return
+	}
+
+	detail, err := h.history.Get(ctx, safeJobID)
+	if err != nil {
+		if errors.Is(err, jobstatus.ErrNotFound) {
+			slog.WarnContext(ctx, "レビュー履歴が見つかりません", "job_id", safeJobID, "error", err)
+			http.Error(w, "指定されたレビューは見つかりませんでした。", http.StatusNotFound)
+			return
+		}
+		slog.ErrorContext(ctx, "レビュー履歴の取得に失敗しました", "job_id", safeJobID, "error", err)
+		http.Error(w, "レビューを取得できませんでした。", http.StatusInternalServerError)
+		return
+	}
+
+	// 実行中のものを消すと、ワーカーがあとから status.json を書き戻して復活します。
+	// 画面ではボタンを出していませんが、直接呼ばれても弾けるようここでも判定します。
+	if !detail.Status.Deletable() {
+		slog.WarnContext(ctx, "実行中のレビューに削除要求がありました", "job_id", safeJobID, "state", detail.Status.State)
+		http.Error(w, "実行中のレビューは削除できません。", http.StatusConflict)
+		return
+	}
+
+	if err := h.history.Delete(ctx, safeJobID); err != nil {
+		slog.ErrorContext(ctx, "レビュー履歴の削除に失敗しました", "job_id", safeJobID, "error", err)
+		http.Error(w, "削除に失敗しました。", http.StatusInternalServerError)
+		return
+	}
+
+	slog.InfoContext(ctx, "レビュー履歴を削除しました", "job_id", safeJobID)
+	w.WriteHeader(http.StatusNoContent)
 }

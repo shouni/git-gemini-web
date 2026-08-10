@@ -25,9 +25,13 @@ type recordingHistory struct {
 	listErr error
 	getErr  error
 
-	gotPage    int
-	gotPerPage int
-	gotJobID   string
+	deleteErr error
+
+	gotPage      int
+	gotPerPage   int
+	gotJobID     string
+	deletedJobID string
+	deleteCalls  int
 }
 
 func (h *recordingHistory) List(_ context.Context, page, perPage int) (domain.HistoryPage, error) {
@@ -44,6 +48,12 @@ func (h *recordingHistory) Get(_ context.Context, jobID string) (domain.ReviewDe
 		return domain.ReviewDetail{}, h.getErr
 	}
 	return h.detail, nil
+}
+
+func (h *recordingHistory) Delete(_ context.Context, jobID string) error {
+	h.deleteCalls++
+	h.deletedJobID = jobID
+	return h.deleteErr
 }
 
 func (h *recordingHistory) Invalidate() {}
@@ -330,5 +340,136 @@ func TestHandleReviewDetail_GetError(t *testing.T) {
 	}
 	if strings.Contains(w.Body.String(), "gcs down") {
 		t.Error("内部のエラー内容が画面へ出ています")
+	}
+}
+
+func deleteRequest(jobID string) *http.Request {
+	req := httptest.NewRequest(http.MethodDelete, "/history/x", nil)
+
+	routeCtx := chi.NewRouteContext()
+	routeCtx.URLParams.Add("jobID", jobID)
+	return req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, routeCtx))
+}
+
+func TestHandleReviewDelete(t *testing.T) {
+	history := &recordingHistory{
+		detail: domain.ReviewDetail{Status: sampleStatus(jobstatus.StateSucceeded, review.StatusSucceeded)},
+	}
+
+	w := httptest.NewRecorder()
+	buildHistoryHandler(t, history).HandleReviewDelete(w, deleteRequest("20260810-213000-a1b2c3d4"))
+
+	if w.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, want 204", w.Code)
+	}
+	if history.deleteCalls != 1 {
+		t.Errorf("削除回数 = %d, want 1", history.deleteCalls)
+	}
+	if history.deletedJobID != "20260810-213000-a1b2c3d4" {
+		t.Errorf("削除対象 = %q", history.deletedJobID)
+	}
+}
+
+// 実行中のものを消すと、ワーカーがあとから status.json を書き戻して復活します。
+// 画面にボタンが出ていなくても、直接呼ばれた場合に弾けること。
+func TestHandleReviewDeleteRejectsRunning(t *testing.T) {
+	tests := []struct {
+		name  string
+		state jobstatus.State
+	}{
+		{"受付済み", jobstatus.StateQueued},
+		{"実行中", jobstatus.StateRunning},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			history := &recordingHistory{
+				detail: domain.ReviewDetail{Status: sampleStatus(tt.state, "")},
+			}
+
+			w := httptest.NewRecorder()
+			buildHistoryHandler(t, history).HandleReviewDelete(w, deleteRequest("20260810-213000-a1b2c3d4"))
+
+			if w.Code != http.StatusConflict {
+				t.Fatalf("status = %d, want 409", w.Code)
+			}
+			if history.deleteCalls != 0 {
+				t.Errorf("削除が実行されています: %d 回", history.deleteCalls)
+			}
+		})
+	}
+}
+
+func TestHandleReviewDeleteErrors(t *testing.T) {
+	tests := []struct {
+		name     string
+		jobID    string
+		history  *recordingHistory
+		wantCode int
+	}{
+		{
+			name:     "不正なジョブID",
+			jobID:    "-bad-id",
+			history:  &recordingHistory{},
+			wantCode: http.StatusBadRequest,
+		},
+		{
+			name:     "見つからない",
+			jobID:    "20260810-213000-a1b2c3d4",
+			history:  &recordingHistory{getErr: jobstatus.ErrNotFound},
+			wantCode: http.StatusNotFound,
+		},
+		{
+			name:  "削除に失敗",
+			jobID: "20260810-213000-a1b2c3d4",
+			history: &recordingHistory{
+				detail:    domain.ReviewDetail{Status: sampleStatus(jobstatus.StateSucceeded, review.StatusSucceeded)},
+				deleteErr: errors.New("gcs down"),
+			},
+			wantCode: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			buildHistoryHandler(t, tt.history).HandleReviewDelete(w, deleteRequest(tt.jobID))
+
+			if w.Code != tt.wantCode {
+				t.Fatalf("status = %d, want %d", w.Code, tt.wantCode)
+			}
+			if strings.Contains(w.Body.String(), "gcs down") {
+				t.Error("内部のエラー内容が応答に出ています")
+			}
+		})
+	}
+}
+
+// 削除できる状態のときだけボタンを描くこと。実行中に出すと押せてしまいます。
+func TestReviewDetailShowsDeleteButtonOnlyWhenDeletable(t *testing.T) {
+	tests := []struct {
+		name  string
+		state jobstatus.State
+		want  bool
+	}{
+		{"完了", jobstatus.StateSucceeded, true},
+		{"失敗", jobstatus.StateFailed, true},
+		{"実行中", jobstatus.StateRunning, false},
+		{"受付済み", jobstatus.StateQueued, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			history := &recordingHistory{
+				detail: domain.ReviewDetail{Status: sampleStatus(tt.state, "")},
+			}
+
+			w := httptest.NewRecorder()
+			buildHistoryHandler(t, history).HandleReviewDetail(w, detailRequest("20260810-213000-a1b2c3d4"))
+
+			if got := strings.Contains(w.Body.String(), "delete-review-btn"); got != tt.want {
+				t.Errorf("削除ボタンの表示 = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

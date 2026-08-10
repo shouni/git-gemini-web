@@ -4,6 +4,7 @@ package server
 import (
 	"bytes"
 	"html/template"
+	"io/fs"
 	"log/slog"
 	"net/http"
 
@@ -23,9 +24,28 @@ const (
 func NewRouter(h *builder.AppHandlers) http.Handler {
 	r := chi.NewRouter()
 	setupCommonMiddleware(r)
+	setupStaticRoutes(r)
 	setupRoutes(r, h)
 
 	return r
+}
+
+// setupStaticRoutes は、埋め込んだ静的ファイルを /static/ で配信します。
+//
+// 認証の外側に置きます。CSS/JS に秘密は含まれず、認証の内側に入れるとログイン画面で
+// スタイルが当たらなくなるためです。
+func setupStaticRoutes(r chi.Router) {
+	staticFS, err := fs.Sub(assets.StaticFiles, "static")
+	if err != nil {
+		slog.Error("static assets are unavailable", "error", err)
+		return
+	}
+
+	fileServer := http.StripPrefix("/static/", http.FileServer(http.FS(staticFS)))
+	r.Handle("/static/*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "public, max-age=300, must-revalidate")
+		fileServer.ServeHTTP(w, r)
+	}))
 }
 
 // setupCommonMiddleware は、標準的なミドルウェアを構成します。
@@ -82,6 +102,7 @@ func setupRoutes(r chi.Router, h *builder.AppHandlers) {
 		r.Post("/submit_review", h.Web.HandleReviewSubmit)
 		r.Get("/history", h.Web.HandleHistory)
 		r.Get("/history/{jobID}", h.Web.HandleReviewDetail)
+		r.Delete("/history/{jobID}", h.Web.HandleReviewDelete)
 	})
 
 	// C. ワーカー専用ルート (OIDC認証)

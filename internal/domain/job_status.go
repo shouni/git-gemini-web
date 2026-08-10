@@ -44,6 +44,15 @@ func (s JobStatus) HasReport() bool {
 	return s.ReportURI != ""
 }
 
+// Deletable は、履歴から削除してよい状態かどうかを返します。
+//
+// queued / running を消せないようにしているのは、消したあとでワーカーが status.json を
+// 書き戻し、プレフィックスが復活するためです。結果として、中身の無い行が履歴に残ります。
+// failed を許すのは、review-queue が max_attempts = 1 で再試行が来ないためです。
+func (s JobStatus) Deletable() bool {
+	return s.State == jobstatus.StateSucceeded || s.State == jobstatus.StateFailed
+}
+
 // carryOverFrom は、前回の記録から引き継ぐべきサービス固有フィールドを移します。
 //
 // ワーカーは状態が変わるたびにタスクの内容から JobStatus を組み立て直すため、投入時に

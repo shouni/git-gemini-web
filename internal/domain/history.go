@@ -30,6 +30,9 @@ type HistoryRepository interface {
 	List(ctx context.Context, page, perPage int) (HistoryPage, error)
 	// Get は、1 件分の進行状況とレビュー結果全文を返します。
 	Get(ctx context.Context, jobID string) (ReviewDetail, error)
+	// Delete は、1 件分のオブジェクトをすべて削除します。
+	// 削除してよい状態かどうかの判断は呼び出し側（ハンドラー）が行います。
+	Delete(ctx context.Context, jobID string) error
 	// Invalidate は、ジョブ ID 一覧のキャッシュを捨てます。新しいジョブを投入した直後に
 	// 呼ぶことで、投入したのに履歴へ現れない時間をなくします。
 	Invalidate()

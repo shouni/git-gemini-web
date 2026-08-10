@@ -4,6 +4,7 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -28,9 +29,10 @@ const loadConcurrency = 10
 // ための歯止めです。
 const maxReportBytes = 8 << 20 // 8 MiB
 
-// History は、GCS 上のレビュー履歴を読み取ります。
+// History は、GCS 上のレビュー履歴を読み書きします。
 type History struct {
 	reader remoteio.InputReader
+	writer remoteio.OutputWriter
 	store  domain.StatusStore
 	layout domain.StorageLayout
 	ids    *cache.IDList
@@ -40,9 +42,15 @@ type History struct {
 var _ domain.HistoryRepository = (*History)(nil)
 
 // NewHistory は History を構築します。
-func NewHistory(reader remoteio.InputReader, store domain.StatusStore, layout domain.StorageLayout) *History {
+func NewHistory(
+	reader remoteio.InputReader,
+	writer remoteio.OutputWriter,
+	store domain.StatusStore,
+	layout domain.StorageLayout,
+) *History {
 	return &History{
 		reader: reader,
+		writer: writer,
 		store:  store,
 		layout: layout,
 		ids:    cache.NewIDList(cache.DefaultIDListTTL),
@@ -96,6 +104,53 @@ func (h *History) Get(ctx context.Context, jobID string) (domain.ReviewDetail, e
 
 	detail.Report = &report
 	return detail, nil
+}
+
+// Delete は、1 件分のオブジェクトをすべて削除します。
+//
+// ジョブのプレフィックスを走査して消すため、消す側は「そのジョブが何を作ったか」を
+// 知らずに済みます。成果物の種類が増えてもここを直す必要はありません
+// （進行状況も同じプレフィックス配下にあるので、まとめて消えます）。
+func (h *History) Delete(ctx context.Context, jobID string) error {
+	safeJobID, err := jobid.Sanitize(jobID)
+	if err != nil {
+		return err
+	}
+
+	if err := h.deletePrefix(ctx, h.layout.JobPrefixURI(safeJobID)); err != nil {
+		return err
+	}
+
+	// 消したジョブが一覧に残らないよう、ID 一覧のキャッシュを捨てます。
+	// 捨てないと、読めない ID がジョブIDだけの空行として TTL の間並びます。
+	h.Invalidate()
+	return nil
+}
+
+// deletePrefix はプレフィックス配下のオブジェクトをすべて削除します。
+//
+// プレフィックスが空、あるいは区切りで終わっていない場合は拒否します。ここを取り違えると
+// バケットの広い範囲を消すことになるため、呼び出し側の組み立てを信用しません。
+func (h *History) deletePrefix(ctx context.Context, prefix string) error {
+	if prefix == "" || !strings.HasSuffix(prefix, "/") {
+		return fmt.Errorf("範囲を限定できないプレフィックスの削除は拒否します: %q", prefix)
+	}
+
+	var uris []string
+	if err := h.reader.List(ctx, prefix, func(gcsPath string) error {
+		uris = append(uris, gcsPath)
+		return nil
+	}); err != nil {
+		return fmt.Errorf("削除対象の一覧取得に失敗しました (%s): %w", prefix, err)
+	}
+
+	var errs []error
+	for _, uri := range uris {
+		if err := h.writer.Delete(ctx, uri); err != nil {
+			errs = append(errs, fmt.Errorf("%s の削除に失敗しました: %w", uri, err))
+		}
+	}
+	return errors.Join(errs...)
 }
 
 // Invalidate は、ジョブ ID 一覧のキャッシュを捨てます。

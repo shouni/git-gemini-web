@@ -47,7 +47,7 @@ func BuildContainer(ctx context.Context, cfg *config.Config) (container *app.Con
 	// 3. 進行状況と履歴
 	layout := domain.NewStorageLayout(cfg.GCSBucket)
 	statusStore := buildStatusStore(rio, layout)
-	history := repository.NewHistory(rio.Reader, statusStore, layout)
+	history := repository.NewHistory(rio.Reader, rio.Writer, statusStore, layout)
 
 	// 4. Task Enqueuer
 	enqueuer, err := buildTaskEnqueuer(ctx, cfg)

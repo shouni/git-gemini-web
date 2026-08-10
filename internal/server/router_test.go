@@ -207,3 +207,39 @@ func TestFormRendersCSRFTokenFromMiddleware(t *testing.T) {
 		t.Fatalf("フォームに CSRF トークンが埋まっていません: %s", w.Body.String())
 	}
 }
+
+// 静的ファイルは認証の外側で配信されること。
+// 認証の内側に入れると、ログイン画面でスタイルが当たりません。
+func TestStaticFilesNeedNoAuth(t *testing.T) {
+	t.Parallel()
+
+	r := newRouterForTest(t)
+
+	for _, path := range []string{"/static/css/app.css", "/static/js/app.js"} {
+		t.Run(path, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, path, nil))
+
+			if w.Code != http.StatusOK {
+				t.Fatalf("status = %d, want 200", w.Code)
+			}
+			if w.Header().Get("Cache-Control") == "" {
+				t.Error("Cache-Control が設定されていません")
+			}
+		})
+	}
+}
+
+// 削除は認証の内側にあること。未認証で消せてはいけません。
+func TestDeleteRequiresAuth(t *testing.T) {
+	t.Parallel()
+
+	r := newRouterForTest(t)
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodDelete, "/history/20260810-213000-a1b2c3d4", nil))
+
+	if w.Code == http.StatusNoContent {
+		t.Fatal("未認証の削除が通っています")
+	}
+}

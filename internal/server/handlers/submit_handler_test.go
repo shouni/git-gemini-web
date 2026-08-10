@@ -48,6 +48,8 @@ func (f *fakeHistory) Get(context.Context, string) (domain.ReviewDetail, error) 
 	return domain.ReviewDetail{}, nil
 }
 
+func (f *fakeHistory) Delete(context.Context, string) error { return nil }
+
 func (f *fakeHistory) Invalidate() { f.invalidated++ }
 
 type fakeEnqueuer struct {
