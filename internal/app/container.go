@@ -5,9 +5,9 @@ import (
 	"context"
 	"log/slog"
 
-	coreports "github.com/shouni/gemini-reviewer-core/ports"
 	"github.com/shouni/go-http-kit/httpkit"
 	"github.com/shouni/go-remote-io/remoteio"
+	"github.com/shouni/go-review-kit/review"
 
 	"github.com/shouni/git-gemini-web/internal/config"
 	"github.com/shouni/git-gemini-web/internal/domain"
@@ -18,14 +18,18 @@ type Container struct {
 	Config *config.Config
 	// I/O and Storage
 	RemoteIO *RemoteIO
+	Layout   domain.StorageLayout
+	// Job State and History
+	StatusStore domain.StatusStore
+	History     domain.HistoryRepository
 	// Asynchronous Task
 	TaskEnqueuer TaskEnqueuer
 	// Business Logic
 	Pipeline domain.Pipeline
 	// External Adapters
 	HTTPClient httpkit.Requester
-	Notifier   coreports.Notifier
-	PromptGen  coreports.PromptGenerator
+	Notifier   review.Notifier
+	PromptGen  review.PromptGenerator
 }
 
 // TaskEnqueuer は、レビュー要求を非同期タスクとしてキューへ投入する役割です。
@@ -37,7 +41,8 @@ type TaskEnqueuer interface {
 // RemoteIO は外部ストレージ操作に関するコンポーネントをまとめます。
 type RemoteIO struct {
 	Factory remoteio.IOFactory
-	Writer  remoteio.Writer
+	Reader  remoteio.InputReader
+	Writer  remoteio.OutputWriter
 	Signer  remoteio.URLSigner
 }
 

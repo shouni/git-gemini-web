@@ -33,6 +33,10 @@ var (
 	//go:embed templates/*.html
 	Templates embed.FS
 
+	// StaticFiles は、ブラウザへ配信するJavaScriptなどの静的ファイルを保持します。
+	//go:embed static
+	StaticFiles embed.FS
+
 	cachedPrompts map[string]promptTemplate
 	mu            sync.RWMutex
 )

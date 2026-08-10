@@ -4,12 +4,9 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"regexp"
-	"strings"
 	"testing"
 
-	"github.com/gorilla/sessions"
 	"github.com/shouni/gcp-kit/auth"
 	"github.com/shouni/gcp-kit/worker"
 
@@ -29,33 +26,25 @@ type noopPipeline struct{}
 
 func (noopPipeline) Execute(context.Context, domain.ReviewRequest) error { return nil }
 
-func authenticatedSessionCookie(t *testing.T) *http.Cookie {
+// newTestAuthHandler は、テスト用の auth.Handler を返します。
+// OAuth の実際のやり取りは行わず、セッション判定と CSRF 検証だけを対象にします。
+func newTestAuthHandler(t *testing.T) *auth.Handler {
 	t.Helper()
 
-	store := sessions.NewCookieStore([]byte("1234567890abcdef"), []byte("1234567890123456"))
-	store.Options = &sessions.Options{
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
-	}
-
-	req := httptest.NewRequest(http.MethodGet, "https://service.example.com/", nil)
-	w := httptest.NewRecorder()
-	session, err := store.Get(req, "test-session")
+	h, err := auth.NewHandler(auth.Config{
+		ClientID:          "client-id",
+		ClientSecret:      "client-secret",
+		RedirectURL:       "https://service.example.com/auth/callback",
+		SessionAuthKey:    "1234567890abcdef",
+		SessionEncryptKey: "1234567890123456",
+		SessionName:       "test-session",
+		IsSecureCookie:    true,
+		AllowedEmails:     []string{"tester@example.com"},
+	})
 	if err != nil {
-		t.Fatalf("failed to create session: %v", err)
+		t.Fatalf("auth.NewHandler() error = %v", err)
 	}
-	session.Values[auth.DefaultUserSessionKey] = "tester@example.com"
-	if err := session.Save(req, w); err != nil {
-		t.Fatalf("failed to save session: %v", err)
-	}
-
-	cookies := w.Result().Cookies()
-	if len(cookies) == 0 {
-		t.Fatal("session cookie was not set")
-	}
-	return cookies[0]
+	return h
 }
 
 func newRouterForTest(t *testing.T) http.Handler {
@@ -86,7 +75,7 @@ func newRouterForTest(t *testing.T) http.Handler {
 		t.Fatalf("failed to create auth handler: %v", err)
 	}
 
-	webHandler, err := handlers.NewHandler(cfg, noopTaskEnqueuer{}, &app.RemoteIO{})
+	webHandler, err := handlers.NewHandler(handlers.Deps{Config: cfg, TaskEnqueuer: noopTaskEnqueuer{}, RemoteIO: &app.RemoteIO{}})
 	if err != nil {
 		t.Fatalf("failed to create web handler: %v", err)
 	}
@@ -151,42 +140,106 @@ func TestNewRouter_RouteReachabilityAndGuards(t *testing.T) {
 	}
 }
 
-func TestNewRouter_FormRendersCSRFTokenAndSubmitUsesIt(t *testing.T) {
+// GET リクエストではセッションに CSRF トークンが無ければ自動生成され、
+// context 経由でテンプレートに渡ること。
+//
+// これが壊れるとフォームにトークンが埋まらず、submit が全部弾かれます。
+// ミドルウェアは gcp-kit の実装ですが、handlers 側が同じキーで読めているか
+// （context.go の委譲が効いているか）はこちらで確かめる必要があります。
+func TestCSRFAutoGenPopulatesContextOnGet(t *testing.T) {
+	t.Parallel()
+
+	var token string
+	handler := newTestAuthHandler(t).CSRFContextMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		token = handlers.CSRFTokenFromContext(r.Context())
+	}))
+
+	handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/", nil))
+
+	if token == "" {
+		t.Fatal("GET リクエストで CSRF トークンが自動生成されていない")
+	}
+}
+
+// POST では CSRF トークンを自動生成しないこと。
+// 生成してしまうと、トークンを持たないリクエストに正当なトークンを与えることになり、
+// CSRF 検証が意味をなさなくなります。
+func TestCSRFAutoGenSkipsPost(t *testing.T) {
+	t.Parallel()
+
+	var token string
+	handler := newTestAuthHandler(t).CSRFContextMiddleware(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		token = handlers.CSRFTokenFromContext(r.Context())
+	}))
+
+	handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodPost, "/submit_review", nil))
+
+	if token != "" {
+		t.Fatalf("POST で CSRF トークンが自動生成されている: %q", token)
+	}
+}
+
+// 認証済みのフォーム描画で、context のトークンが実際に埋め込まれること。
+func TestFormRendersCSRFTokenFromMiddleware(t *testing.T) {
+	t.Parallel()
+
+	cfg := &config.Config{
+		ServiceURL:   "https://service.example.com",
+		GeminiModel:  "gemini-2.5-flash",
+		GeminiModels: []string{"gemini-2.5-flash"},
+	}
+	webHandler, err := handlers.NewHandler(handlers.Deps{
+		Config: cfg, TaskEnqueuer: noopTaskEnqueuer{}, RemoteIO: &app.RemoteIO{},
+	})
+	if err != nil {
+		t.Fatalf("failed to create web handler: %v", err)
+	}
+
+	handler := newTestAuthHandler(t).CSRFContextMiddleware(http.HandlerFunc(webHandler.HandleReviewForm))
+
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/", nil))
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", w.Code)
+	}
+	if !regexp.MustCompile(`name="csrf_token" value="[^"]+"`).MatchString(w.Body.String()) {
+		t.Fatalf("フォームに CSRF トークンが埋まっていません: %s", w.Body.String())
+	}
+}
+
+// 静的ファイルは認証の外側で配信されること。
+// 認証の内側に入れると、ログイン画面でスタイルが当たりません。
+func TestStaticFilesNeedNoAuth(t *testing.T) {
+	t.Parallel()
+
 	r := newRouterForTest(t)
-	sessionCookie := authenticatedSessionCookie(t)
 
-	getReq := httptest.NewRequest(http.MethodGet, "https://service.example.com/", nil)
-	getReq.AddCookie(sessionCookie)
-	getW := httptest.NewRecorder()
-	r.ServeHTTP(getW, getReq)
+	for _, path := range []string{"/static/css/app.css", "/static/js/app.js"} {
+		t.Run(path, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, path, nil))
 
-	if getW.Code != http.StatusOK {
-		t.Fatalf("GET / unexpected status: got %d want %d", getW.Code, http.StatusOK)
+			if w.Code != http.StatusOK {
+				t.Fatalf("status = %d, want 200", w.Code)
+			}
+			if w.Header().Get("Cache-Control") == "" {
+				t.Error("Cache-Control が設定されていません")
+			}
+		})
 	}
+}
 
-	tokenMatch := regexp.MustCompile(`name="csrf_token" value="([^"]+)"`).FindStringSubmatch(getW.Body.String())
-	if len(tokenMatch) != 2 {
-		t.Fatalf("csrf token was not rendered in form: %s", getW.Body.String())
-	}
-	csrfToken := tokenMatch[1]
+// 削除は認証の内側にあること。未認証で消せてはいけません。
+func TestDeleteRequiresAuth(t *testing.T) {
+	t.Parallel()
 
-	for _, cookie := range getW.Result().Cookies() {
-		if cookie.Name == sessionCookie.Name {
-			sessionCookie = cookie
-			break
-		}
-	}
+	r := newRouterForTest(t)
 
-	form := url.Values{}
-	form.Set("csrf_token", csrfToken)
-	postReq := httptest.NewRequest(http.MethodPost, "https://service.example.com/submit_review", strings.NewReader(form.Encode()))
-	postReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	postReq.Header.Set("Origin", "https://service.example.com")
-	postReq.AddCookie(sessionCookie)
-	postW := httptest.NewRecorder()
-	r.ServeHTTP(postW, postReq)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodDelete, "/history/20260810-213000-a1b2c3d4", nil))
 
-	if postW.Code != http.StatusBadRequest {
-		t.Fatalf("POST with rendered csrf token should reach form validation: got %d want %d", postW.Code, http.StatusBadRequest)
+	if w.Code == http.StatusNoContent {
+		t.Fatal("未認証の削除が通っています")
 	}
 }

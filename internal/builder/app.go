@@ -13,6 +13,8 @@ import (
 	"github.com/shouni/git-gemini-web/internal/adapters"
 	"github.com/shouni/git-gemini-web/internal/app"
 	"github.com/shouni/git-gemini-web/internal/config"
+	"github.com/shouni/git-gemini-web/internal/domain"
+	"github.com/shouni/git-gemini-web/internal/repository"
 )
 
 // BuildContainer は外部サービスとの接続を確立し、依存関係を組み立てた app.Container を返します。
@@ -42,20 +44,25 @@ func BuildContainer(ctx context.Context, cfg *config.Config) (container *app.Con
 		return nil, fmt.Errorf("I/Oコンポーネントの初期化に失敗しました: %w", err)
 	}
 
-	// 3. Task Enqueuer
+	// 3. 進行状況と履歴
+	layout := domain.NewStorageLayout(cfg.GCSBucket)
+	statusStore := buildStatusStore(rio, layout)
+	history := repository.NewHistory(rio.Reader, rio.Writer, statusStore, layout)
+
+	// 4. Task Enqueuer
 	enqueuer, err := buildTaskEnqueuer(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("TaskEnqueuer の構築に失敗しました: %w", err)
 	}
 	resources = append(resources, enqueuer)
 
-	// 3. Prompt Adapter の構築
+	// 5. Prompt Adapter の構築
 	promptGen, err := adapters.NewPromptAdapter()
 	if err != nil {
 		return nil, fmt.Errorf("PromptAdapter の構築に失敗しました: %w", err)
 	}
 
-	// 4. Slack Adapter
+	// 6. Slack Adapter
 	slack, err := adapters.NewSlackAdapter(httpClient.WithoutRetry(), cfg.SlackWebhookURL)
 	if err != nil {
 		return nil, fmt.Errorf("SlackAdapter の構築に失敗しました: %w", err)
@@ -64,12 +71,16 @@ func BuildContainer(ctx context.Context, cfg *config.Config) (container *app.Con
 	appCtx := &app.Container{
 		Config:       cfg,
 		RemoteIO:     rio,
+		Layout:       layout,
+		StatusStore:  statusStore,
+		History:      history,
 		TaskEnqueuer: enqueuer,
+		HTTPClient:   httpClient,
 		PromptGen:    promptGen,
 		Notifier:     slack,
 	}
 
-	// 5. Pipeline (Core Logic)
+	// 7. Pipeline (Core Logic)
 	pipeline, err := buildPipeline(ctx, appCtx)
 	if err != nil {
 		return nil, fmt.Errorf("パイプラインの初期化に失敗しました: %w", err)

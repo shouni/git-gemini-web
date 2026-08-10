@@ -10,26 +10,7 @@
           crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
-    <style>
-        :root {
-            --zunda-green: #76bc21;
-            --zunda-dark: #64a01c;
-        }
-        body { background-color: #fcfdfb; }
-        .navbar { background-color: var(--zunda-green); }
-        .nav-link { color: white !important; transition: all 0.2s; }
-        .nav-link:hover { opacity: 0.8; transform: translateY(-1px); }
-
-        /* ボタン等のブランドカラー統一 */
-        .btn-primary { background-color: var(--zunda-green); border-color: var(--zunda-green); }
-        .btn-primary:hover { background-color: var(--zunda-dark); border-color: var(--zunda-dark); }
-
-        /* アクティブなリンクの強調 */
-        .nav-link.active { font-weight: bold; border-bottom: 2px solid white; }
-
-        /* フッターの装飾 */
-        footer hr { border-top: 1px solid #dee2e6; width: 50%; margin: 2rem auto; }
-    </style>
+    <link rel="stylesheet" href="/static/css/app.css">
 </head>
 <body>
 <nav class="navbar navbar-expand-lg mb-4 shadow-sm">
@@ -43,6 +24,7 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
                 <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="/history">History</a></li>
             </ul>
             <span class="navbar-text text-white-50 small">
                 2026 Edition | <i class="bi bi-lightning-charge-fill"></i> Gemini 3 Flash
@@ -66,6 +48,7 @@
     </div>
 </footer>
 
+<script src="/static/js/app.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
         crossorigin="anonymous"></script>

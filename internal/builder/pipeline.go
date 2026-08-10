@@ -4,76 +4,40 @@ import (
 	"context"
 	"fmt"
 
-	coreports "github.com/shouni/gemini-reviewer-core/ports"
-	"github.com/shouni/gemini-reviewer-core/publisher"
-	"github.com/shouni/gemini-reviewer-core/runner"
-	"github.com/shouni/gemini-reviewer-core/workflow"
-	"github.com/shouni/go-remote-io/remoteio"
+	"github.com/shouni/go-review-kit/pipeline"
 
 	"github.com/shouni/git-gemini-web/internal/adapters"
 	"github.com/shouni/git-gemini-web/internal/app"
-	"github.com/shouni/git-gemini-web/internal/config"
 	"github.com/shouni/git-gemini-web/internal/domain"
 )
 
 // buildPipeline は、実行可能な domain.Pipeline を返します。
-func buildPipeline(
-	ctx context.Context,
-	appCtx *app.Container,
-) (domain.Pipeline, error) {
-	reviewRunner, err := buildReviewRunner(ctx, appCtx.Config, appCtx.PromptGen)
-	if err != nil {
-		return nil, fmt.Errorf("ReviewRunnerの構築に失敗: %w", err)
-	}
-
-	publishRunner, err := buildPublishRunner(appCtx.RemoteIO.Writer, appCtx.Notifier)
-	if err != nil {
-		return nil, fmt.Errorf("PublishRunnerの構築に失敗: %w", err)
-	}
-
-	coreWorkflow := workflow.New(reviewRunner, publishRunner)
-	return adapters.NewCoreWorkflowAdapter(coreWorkflow, appCtx.Config.PipelineTimeout), nil
-}
-
-// buildReviewRunner は、実行可能な ports.ReviewRunner のインターフェースを返します。
-func buildReviewRunner(
-	ctx context.Context,
-	cfg *config.Config,
-	promptGen coreports.PromptGenerator,
-) (*runner.ReviewRunner, error) {
-	gitFactory := adapters.NewGitFactory(cfg)
-	codeReviewAI, err := adapters.NewCodeReviewAI(ctx, cfg)
+func buildPipeline(ctx context.Context, appCtx *app.Container) (domain.Pipeline, error) {
+	sources, err := adapters.NewDiffSourceFactory(appCtx.Config.SSHKeyPath)
 	if err != nil {
 		return nil, err
 	}
 
-	reviewRunner := runner.NewReviewRunner(
-		promptGen,
-		gitFactory,
-		codeReviewAI,
-	)
-
-	return reviewRunner, nil
-}
-
-// buildPublishRunner は、実行可能な ports.PublishRunner のインターフェースを返します。
-func buildPublishRunner(
-	writer remoteio.Writer,
-	notifier coreports.Notifier,
-) (*runner.PublishRunner, error) {
-	converter, err := publisher.NewConverterAdapter()
+	reviewer, err := adapters.NewReviewer(ctx, appCtx.Config)
 	if err != nil {
-		return nil, fmt.Errorf("converterの初期化に失敗しました: %w", err)
-	}
-	publishService, err := publisher.New(writer, converter)
-	if err != nil {
-		return nil, fmt.Errorf("publisherの初期化に失敗しました: %w", err)
+		return nil, err
 	}
 
-	publishRunner := runner.NewPublishRunner(
-		publishService,
-		notifier,
-	)
+	publisher, err := adapters.NewReportPublisher(appCtx.RemoteIO.Writer, appCtx.Layout)
+	if err != nil {
+		return nil, fmt.Errorf("ReportPublisher の構築に失敗しました: %w", err)
+	}
 
-	return publishRunner, nil
+	core, err := pipeline.New(pipeline.Deps{
+		Sources:   sources,
+		Prompts:   appCtx.PromptGen,
+		Reviewer:  reviewer,
+		Publisher: publisher,
+		Notifier:  appCtx.Notifier,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("パイプラインの構築に失敗しました: %w", err)
+	}
+
+	return adapters.NewReviewPipeline(core, appCtx.StatusStore, appCtx.Config.PipelineTimeout), nil
 }

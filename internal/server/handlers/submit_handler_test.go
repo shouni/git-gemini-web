@@ -16,17 +16,41 @@ import (
 	"github.com/shouni/git-gemini-web/internal/domain"
 )
 
-type fakeSigner struct {
-	url string
-	err error
+// fakeStatusStore は進行状況の記録先のフェイクです。
+type fakeStatusStore struct {
+	err   error
+	saved []domain.JobStatus
 }
 
-func (f *fakeSigner) GenerateSignedURL(_ context.Context, _ string, _ string, _ time.Duration) (string, error) {
-	if f.err != nil {
-		return "", f.err
-	}
-	return f.url, nil
+func (f *fakeStatusStore) Get(_ context.Context, _ string) (domain.JobStatus, error) {
+	return domain.JobStatus{}, errors.New("not recorded")
 }
+
+func (f *fakeStatusStore) Save(_ context.Context, jobID string, status domain.JobStatus) error {
+	if f.err != nil {
+		return f.err
+	}
+	status.JobID = jobID
+	f.saved = append(f.saved, status)
+	return nil
+}
+
+// fakeHistory は履歴のフェイクです。投入直後にキャッシュが捨てられたかだけを見ます。
+type fakeHistory struct {
+	invalidated int
+}
+
+func (f *fakeHistory) List(context.Context, int, int) (domain.HistoryPage, error) {
+	return domain.HistoryPage{}, nil
+}
+
+func (f *fakeHistory) Get(context.Context, string) (domain.ReviewDetail, error) {
+	return domain.ReviewDetail{}, nil
+}
+
+func (f *fakeHistory) Delete(context.Context, string) error { return nil }
+
+func (f *fakeHistory) Invalidate() { f.invalidated++ }
 
 type fakeEnqueuer struct {
 	err      error
@@ -40,25 +64,43 @@ func (f *fakeEnqueuer) Enqueue(_ context.Context, payload domain.ReviewRequest) 
 	return f.err
 }
 
-func buildTestHandler(t *testing.T, signerErr, enqueueErr error) (*Handler, *fakeEnqueuer) {
+// testJobID は、テストで採番されるジョブIDです。
+const testJobID = "20260415-102030-abcdef123456"
+
+func buildTestHandler(t *testing.T, jobIDErr, enqueueErr error) (*Handler, *fakeEnqueuer, *fakeStatusStore, *fakeHistory) {
 	t.Helper()
+
 	enq := &fakeEnqueuer{err: enqueueErr}
-	h, err := NewHandler(
-		&config.Config{
+	store := &fakeStatusStore{}
+	history := &fakeHistory{}
+
+	h, err := NewHandler(Deps{
+		Config: &config.Config{
+			ServiceURL:   "https://service.example.com",
 			GeminiModel:  "gemini-2.5-flash",
 			GeminiModels: []string{"gemini-2.5-flash", "gemini-2.5-pro"},
 			GCSBucket:    "bucket-a",
 		},
-		enq,
-		&app.RemoteIO{Signer: &fakeSigner{url: "https://signed.example.com/result.html", err: signerErr}},
-	)
+		TaskEnqueuer: enq,
+		RemoteIO:     &app.RemoteIO{},
+		Layout:       domain.NewStorageLayout("bucket-a"),
+		StatusStore:  store,
+		History:      history,
+	})
 	if err != nil {
 		t.Fatalf("failed to build handler: %v", err)
 	}
+
 	h.now = func() time.Time {
 		return time.Date(2026, 4, 15, 10, 20, 30, 0, time.UTC)
 	}
-	return h, enq
+	h.newJobID = func() (string, error) {
+		if jobIDErr != nil {
+			return "", jobIDErr
+		}
+		return testJobID, nil
+	}
+	return h, enq, store, history
 }
 
 func newSubmitRequest(body string) *http.Request {
@@ -78,7 +120,7 @@ func validFormBody() string {
 }
 
 func TestHandleReviewSubmit_ParseError(t *testing.T) {
-	h, enq := buildTestHandler(t, nil, nil)
+	h, enq, _, _ := buildTestHandler(t, nil, nil)
 	w := httptest.NewRecorder()
 	h.HandleReviewSubmit(w, newSubmitRequest("%zz"))
 
@@ -91,7 +133,7 @@ func TestHandleReviewSubmit_ParseError(t *testing.T) {
 }
 
 func TestHandleReviewSubmit_ValidationError(t *testing.T) {
-	h, enq := buildTestHandler(t, nil, nil)
+	h, enq, _, _ := buildTestHandler(t, nil, nil)
 	w := httptest.NewRecorder()
 
 	v := url.Values{}
@@ -112,7 +154,7 @@ func TestHandleReviewSubmit_ValidationError(t *testing.T) {
 }
 
 func TestHandleReviewSubmit_ValidationErrorPreservesSelectedGeminiModel(t *testing.T) {
-	h, enq := buildTestHandler(t, nil, nil)
+	h, enq, _, _ := buildTestHandler(t, nil, nil)
 	w := httptest.NewRecorder()
 
 	v := url.Values{}
@@ -137,7 +179,7 @@ func TestHandleReviewSubmit_ValidationErrorPreservesSelectedGeminiModel(t *testi
 }
 
 func TestHandleReviewSubmit_ValidationErrorPreservesFormValues(t *testing.T) {
-	h, enq := buildTestHandler(t, nil, nil)
+	h, enq, _, _ := buildTestHandler(t, nil, nil)
 	w := httptest.NewRecorder()
 
 	v := url.Values{}
@@ -174,7 +216,7 @@ func TestHandleReviewSubmit_ValidationErrorPreservesFormValues(t *testing.T) {
 }
 
 func TestHandleReviewSubmit_InvalidGeminiModel(t *testing.T) {
-	h, enq := buildTestHandler(t, nil, nil)
+	h, enq, _, _ := buildTestHandler(t, nil, nil)
 	w := httptest.NewRecorder()
 
 	v := url.Values{}
@@ -194,8 +236,9 @@ func TestHandleReviewSubmit_InvalidGeminiModel(t *testing.T) {
 	}
 }
 
-func TestHandleReviewSubmit_SignerError(t *testing.T) {
-	h, enq := buildTestHandler(t, errors.New("sign error"), nil)
+// ジョブIDを採番できなければ保存先も閲覧先も決まらないため、投入まで進みません。
+func TestHandleReviewSubmit_JobIDError(t *testing.T) {
+	h, enq, _, _ := buildTestHandler(t, errors.New("entropy failure"), nil)
 	w := httptest.NewRecorder()
 	h.HandleReviewSubmit(w, newSubmitRequest(validFormBody()))
 
@@ -203,12 +246,12 @@ func TestHandleReviewSubmit_SignerError(t *testing.T) {
 		t.Fatalf("expected status 500, got %d", w.Code)
 	}
 	if enq.called {
-		t.Fatal("enqueue should not be called when signer fails")
+		t.Fatal("enqueue should not be called when job id assignment fails")
 	}
 }
 
 func TestHandleReviewSubmit_EnqueueError(t *testing.T) {
-	h, enq := buildTestHandler(t, nil, errors.New("queue unavailable"))
+	h, enq, _, _ := buildTestHandler(t, nil, errors.New("queue unavailable"))
 	w := httptest.NewRecorder()
 	h.HandleReviewSubmit(w, newSubmitRequest(validFormBody()))
 
@@ -221,7 +264,7 @@ func TestHandleReviewSubmit_EnqueueError(t *testing.T) {
 }
 
 func TestHandleReviewSubmit_Success(t *testing.T) {
-	h, enq := buildTestHandler(t, nil, nil)
+	h, enq, store, history := buildTestHandler(t, nil, nil)
 	w := httptest.NewRecorder()
 	h.HandleReviewSubmit(w, newSubmitRequest(validFormBody()))
 
@@ -234,19 +277,56 @@ func TestHandleReviewSubmit_Success(t *testing.T) {
 	if enq.received.ModelName != "gemini-2.5-flash" {
 		t.Fatalf("unexpected model name: %s", enq.received.ModelName)
 	}
-	if enq.received.PublicURL != "https://signed.example.com/result.html" {
-		t.Fatalf("unexpected public url: %s", enq.received.PublicURL)
+	if enq.received.JobID != testJobID {
+		t.Fatalf("unexpected job id: %s", enq.received.JobID)
 	}
-	if !strings.Contains(enq.received.StorageURI, "feature-new-ui.html") {
-		t.Fatalf("unexpected storage uri: %s", enq.received.StorageURI)
+
+	// 保存先も閲覧先もジョブIDから決まります。
+	wantURI := "gs://bucket-a/reviews/" + testJobID + "/report.json"
+	if enq.received.StorageURI != wantURI {
+		t.Fatalf("storage uri = %s, want %s", enq.received.StorageURI, wantURI)
 	}
-	if body := w.Body.String(); !strings.Contains(body, "https://signed.example.com/result.html") {
-		t.Fatalf("response should include result URL, body=%q", body)
+	wantURL := "https://service.example.com/history/" + testJobID
+	if enq.received.PublicURL != wantURL {
+		t.Fatalf("public url = %s, want %s", enq.received.PublicURL, wantURL)
+	}
+	if body := w.Body.String(); !strings.Contains(body, wantURL) {
+		t.Fatalf("response should include the detail URL, body=%q", body)
+	}
+
+	// 受付が履歴に残り、一覧のキャッシュが捨てられていること。
+	if len(store.saved) != 1 {
+		t.Fatalf("記録件数 = %d, want 1", len(store.saved))
+	}
+	if got := store.saved[0]; got.State != "queued" || got.QueuedAt.IsZero() {
+		t.Fatalf("記録内容が想定と違います: %+v", got)
+	}
+	if history.invalidated != 1 {
+		t.Fatalf("キャッシュ破棄の回数 = %d, want 1", history.invalidated)
+	}
+}
+
+// 記録に失敗しても投入は成立しているため、受付は成功として返します。
+func TestHandleReviewSubmit_StatusRecordFailureStillAccepts(t *testing.T) {
+	h, enq, store, history := buildTestHandler(t, nil, nil)
+	store.err = errors.New("gcs unavailable")
+
+	w := httptest.NewRecorder()
+	h.HandleReviewSubmit(w, newSubmitRequest(validFormBody()))
+
+	if w.Code != http.StatusAccepted {
+		t.Fatalf("expected status 202, got %d", w.Code)
+	}
+	if !enq.called {
+		t.Fatal("enqueue should be called")
+	}
+	if history.invalidated != 0 {
+		t.Fatal("記録に失敗したらキャッシュは捨てない想定です")
 	}
 }
 
 func TestHandleReviewSubmit_SuccessPreservesFormValues(t *testing.T) {
-	h, enq := buildTestHandler(t, nil, nil)
+	h, enq, _, _ := buildTestHandler(t, nil, nil)
 	w := httptest.NewRecorder()
 
 	v, err := url.ParseQuery(validFormBody())
@@ -286,7 +366,7 @@ func TestHandleReviewSubmit_SuccessPreservesFormValues(t *testing.T) {
 }
 
 func TestHandleReviewSubmit_UsesSelectedGeminiModel(t *testing.T) {
-	h, enq := buildTestHandler(t, nil, nil)
+	h, enq, _, _ := buildTestHandler(t, nil, nil)
 	w := httptest.NewRecorder()
 
 	v, err := url.ParseQuery(validFormBody())

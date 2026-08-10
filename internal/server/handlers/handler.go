@@ -2,12 +2,10 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"html/template"
 	"net/http"
 	"time"
 
-	"github.com/shouni/git-gemini-web/assets"
 	"github.com/shouni/git-gemini-web/internal/app"
 	"github.com/shouni/git-gemini-web/internal/config"
 	"github.com/shouni/git-gemini-web/internal/domain"
@@ -48,32 +46,46 @@ type reviewTaskEnqueuer interface {
 	Enqueue(ctx context.Context, payload domain.ReviewRequest) error
 }
 
+// Deps は Handler が必要とする依存です。
+type Deps struct {
+	Config       *config.Config
+	TaskEnqueuer reviewTaskEnqueuer
+	RemoteIO     *app.RemoteIO
+	Layout       domain.StorageLayout
+	StatusStore  domain.StatusStore
+	History      domain.HistoryRepository
+}
+
 // Handler は HTTPリクエストを処理する構造体です。
 type Handler struct {
 	cfg          *config.Config
 	taskEnqueuer reviewTaskEnqueuer
 	remoteIO     *app.RemoteIO
-	template     *template.Template
+	layout       domain.StorageLayout
+	statusStore  domain.StatusStore
+	history      domain.HistoryRepository
+	templates    map[string]*template.Template
 	now          func() time.Time
+	newJobID     func() (string, error)
 }
 
 // NewHandler は新しい Handler インスタンスを作成します。
-func NewHandler(
-	cfg *config.Config,
-	taskEnqueuer reviewTaskEnqueuer,
-	remoteIO *app.RemoteIO,
-) (*Handler, error) {
-	tmpl, err := template.ParseFS(assets.Templates, "templates/*.html")
+func NewHandler(deps Deps) (*Handler, error) {
+	templates, err := parsePageTemplates()
 	if err != nil {
-		return nil, fmt.Errorf("テンプレートパース失敗: %w", err)
+		return nil, err
 	}
 
 	return &Handler{
-		cfg:          cfg,
-		taskEnqueuer: taskEnqueuer,
-		remoteIO:     remoteIO,
-		template:     tmpl,
+		cfg:          deps.Config,
+		taskEnqueuer: deps.TaskEnqueuer,
+		remoteIO:     deps.RemoteIO,
+		layout:       deps.Layout,
+		statusStore:  deps.StatusStore,
+		history:      deps.History,
+		templates:    templates,
 		now:          time.Now,
+		newJobID:     newJobID,
 	}, nil
 }
 

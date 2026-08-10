@@ -36,7 +36,14 @@ func BuildHandlers(
 	}
 
 	// Web UI ハンドラーの生成
-	webHandler, err := handlers.NewHandler(appCtx.Config, appCtx.TaskEnqueuer, appCtx.RemoteIO)
+	webHandler, err := handlers.NewHandler(handlers.Deps{
+		Config:       appCtx.Config,
+		TaskEnqueuer: appCtx.TaskEnqueuer,
+		RemoteIO:     appCtx.RemoteIO,
+		Layout:       appCtx.Layout,
+		StatusStore:  appCtx.StatusStore,
+		History:      appCtx.History,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("WebHandlerの初期化失敗: %w", err)
 	}

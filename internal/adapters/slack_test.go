@@ -5,9 +5,10 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/shouni/gemini-reviewer-core/ports"
 	"github.com/shouni/go-notify/notify"
+	"github.com/shouni/go-review-kit/review"
 )
 
 // recordingNotifier は送信された notify.Message を記録するフェイクです。
@@ -39,22 +40,51 @@ func newTestSlackAdapter() (*SlackAdapter, *recordingNotifier) {
 }
 
 // testReviewRequest はテストで使う共通のレビュー要求です。
-func testReviewRequest() ports.ReviewRequest {
-	return ports.ReviewRequest{
-		RepoURL:       "git@github.com:org/repo.git",
-		BaseBranch:    "main",
-		FeatureBranch: "feature/new-ui",
-		Mode:          "code",
-		ModelName:     "gemini-2.5-pro",
-		StorageURI:    "gs://bucket/reviews/repo.html",
-		PublicURL:     "https://signed.example.com/repo.html",
+func testReviewRequest() review.Request {
+	return review.Request{
+		JobID:      "20260810-213000-a1b2c3d4",
+		RepoURL:    "git@github.com:org/repo.git",
+		Base:       "main",
+		Head:       "feature/new-ui",
+		Mode:       "code",
+		Model:      "gemini-2.5-pro",
+		StorageURI: "gs://bucket/reviews/20260810-213000-a1b2c3d4/report.json",
+		PublicURL:  "https://service.example.com/history/20260810-213000-a1b2c3d4",
+	}
+}
+
+// notification は指定した結末の Notification を組み立てます。
+func notification(status review.Status, report *review.Report, cause error) review.Notification {
+	req := testReviewRequest()
+	return review.Notification{
+		Request: req,
+		Result: review.Result{
+			Status:     status,
+			StorageURI: req.StorageURI,
+			PublicURL:  req.PublicURL,
+			Duration:   3 * time.Second,
+		},
+		Report: report,
+		Err:    cause,
+	}
+}
+
+func testReport() review.Report {
+	return review.Report{
+		Title:   "認証処理のレビュー",
+		Summary: "概ね良好です。",
+		Verdict: review.Verdict{Decision: review.DecisionMinor, Reason: "軽微な指摘が1件"},
+		Findings: []review.Finding{
+			{Severity: review.SeverityMinor, File: "main.go", Excerpt: "x := 1", Message: "未使用です。"},
+		},
 	}
 }
 
 func TestNotifySuccessIncludesModelName(t *testing.T) {
 	adapter, rec := newTestSlackAdapter()
 
-	err := adapter.Notify(context.Background(), ports.ReviewProcessOutcome{Req: testReviewRequest()})
+	report := testReport()
+	err := adapter.Notify(context.Background(), notification(review.StatusSucceeded, &report, nil))
 	if err != nil {
 		t.Fatalf("Notify() error = %v", err)
 	}
@@ -65,11 +95,13 @@ func TestNotifySuccessIncludesModelName(t *testing.T) {
 	}
 
 	for _, want := range []string{
-		"**詳細URL:** [gs://bucket/reviews/repo.html](https://signed.example.com/repo.html)",
+		"**詳細:** [20260810-213000-a1b2c3d4](https://service.example.com/history/20260810-213000-a1b2c3d4)",
 		"**リポジトリ:** `org/repo`",
 		"**ブランチ:** `main` ← `feature/new-ui`",
 		"**モード:** `code`",
 		"**モデル:** `gemini-2.5-pro`",
+		"**判定:** Minor",
+		"**指摘:** 1件",
 	} {
 		if !strings.Contains(msg.Body, want) {
 			t.Fatalf("slack content should contain %q, got:\n%s", want, msg.Body)
@@ -77,18 +109,32 @@ func TestNotifySuccessIncludesModelName(t *testing.T) {
 	}
 }
 
+// レポートが無くても成功通知は送れること（結果は保存済みでも、通知の組み立てで
+// 落ちるとワーカーがエラーを返し、タスクが再配信されます）。
+func TestNotifySuccessWithoutReport(t *testing.T) {
+	adapter, rec := newTestSlackAdapter()
+
+	if err := adapter.Notify(context.Background(), notification(review.StatusSucceeded, nil, nil)); err != nil {
+		t.Fatalf("Notify() error = %v", err)
+	}
+
+	msg := rec.last(t)
+	if msg.Title != slackTitles.Success {
+		t.Errorf("Title = %q, want %q", msg.Title, slackTitles.Success)
+	}
+	if strings.Contains(msg.Body, "判定") {
+		t.Errorf("Body = %q, レポートが無い場合に判定は出さない想定です", msg.Body)
+	}
+}
+
 // TestNotifyFailureIncludesStepAndCause は、失敗通知が発生ステップと原因を含み、
-// 詳細URLを含まないことを検証します。失敗時は Publish が実行されないため、
-// 詳細URLを出すとリンク先が存在しません。
+// 詳細リンクを含まないことを検証します。失敗時は結果が保存されないため、
+// リンクを出しても中身がありません。
 func TestNotifyFailureIncludesStepAndCause(t *testing.T) {
 	adapter, rec := newTestSlackAdapter()
 
-	outcome := ports.ReviewProcessOutcome{
-		Req:      testReviewRequest(),
-		StepName: "AI レビュー生成",
-		Error:    errors.New("Gemini がタイムアウトしました"),
-	}
-	if err := adapter.Notify(context.Background(), outcome); err != nil {
+	cause := review.WrapStep(review.StepReview, errors.New("Gemini がタイムアウトしました"))
+	if err := adapter.Notify(context.Background(), notification(review.StatusFailed, nil, cause)); err != nil {
 		t.Fatalf("Notify() error = %v", err)
 	}
 
@@ -96,14 +142,31 @@ func TestNotifyFailureIncludesStepAndCause(t *testing.T) {
 	if msg.Title != slackTitles.Failure {
 		t.Errorf("Title = %q, want %q", msg.Title, slackTitles.Failure)
 	}
-	if !strings.Contains(msg.Body, "**発生ステップ:** AI レビュー生成") {
+	if !strings.Contains(msg.Body, "**発生ステップ:** "+review.StepReview) {
 		t.Errorf("Body = %q, want the failing step", msg.Body)
 	}
-	if !strings.Contains(msg.Body, "**エラー内容:**\nGemini がタイムアウトしました") {
+	if !strings.Contains(msg.Body, "Gemini がタイムアウトしました") {
 		t.Errorf("Body = %q, want the cause", msg.Body)
 	}
-	if strings.Contains(msg.Body, "詳細URL") {
+	if strings.Contains(msg.Body, "詳細") {
 		t.Errorf("Body = %q, want no result link on failure", msg.Body)
+	}
+}
+
+// 工程名の付いていないエラーでも失敗通知は送れること。
+func TestNotifyFailureWithoutStep(t *testing.T) {
+	adapter, rec := newTestSlackAdapter()
+
+	if err := adapter.Notify(context.Background(), notification(review.StatusFailed, nil, errors.New("boom"))); err != nil {
+		t.Fatalf("Notify() error = %v", err)
+	}
+
+	msg := rec.last(t)
+	if strings.Contains(msg.Body, "発生ステップ") {
+		t.Errorf("Body = %q, 工程名が無いなら行ごと出さない想定です", msg.Body)
+	}
+	if !strings.Contains(msg.Body, "boom") {
+		t.Errorf("Body = %q, want the cause", msg.Body)
 	}
 }
 
@@ -113,8 +176,7 @@ func TestNotifyFailureIncludesStepAndCause(t *testing.T) {
 func TestNotifySkippedOmitsReasonSection(t *testing.T) {
 	adapter, rec := newTestSlackAdapter()
 
-	outcome := ports.ReviewProcessOutcome{Req: testReviewRequest(), IsSkipped: true}
-	if err := adapter.Notify(context.Background(), outcome); err != nil {
+	if err := adapter.Notify(context.Background(), notification(review.StatusSkipped, nil, nil)); err != nil {
 		t.Fatalf("Notify() error = %v", err)
 	}
 
@@ -128,27 +190,8 @@ func TestNotifySkippedOmitsReasonSection(t *testing.T) {
 	if !strings.Contains(msg.Body, "**リポジトリ:** `org/repo`") {
 		t.Errorf("Body = %q, want the repository", msg.Body)
 	}
-	if strings.Contains(msg.Body, "詳細URL") {
+	if strings.Contains(msg.Body, "詳細") {
 		t.Errorf("Body = %q, want no result link when skipped", msg.Body)
-	}
-}
-
-// TestNotifyErrorTakesPrecedenceOverSkipped は、両方立っている場合に失敗として
-// 扱われることを検証します。
-func TestNotifyErrorTakesPrecedenceOverSkipped(t *testing.T) {
-	adapter, rec := newTestSlackAdapter()
-
-	outcome := ports.ReviewProcessOutcome{
-		Req:       testReviewRequest(),
-		IsSkipped: true,
-		Error:     errors.New("boom"),
-	}
-	if err := adapter.Notify(context.Background(), outcome); err != nil {
-		t.Fatalf("Notify() error = %v", err)
-	}
-
-	if msg := rec.last(t); msg.Title != slackTitles.Failure {
-		t.Errorf("Title = %q, want %q", msg.Title, slackTitles.Failure)
 	}
 }
 
@@ -156,7 +199,7 @@ func TestNotifyErrorTakesPrecedenceOverSkipped(t *testing.T) {
 // 行ごと省かれることを検証します。
 func TestWriteRepositoryFieldsOmitsEmptyBranches(t *testing.T) {
 	body := notify.NewBody()
-	writeRepositoryFields(body, ports.ReviewRequest{RepoURL: "git@github.com:org/repo.git"})
+	writeRepositoryFields(body, review.Request{RepoURL: "git@github.com:org/repo.git"})
 
 	got := body.String()
 	if strings.Contains(got, "ブランチ") {
@@ -178,7 +221,7 @@ func TestNewSlackAdapterDisabledWhenWebhookURLEmpty(t *testing.T) {
 		t.Fatal("Webhook URL 未設定なのに通知が有効になっています")
 	}
 
-	if err := adapter.Notify(context.Background(), ports.ReviewProcessOutcome{Req: testReviewRequest()}); err != nil {
+	if err := adapter.Notify(context.Background(), notification(review.StatusSucceeded, nil, nil)); err != nil {
 		t.Errorf("Notify() = %v, want nil", err)
 	}
 }
@@ -195,32 +238,21 @@ func TestNewSlackAdapterRequiresHTTPClientWhenWebhookSet(t *testing.T) {
 // Slack 側はこれを attachment の色に落とすため、見出しの絵文字とは別に必要です。
 func TestNotifySetsLevel(t *testing.T) {
 	tests := []struct {
-		name    string
-		outcome ports.ReviewProcessOutcome
-		want    notify.Level
+		name   string
+		status review.Status
+		cause  error
+		want   notify.Level
 	}{
-		{
-			name:    "成功",
-			outcome: ports.ReviewProcessOutcome{Req: testReviewRequest()},
-			want:    notify.LevelSuccess,
-		},
-		{
-			name:    "失敗",
-			outcome: ports.ReviewProcessOutcome{Req: testReviewRequest(), Error: errors.New("boom")},
-			want:    notify.LevelFailure,
-		},
-		{
-			name:    "スキップ",
-			outcome: ports.ReviewProcessOutcome{Req: testReviewRequest(), IsSkipped: true},
-			want:    notify.LevelSkipped,
-		},
+		{"成功", review.StatusSucceeded, nil, notify.LevelSuccess},
+		{"失敗", review.StatusFailed, errors.New("boom"), notify.LevelFailure},
+		{"スキップ", review.StatusSkipped, nil, notify.LevelSkipped},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			adapter, rec := newTestSlackAdapter()
 
-			if err := adapter.Notify(context.Background(), tt.outcome); err != nil {
+			if err := adapter.Notify(context.Background(), notification(tt.status, nil, tt.cause)); err != nil {
 				t.Fatalf("Notify failed: %v", err)
 			}
 			if got := rec.last(t).Level; got != tt.want {
