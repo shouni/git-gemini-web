@@ -46,12 +46,11 @@ golangci-lint run                # CI は v2.12.2 / 設定は .golangci.yml
 
 配置は `internal/domain/storage_layout.go` に集約しています。状態ファイルを成果物と同じジョブプレフィックス配下へ置くのは意図的で、履歴一覧が `reviews/` 直下の列挙で作られるため、同居させることで実行中・失敗・スキップのジョブも一覧に出ます（成果物の有無で消えません）。
 
-状態の記録は 2 か所です。
+状態の記録はすべて `adapters/workflow.go` の `ReviewPipeline` が行います。`running` と再実行ガード（`AlreadySucceeded`）を `Run` の前に、結末（`succeeded` / `failed`）を `Run` の戻り値から記録します。
 
-- `adapters/workflow.go` — `running` と再実行ガード（`AlreadySucceeded`）
-- `adapters/status_recorder.go` — 結末（`succeeded` / `failed`）
+**`review.Notifier` を記録に使わないでください。** `pipeline.Run` が `(Result, *Report, error)` を返すため、レビューの中身は戻り値から取れます。`Notifier` は Slack への外向きの通知だけを担います（`adapters/slack.go`）。
 
-**結末の記録が `review.Notifier` として実装されているのは偶然ではありません。** 成功・スキップ・失敗のいずれでも必ず 1 回呼ばれるのは `Notify` だけで、`Publish` は成功時しか呼ばれないため失敗を記録できません。`adapters.MultiNotifier` が記録と Slack へ配ります。
+**締切はレビューにだけ被せます。** `Execute` が `ctx` を上書きせず `runCtx` を別に作るのはそのためで、打ち切られた直後の記録まで期限切れの context で行うと、いちばん記録が要る場面で残りません。記録側も `context.WithoutCancel` で切り離しています。
 
 「差分なしスキップ」は `state=succeeded` + `outcome=SKIPPED` で表します。ジョブとしては正常終了しているためで、`jobstatus.State` を拡張しないでください。
 

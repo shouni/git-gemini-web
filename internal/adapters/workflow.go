@@ -7,9 +7,13 @@ import (
 
 	"github.com/shouni/go-job-kit/jobstatus"
 	"github.com/shouni/go-review-kit/pipeline"
+	"github.com/shouni/go-review-kit/review"
 
 	"github.com/shouni/git-gemini-web/internal/domain"
 )
+
+// recordTimeout は、結末の記録に与える上限です。
+const recordTimeout = 30 * time.Second
 
 // ReviewPipeline は go-review-kit のパイプラインを domain.Pipeline として公開する ACL です。
 // あわせて、ワーカー側でしか分からない進行状況（実行開始・再配信）を記録します。
@@ -47,16 +51,62 @@ func (p *ReviewPipeline) Execute(ctx context.Context, req domain.ReviewRequest) 
 	}
 	p.recordRunning(ctx, req)
 
+	// 締切はレビューにだけ被せます。ここで ctx を上書きしてしまうと、打ち切られた直後の
+	// 記録まで期限切れの context で行うことになり、いちばん記録が要る場面で残りません。
+	runCtx := ctx
 	if p.timeout > 0 {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, p.timeout)
+		runCtx, cancel = context.WithTimeout(ctx, p.timeout)
 		defer cancel()
 	}
 
-	// 結末（成功・スキップ・失敗）の記録は StatusRecorder が Notifier として行うため、
-	// ここでは結果を捨ててエラーだけをワーカーへ返します。
-	_, err := p.core.Run(ctx, toReviewRequest(req))
+	result, report, err := p.core.Run(runCtx, toReviewRequest(req))
+	p.recordOutcome(ctx, req, result, report, err)
+
 	return err
+}
+
+// recordOutcome は、レビューの結末を進行状況へ記録します。
+//
+// レビューが締切で打ち切られた場合、呼び出し元の context も同時に期限切れになっている
+// ことがあります。記録まで道連れにしないよう、締切を外したうえで上限を与え直します
+// （ライブラリが保存と通知に対して行っているのと同じ切り離しです）。
+func (p *ReviewPipeline) recordOutcome(
+	ctx context.Context,
+	req domain.ReviewRequest,
+	result review.Result,
+	report *review.Report,
+	cause error,
+) {
+	if req.JobID == "" {
+		return
+	}
+
+	recordCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), recordTimeout)
+	defer cancel()
+
+	p.recorder.Record(recordCtx, req.JobID, buildOutcomeStatus(req, result, report, cause), domain.CarryOverExtras)
+}
+
+// buildOutcomeStatus は、結末から記録する JobStatus を組み立てます。
+func buildOutcomeStatus(
+	req domain.ReviewRequest,
+	result review.Result,
+	report *review.Report,
+	cause error,
+) domain.JobStatus {
+	if cause != nil {
+		return domain.NewFailedStatus(req, cause)
+	}
+
+	// スキップもジョブとしては正常終了です。成果物が無いことは Outcome が表します。
+	status := domain.NewSucceededStatus(req, result.Status)
+	if report != nil {
+		status.Title = report.Title
+		status.Decision = report.Verdict.Decision
+		status.ReportURI = req.StorageURI
+	}
+	return status
 }
 
 // skipRedelivery は、既に成功しているジョブの再配信を打ち切ってよいかを返します。

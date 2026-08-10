@@ -72,7 +72,7 @@ git-gemini-web/
 │   ├── templates/     #   - HTML テンプレート
 │   └── assets.go      #   - embed.FS の定義
 ├── internal/
-│   ├── adapters/      # 【接続】Gemini / Git / Slack / 結果保存 / 進行状況の記録
+│   ├── adapters/      # 【接続】Gemini / Git / Slack / 結果保存 / パイプライン ACL
 │   ├── app/           # 【基盤】Container による依存の保持とライフサイクル管理
 │   ├── builder/       # 【構築】各コンポーネントの初期化と組み立て
 │   ├── config/        # 【設定】環境変数・定数・バリデーション

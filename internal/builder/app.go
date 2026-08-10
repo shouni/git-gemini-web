@@ -77,13 +77,7 @@ func BuildContainer(ctx context.Context, cfg *config.Config) (container *app.Con
 		TaskEnqueuer: enqueuer,
 		HTTPClient:   httpClient,
 		PromptGen:    promptGen,
-		// 結末の記録と Slack 投稿はどちらもレビューの結末を受け取ります。記録を
-		// Notifier として組むのは、成功・スキップ・失敗のいずれでも必ず 1 回呼ばれる
-		// のが Notify だけだからです（Publisher は成功時しか呼ばれません）。
-		Notifier: adapters.MultiNotifier{
-			adapters.NewStatusRecorder(statusStore),
-			slack,
-		},
+		Notifier:     slack,
 	}
 
 	// 7. Pipeline (Core Logic)

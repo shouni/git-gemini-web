@@ -2,6 +2,7 @@ package adapters
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"testing"
 	"time"
@@ -15,11 +16,24 @@ import (
 // stubSource は差分取得元のフェイクです。Diff で受け取った context を観察できます。
 type stubSource struct {
 	seen func(ctx context.Context)
+	diff string
+	err  error
 }
 
 func (s stubSource) Diff(ctx context.Context, _, _ string) (string, error) {
 	if s.seen != nil {
 		s.seen(ctx)
+	}
+	if s.err != nil {
+		return "", s.err
+	}
+	// 実際の差分取得と同じく、打ち切られていればエラーを返します。
+	// ここで成功を返してしまうと、締切のテストが締切を再現できません。
+	if err := ctx.Err(); err != nil {
+		return "", err
+	}
+	if s.diff != "" {
+		return s.diff, nil
 	}
 	return "diff --git a/main.go b/main.go", nil
 }
@@ -48,18 +62,38 @@ func (stubReviewer) Review(context.Context, string, string) (review.Report, erro
 // stubPublisher は保存のフェイクです。保存時の context を観察できます。
 type stubPublisher struct {
 	seen func(ctx context.Context)
+	err  error
 }
 
 func (p stubPublisher) Publish(ctx context.Context, _ review.Request, _ review.Report) error {
 	if p.seen != nil {
 		p.seen(ctx)
 	}
+	return p.err
+}
+
+// stubNotifier は通知のフェイクです。通知時の context を観察できます。
+type stubNotifier struct {
+	mu     sync.Mutex
+	calls  int
+	ctxErr error
+}
+
+func (n *stubNotifier) Notify(ctx context.Context, _ review.Notification) error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
+	n.calls++
+	n.ctxErr = ctx.Err()
 	return nil
 }
 
-type stubNotifier struct{}
-
-func (stubNotifier) Notify(context.Context, review.Notification) error { return nil }
+// result は通知の回数と、最後の通知が受け取った context のエラーを返します。
+func (n *stubNotifier) result() (int, error) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	return n.calls, n.ctxErr
+}
 
 // stubStore は進行状況のフェイクです。保存された状態を順に記録します。
 type stubStore struct {
@@ -109,13 +143,23 @@ func (errNotRecorded) Error() string { return "not recorded" }
 // newTestPipeline は、観察用フックを差し込んだパイプラインを組み立てます。
 func newTestPipeline(t *testing.T, source stubSource, publisher stubPublisher) *pipeline.Pipeline {
 	t.Helper()
+	return newTestPipelineWith(t, source, publisher, &stubNotifier{})
+}
+
+func newTestPipelineWith(
+	t *testing.T,
+	source stubSource,
+	publisher stubPublisher,
+	notifier review.Notifier,
+) *pipeline.Pipeline {
+	t.Helper()
 
 	p, err := pipeline.New(pipeline.Deps{
 		Sources:   stubFactory{source: source},
 		Prompts:   stubPrompts{},
 		Reviewer:  stubReviewer{},
 		Publisher: publisher,
-		Notifier:  stubNotifier{},
+		Notifier:  notifier,
 	})
 	if err != nil {
 		t.Fatalf("パイプラインの構築に失敗: %v", err)
@@ -181,30 +225,35 @@ func TestReviewPipeline_ゼロなら無制限(t *testing.T) {
 	}
 }
 
-// 締切で打ち切られても保存・通知は走ること（ライブラリ側の切り離しが効いているかの結合確認）。
-func TestReviewPipeline_打ち切り後も保存は走る(t *testing.T) {
+// 締切で打ち切られても通知は走ること（ライブラリ側の切り離しが効いているかの結合確認）。
+//
+// 打ち切られた場合、保存する結果が無いので Publisher は呼ばれません。報告が要るのは
+// まさにこの場面なので、Notifier が期限切れでない context で呼ばれることを確かめます。
+func TestReviewPipeline_打ち切り後も通知は走る(t *testing.T) {
 	t.Parallel()
 
-	var publishCtxErr error
-	published := false
-	core := newTestPipeline(t,
+	notifier := &stubNotifier{}
+	core := newTestPipelineWith(t,
 		stubSource{seen: func(ctx context.Context) {
 			<-ctx.Done() // 締切まで待つ = レビューが打ち切られた状態を作る
 		}},
-		stubPublisher{seen: func(ctx context.Context) {
-			published = true
-			publishCtxErr = ctx.Err()
-		}},
+		stubPublisher{},
+		notifier,
 	)
 
-	// 差分取得が締切で打ち切られるため、パイプラインは失敗として返ります。
-	// ここで確かめたいのは、その後も保存側が動けることです。
-	_ = NewReviewPipeline(core, &stubStore{}, 10*time.Millisecond).Execute(context.Background(), testDomainRequest())
+	if err := NewReviewPipeline(core, &stubStore{}, 10*time.Millisecond).Execute(context.Background(), testDomainRequest()); err == nil {
+		t.Fatal("打ち切りがエラーとして返っていません")
+	}
 
-	if published {
-		if publishCtxErr != nil {
-			t.Errorf("保存の context が期限切れ: %v", publishCtxErr)
-		}
+	calls, ctxErr := notifier.result()
+	if calls == 0 {
+		t.Fatal("打ち切り後に通知が行われていない")
+	}
+	if calls != 1 {
+		t.Errorf("通知回数 = %d, want 1", calls)
+	}
+	if ctxErr != nil {
+		t.Errorf("通知の context が期限切れ: %v", ctxErr)
 	}
 }
 
@@ -250,5 +299,116 @@ func TestReviewPipeline_完了済みの再配信は打ち切る(t *testing.T) {
 	}
 	if reviewed {
 		t.Error("完了済みなのにレビューが実行されている")
+	}
+}
+
+// 結末は Run の戻り値から記録します。以前は通知フックへ相乗りしていましたが、
+// Run が Report を返すようになったため直接組み立てられます。
+func TestReviewPipeline_結末を記録する(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name        string
+		source      stubSource
+		publisher   stubPublisher
+		wantState   string
+		wantOutcome review.Status
+		wantReport  bool
+	}{
+		{
+			name:        "成功",
+			wantState:   "succeeded",
+			wantOutcome: review.StatusSucceeded,
+			wantReport:  true,
+		},
+		{
+			name:        "差分なし",
+			source:      stubSource{diff: "   "},
+			wantState:   "succeeded",
+			wantOutcome: review.StatusSkipped,
+		},
+		{
+			name:        "差分取得に失敗",
+			source:      stubSource{err: errors.New("boom")},
+			wantState:   "failed",
+			wantOutcome: review.StatusFailed,
+		},
+		{
+			name:        "保存に失敗",
+			publisher:   stubPublisher{err: errors.New("gcs down")},
+			wantState:   "failed",
+			wantOutcome: review.StatusFailed,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			store := &stubStore{}
+			core := newTestPipeline(t, tt.source, tt.publisher)
+
+			_ = NewReviewPipeline(core, store, 0).Execute(context.Background(), testDomainRequest())
+
+			// 1 件目は running、最後が結末です。
+			if len(store.saved) < 2 {
+				t.Fatalf("記録件数 = %d, want 2 以上 (%v)", len(store.saved), store.states())
+			}
+
+			got := store.saved[len(store.saved)-1]
+			if string(got.State) != tt.wantState {
+				t.Errorf("State = %q, want %q", got.State, tt.wantState)
+			}
+			if got.Outcome != tt.wantOutcome {
+				t.Errorf("Outcome = %q, want %q", got.Outcome, tt.wantOutcome)
+			}
+			if got.HasReport() != tt.wantReport {
+				t.Errorf("HasReport() = %v, want %v", got.HasReport(), tt.wantReport)
+			}
+			if tt.wantState == "failed" && got.Error == "" {
+				t.Error("失敗理由が記録されていません")
+			}
+		})
+	}
+}
+
+// 成功時はレビューの中身（題目・判定）まで記録します。履歴一覧の 1 行になります。
+func TestReviewPipeline_結末にレビューの中身を載せる(t *testing.T) {
+	t.Parallel()
+
+	store := &stubStore{}
+	core := newTestPipeline(t, stubSource{}, stubPublisher{})
+
+	req := testDomainRequest()
+	if err := NewReviewPipeline(core, store, 0).Execute(context.Background(), req); err != nil {
+		t.Fatalf("Execute() failed: %v", err)
+	}
+
+	got := store.saved[len(store.saved)-1]
+	if got.Title != "レビュー結果" {
+		t.Errorf("Title = %q, want %q", got.Title, "レビュー結果")
+	}
+	if got.Decision != review.DecisionNone {
+		t.Errorf("Decision = %q, want %q", got.Decision, review.DecisionNone)
+	}
+	if got.ReportURI != req.StorageURI {
+		t.Errorf("ReportURI = %q, want %q", got.ReportURI, req.StorageURI)
+	}
+}
+
+// レビューが締切で打ち切られても結末は記録されること。
+// 記録まで期限切れの context で行うと、いちばん記録が要る場面で残りません。
+func TestReviewPipeline_打ち切り後も結末を記録する(t *testing.T) {
+	t.Parallel()
+
+	store := &stubStore{}
+	core := newTestPipeline(t,
+		stubSource{seen: func(ctx context.Context) { <-ctx.Done() }},
+		stubPublisher{},
+	)
+
+	_ = NewReviewPipeline(core, store, 10*time.Millisecond).Execute(context.Background(), testDomainRequest())
+
+	states := store.states()
+	if len(states) < 2 || states[len(states)-1] != "failed" {
+		t.Fatalf("打ち切りが記録されていません: %v", states)
 	}
 }

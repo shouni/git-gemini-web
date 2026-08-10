@@ -174,8 +174,8 @@ github.com/shouni/go-prompt-kit v1.4.1 h1:eH7ZLVFPgeRix/53/uzixHOi9MxVMp76ZIHxYg
 github.com/shouni/go-prompt-kit v1.4.1/go.mod h1:V7zDajbwItE1NWNG3xuzCJQKutB9GQksEyppVrsqiUE=
 github.com/shouni/go-remote-io v1.8.0 h1:+YbK9w1KIJccF+SzfMJS7odUVyIVd0iSTaQ37MGz+Xc=
 github.com/shouni/go-remote-io v1.8.0/go.mod h1:xlyZSdei+CtCN80OCWl9es7aagglMyCesJubEscyDt4=
-github.com/shouni/go-review-kit v1.1.0 h1:hH0VMAi5m8ZC8s90O+kkkEmuSiW4fqM7UqSwFDWEIMs=
-github.com/shouni/go-review-kit v1.1.0/go.mod h1:GGCadqBh4RnnLKjLQga8OSniRrNg5Y9yOUIjaZAc2Uk=
+github.com/shouni/go-review-kit v1.1.1 h1:XGm+HJvuaWbVcgSBcVCMvuh/nYeGhUWVC357PjYzuxE=
+github.com/shouni/go-review-kit v1.1.1/go.mod h1:GGCadqBh4RnnLKjLQga8OSniRrNg5Y9yOUIjaZAc2Uk=
 github.com/shouni/go-utils v1.5.0 h1:uYjAMebKGDoZFDBZxugndcyTyaCpmNXd8KgnzueqnOg=
 github.com/shouni/go-utils v1.5.0/go.mod h1:MRR3X08kWJ+sSS2+KRuvWEikXui5Tixg9vta6r30SnE=
 github.com/shouni/netarmor v1.2.0 h1:dubvM231CMkYz6bhYNB29Gp4YA3UnP6Wq0wfwzMFxnI=
