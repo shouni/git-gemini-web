@@ -18,14 +18,17 @@ FROM scratch
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=builder /etc/ssh/ssh_known_hosts /etc/ssh/ssh_known_hosts
+COPY --from=builder /tmp /tmp
 
 WORKDIR /app
-COPY --from=builder /app/main /app/main
+COPY --chown=65532:65532 --from=builder /app/main /app/main
 
 ENV TZ=Asia/Tokyo
 
 ENV SSH_KNOWN_HOSTS=/etc/ssh/ssh_known_hosts
 
 EXPOSE 8080
+
+USER 65532:65532
 
 CMD ["/app/main"]
