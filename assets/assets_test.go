@@ -5,23 +5,7 @@ import (
 	"testing"
 )
 
-func resetPromptCache(t *testing.T) {
-	t.Helper()
-
-	mu.Lock()
-	cachedPrompts = nil
-	mu.Unlock()
-
-	t.Cleanup(func() {
-		mu.Lock()
-		cachedPrompts = nil
-		mu.Unlock()
-	})
-}
-
 func TestAvailableModesReadsPromptMetadata(t *testing.T) {
-	resetPromptCache(t)
-
 	modes, err := AvailableModes()
 	if err != nil {
 		t.Fatalf("AvailableModes failed: %v", err)
@@ -45,8 +29,6 @@ func TestAvailableModesReadsPromptMetadata(t *testing.T) {
 }
 
 func TestLoadPromptsStripsModeDescriptionMetadata(t *testing.T) {
-	resetPromptCache(t)
-
 	prompts, err := LoadPrompts()
 	if err != nil {
 		t.Fatalf("LoadPrompts failed: %v", err)
@@ -62,8 +44,6 @@ func TestLoadPromptsStripsModeDescriptionMetadata(t *testing.T) {
 }
 
 func TestLoadPromptsReturnsCopy(t *testing.T) {
-	resetPromptCache(t)
-
 	prompts, err := LoadPrompts()
 	if err != nil {
 		t.Fatalf("LoadPrompts failed: %v", err)
