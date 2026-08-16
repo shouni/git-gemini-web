@@ -36,10 +36,33 @@ var (
 	// StaticFiles は、ブラウザへ配信するJavaScriptなどの静的ファイルを保持します。
 	//go:embed static
 	StaticFiles embed.FS
-
-	cachedPrompts map[string]promptTemplate
-	mu            sync.RWMutex
 )
+
+// loadPrompts は、埋め込みプロンプトの解析結果を最初の呼び出しで1度だけ構築します。
+//
+// AvailableModes と IsValidMode はリクエストのたびに呼ばれるため遅延初期化しますが、
+// 二重チェックロックを手で書く必要はありません。読み込み元は埋め込みアセットで、
+// 失敗するとすれば「モード名の衝突」のように毎回同じ結果になるものだけなので、
+// エラーごとキャッシュして再試行しないのが正しい挙動です。
+//
+// 返すマップは呼び出し側で共有されます。書き換えないでください
+// （LoadPrompts と AvailableModes は、いずれも新しい入れ物へ写して返します）。
+var loadPrompts = sync.OnceValues(func() (map[string]promptTemplate, error) {
+	files, err := resource.Load(promptFiles, promptDir)
+	if err != nil {
+		return nil, err
+	}
+
+	parsed := make(map[string]promptTemplate, len(files))
+	for mode, body := range files {
+		description, promptBody := parsePromptMetadata(mode, body)
+		parsed[mode] = promptTemplate{
+			body:        promptBody,
+			description: description,
+		}
+	}
+	return parsed, nil
+})
 
 type promptTemplate struct {
 	body        string
@@ -52,17 +75,15 @@ type ReviewMode struct {
 	Description string
 }
 
-// LoadPrompts は埋め込まれたプロンプトファイルを読み込みます。
+// LoadPrompts は埋め込まれたプロンプトの本文をモード名で引けるマップとして返します。
 func LoadPrompts() (map[string]string, error) {
-	if err := ensurePromptCache(); err != nil {
+	cached, err := loadPrompts()
+	if err != nil {
 		return nil, err
 	}
 
-	mu.RLock()
-	defer mu.RUnlock()
-
-	prompts := make(map[string]string, len(cachedPrompts))
-	for mode, prompt := range cachedPrompts {
+	prompts := make(map[string]string, len(cached))
+	for mode, prompt := range cached {
 		prompts[mode] = prompt.body
 	}
 	return prompts, nil
@@ -91,19 +112,18 @@ func loadPartial(name string) (string, error) {
 
 // AvailableModes は、埋め込まれたレビュープロンプトから利用可能なモード名を返します。
 func AvailableModes() ([]ReviewMode, error) {
-	if err := ensurePromptCache(); err != nil {
+	cached, err := loadPrompts()
+	if err != nil {
 		return nil, err
 	}
 
-	mu.RLock()
-	modes := make([]ReviewMode, 0, len(cachedPrompts))
-	for mode, prompt := range cachedPrompts {
+	modes := make([]ReviewMode, 0, len(cached))
+	for mode, prompt := range cached {
 		modes = append(modes, ReviewMode{
 			Name:        mode,
 			Description: prompt.description,
 		})
 	}
-	mu.RUnlock()
 
 	sort.Slice(modes, func(i, j int) bool {
 		return modes[i].Name < modes[j].Name
@@ -113,45 +133,14 @@ func AvailableModes() ([]ReviewMode, error) {
 
 // IsValidMode は、指定されたモード名に対応するプロンプトファイルが存在するか確認します。
 func IsValidMode(mode string) bool {
-	if err := ensurePromptCache(); err != nil {
+	cached, err := loadPrompts()
+	if err != nil {
 		slog.Error("failed to load prompts for validation", "error", err)
 		return false
 	}
 
-	mu.RLock()
-	defer mu.RUnlock()
-	_, ok := cachedPrompts[mode]
+	_, ok := cached[mode]
 	return ok
-}
-
-func ensurePromptCache() error {
-	mu.RLock()
-	if cachedPrompts != nil {
-		mu.RUnlock()
-		return nil
-	}
-	mu.RUnlock()
-
-	mu.Lock()
-	defer mu.Unlock()
-	// Double-checked locking
-	if cachedPrompts == nil {
-		p, err := resource.Load(promptFiles, promptDir, "")
-		if err != nil {
-			return err
-		}
-		parsedPrompts := make(map[string]promptTemplate, len(p))
-		for mode, body := range p {
-			description, promptBody := parsePromptMetadata(mode, body)
-			parsedPrompts[mode] = promptTemplate{
-				body:        promptBody,
-				description: description,
-			}
-		}
-		cachedPrompts = parsedPrompts
-	}
-
-	return nil
 }
 
 func parsePromptMetadata(mode, body string) (string, string) {
